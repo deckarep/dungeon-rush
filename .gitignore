@@ -5,6 +5,7 @@ snake
 storage.dat
 archive
 dungeon_rush
+dungeonrush
 *.o
 *.gch
 build
