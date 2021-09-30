@@ -100,7 +100,7 @@ void AiInput(Snake* snake) {
     static Choice choices[4];
     int count = 0;
     for (int i = LEFT; i <= DOWN; i++)
-      if (i != currentDirection && (i ^ 1) != currentDirection) {
+      if (i != (int)currentDirection && (i ^ 1) != (int)currentDirection) {
         int value = testOneMove(snake, i);
         if (value >= originValue) choices[count++] = (Choice){value, i};
       }

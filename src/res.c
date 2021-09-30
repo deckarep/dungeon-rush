@@ -191,6 +191,7 @@ bool loadTextset() {
   return success;
 }
 bool loadTileset(const char* path, SDL_Texture* origin) {
+  //printf("loadTileset path: %s\n", path);
   FILE* file = fopen(path, "r");
   int x, y, w, h, f;
   char resName[256];
@@ -331,7 +332,18 @@ void initCommonSprite(Sprite* sprite, Weapon* weapon, int res_id, int hp) {
   Animation* ani = createAnimation(&textures[res_id], NULL, LOOP_INFI,
                 SPRITE_ANIMATION_DURATION, 0, 0, SDL_FLIP_NONE, 0,
                 AT_BOTTOM_CENTER);
-  *sprite = (Sprite){0, 0, hp, hp, weapon, ani, RIGHT, RIGHT};
+  Sprite sp;
+  sp.x = 0;
+  sp.y = 0;
+  sp.hp = hp;
+  sp.totalHp = hp;
+  sp.weapon = weapon;
+  sp.ani = ani;
+  sp.face = RIGHT;
+  sp.direction = RIGHT;
+
+  //*sprite = (Sprite){0, 0, hp, hp, weapon, ani, RIGHT, RIGHT};
+  *sprite = sp;
   sprite->lastAttack = 0;
   sprite->dropRate = 1;
 }

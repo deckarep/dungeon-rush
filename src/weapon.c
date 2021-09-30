@@ -6,7 +6,10 @@
 
 #include <stdio.h>
 
-extern Texture textures[RES_HALO_EXPLOSION2];
+// R.C. This is crashing when compiled with CLANG!!!!
+//extern Texture textures[RES_HALO_EXPLOSION2];
+// R.C. This works!
+extern Texture textures[TILESET_SIZE];
 extern Mix_Chunk* sounds[AUDIO_SOUND_SIZE];
 
 Weapon weapons[WEAPONS_SIZE];
@@ -30,9 +33,19 @@ void initWeapon(Weapon* self, int birthTextureId, int deathTextureId,
                              SPRITE_ANIMATION_DURATION, 0, 0, SDL_FLIP_NONE, 0,
                              AT_CENTER);
   }
-  *self = (Weapon){
-      WEAPON_SWORD_POINT, 32 * 2, 40, 10, 60, 6, birthAni, deathAni, flyAni, -1,
-      AUDIO_CLAW_HIT};
+
+  Weapon st;
+  st.wp = WEAPON_SWORD_POINT;
+  st.shootRange = 32 * 2;
+  st.effectRange = 40;
+  st.damage = 10;
+  st.gap = 60;
+  st.bulletSpeed = 6;
+  st.birthAni = birthAni;
+  st.deathAni = deathAni;
+  st.flyAni = flyAni;
+
+  *self = st;
 }
 void initWeapons() {
   Weapon* now;

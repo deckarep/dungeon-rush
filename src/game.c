@@ -613,6 +613,7 @@ void dropItem(Sprite* sprite) {
     dropItemNearSprite(sprite, ITEM_WEAPON);
 }
 
+#pragma clang diagnostic ignored "-Wunused-parameter"
 void invokeWeaponBuff(Snake* src, Weapon* weapon, Snake* dest, int damage) {
   double random;
   for (int i = BUFF_BEGIN; i < BUFF_END; i++) {
@@ -904,7 +905,8 @@ void updateBuffDuration() {
 }
 void makeSpriteAttack(Sprite* sprite, Snake* snake) {
   Weapon* weapon = sprite->weapon;
-  if (renderFrames - sprite->lastAttack < weapon->gap) {
+  // RC: to make compiler happy added (unsigned int) cast.
+  if (renderFrames - (unsigned int)sprite->lastAttack < (unsigned int)weapon->gap) {
     return;
   }
   bool attacked = false;

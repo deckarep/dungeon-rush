@@ -15,9 +15,10 @@ TCPsocket lanServerSocket;
 TCPsocket lanClientSocket;
 SDLNet_SocketSet socketSet;
 
-static void CHECK() {
-  CASSERT(sizeof(LanPacket) == 4);
-}
+// R.C. Commented out since unused warning by clang.
+//static void CHECK() {
+//  CASSERT(sizeof(LanPacket) == 4);
+//}
 
 HandShakePacket createHandShakePacket() {
   HandShakePacket handshakePacket;
