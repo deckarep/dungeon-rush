@@ -2,10 +2,13 @@ const Builder = @import("std").build.Builder;
 
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
-    const exe = b.addExecutable("sdl-zig-demo", "src/main.zig");
+    const exe = b.addExecutable("dungeonrush-zig", "src/main.zig");
     exe.setBuildMode(mode);
     exe.linkSystemLibrary("SDL2");
     exe.linkSystemLibrary("SDL2_mixer");
+    exe.linkSystemLibrary("SDL2_net");
+    exe.linkSystemLibrary("SDL2_image");
+    exe.linkSystemLibrary("SDL2_ttf");
     exe.linkSystemLibrary("c");
 
     b.default_step.dependOn(&exe.step);
