@@ -9,3 +9,7 @@ dungeonrush
 *.o
 *.gch
 build
+
+# zig related
+zig-cache
+zig-out
