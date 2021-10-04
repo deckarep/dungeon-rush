@@ -10,9 +10,10 @@
 #include <assert.h>
 #endif
 extern const int n, m;
-extern Texture textures[];
+extern Texture textures[TILESET_SIZE];
 extern Block map[MAP_SIZE][MAP_SIZE];
-extern LinkList animationsList[];
+//extern LinkList animationsList[];
+extern LinkList animationsList[ANIMATION_LINK_LIST_NUM];
 
 const double MAP_HOW_OLD = 0.05;
 const double MAP_WALL_HOW_DECORATED = 0.1;// this will take effect in pushMaptoRender in game.c

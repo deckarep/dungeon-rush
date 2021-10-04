@@ -13,7 +13,8 @@
 #include <assert.h>
 #endif
 
-extern LinkList animationsList[];
+//extern LinkList animationsList[];
+extern LinkList animationsList[ANIMATION_LINK_LIST_NUM];
 extern TTF_Font* font;
 extern SDL_Renderer* renderer;
 SDL_Color BLACK = {0, 0, 0, 255};

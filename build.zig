@@ -19,8 +19,7 @@ pub fn build(b: *Builder) void {
         "-Wextra",
     };
 
-    exe.addCSourceFile("src/main_zig.c", cflags);
-    exe.addCSourceFile("src/prng.c", cflags);
+    //exe.addCSourceFile("src/prng.c", cflags);
     exe.addCSourceFile("src/ui.c", cflags);
     exe.addCSourceFile("src/ai.c", cflags);
     exe.addCSourceFile("src/audio.c", cflags);
@@ -36,6 +35,9 @@ pub fn build(b: *Builder) void {
     exe.addCSourceFile("src/storage.c", cflags);
     exe.addCSourceFile("src/types.c", cflags);
     exe.addCSourceFile("src/weapon.c", cflags);
+
+    // Needed for Zig files to find C header files.
+    exe.addIncludeDir("src");
 
     b.default_step.dependOn(&exe.step);
     b.installArtifact(exe);

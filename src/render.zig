@@ -1,0 +1,54 @@
+const std = @import("std");
+const stdout = std.io.getStdOut().writer();
+
+const c = @import("c_headers.zig").c;
+
+const zTypes = @import("types.zig");
+
+extern var renderer: *c.SDL_Renderer;
+pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
+
+var renderFrames:c_ulonglong = undefined;
+
+pub fn initRenderer() void {
+  renderFrames = 0;
+  var i:usize = 0;
+  while( i < c.ANIMATION_LINK_LIST_NUM) : (i+=1) {
+    c.initLinkList(&animationsList[i]);
+  }
+}
+
+fn blacken(duration: i32) void {
+    // TODO: handle sdl return errors properly in zig.
+    _ = c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND);
+    const rect = c.SDL_Rect{
+        .x = 0,
+        .y = 0,
+        .w = c.SCREEN_WIDTH,
+        .h = c.SCREEN_HEIGHT,
+    };
+    // TODO: the args were formally this define: RENDER_BG_COLOR
+    _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 85);
+    var i: usize = 0;
+    while (i < duration) : (i += 1) {
+        _ = c.SDL_RenderFillRect(renderer, &rect);
+        _ = c.SDL_RenderPresent(renderer);
+    }
+}
+
+pub fn blackout() void {
+    blacken(c.RENDER_BLACKOUT_DURATION);
+}
+
+pub fn clearRenderer() void {
+    var i:usize = 0;
+
+    stdout.print("type of LinkList: {s}\n", .{@TypeOf(&animationsList[i])}) catch unreachable;
+
+    while (i < c.ANIMATION_LINK_LIST_NUM) : ( i+=1 ) {
+        //c.destroyAnimationsByLinkList(&animationsList[i]);
+        // NOTE: won't compile because header types are confused somehow for the arg into the zig world.
+        zTypes.destroyAnimationsByLinkList(&animationsList[i]);
+    }
+    _ = c.SDL_RenderClear(renderer);
+}

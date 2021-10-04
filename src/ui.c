@@ -17,13 +17,13 @@
 #include "text.h"
 #include "types.h"
 
-extern LinkList animationsList[];
+//extern LinkList animationsList[];
 extern bool hasMap[MAP_SIZE][MAP_SIZE];
 extern Text texts[TEXTSET_SIZE];
 extern SDL_Renderer* renderer;
 extern int renderFrames;
 extern SDL_Color WHITE;
-extern Texture textures[];
+extern Texture textures[TILESET_SIZE];
 extern Effect effects[];
 
 extern LinkList animationsList[ANIMATION_LINK_LIST_NUM];
@@ -77,6 +77,7 @@ int chooseOptions(int optionsNum, Text** options) {
     sprite->x = SCREEN_WIDTH / 2 - options[cursorPos]->width / 2 - UNIT / 2;
     sprite->y = startY + cursorPos * lineGap;
     updateAnimationOfSprite(sprite);
+    // crashing!!! now.
     renderUi();
     for (int i = 0; i < optionsNum; i++) {
       renderCenteredText(options[i], SCREEN_WIDTH / 2, startY + i * lineGap, 1);

@@ -7,4 +7,6 @@
 void initBlankMap(int w, int h);
 void initRandomMap(double floorPercent, int smoothTimes, double trapRate);
 void pushMapToRender();
+void clearMapGenerator();
+void initBlock(Block* self, BlockType bp, int x, int y, int bid, bool enable);
 #endif

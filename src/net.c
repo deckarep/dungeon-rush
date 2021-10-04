@@ -11,6 +11,9 @@
 
 #define CASSERT(EXPRESSION) switch (0) {case 0: case (EXPRESSION):;}
 
+// Zig: forward declaration (eventually remove prng.h)
+unsigned prngRand();
+
 TCPsocket lanServerSocket;
 TCPsocket lanClientSocket;
 SDLNet_SocketSet socketSet;

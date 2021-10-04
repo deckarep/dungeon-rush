@@ -8,8 +8,11 @@
 #include "res.h"
 #include "types.h"
 
+// Zig: forward declaration (eventually remove prng.h)
+unsigned prngRand();
+
 extern const int SCALE_FACTOR;
-extern Texture textures[];
+extern Texture textures[TILESET_SIZE];
 bool inr(int x, int l, int r) { return x <= r && l <= x; }
 int randInt(int l, int r) { return prngRand() % (r - l + 1) + l; }
 double randDouble() { return (double)prngRand() / PRNG_MAX; }

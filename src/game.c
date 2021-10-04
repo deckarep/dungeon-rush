@@ -29,7 +29,8 @@ extern const int n, m;
 extern Texture textures[TEXTURES_SIZE];
 const int MOVE_STEP = 2;
 
-extern LinkList animationsList[];
+//extern LinkList animationsList[];
+extern LinkList animationsList[ANIMATION_LINK_LIST_NUM];
 extern Effect effects[];
 
 extern Weapon weapons[WEAPONS_SIZE];

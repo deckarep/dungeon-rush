@@ -33,6 +33,7 @@ void renderText(const Text* text, int x, int y, double);
 SDL_Point renderCenteredText(const Text* text, int x, int y, double);
 void setEffect(Texture* texture, Effect* effect);
 void unsetEffect(Texture* texture);
+void blacken(int duration);
 Animation* createAndPushAnimation(LinkList* list, Texture* texture,
                                   const Effect* effect, LoopType lp,
                                   int duration, int x, int y,

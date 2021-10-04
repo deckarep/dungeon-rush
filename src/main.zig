@@ -1,23 +1,35 @@
-const c = @cImport({
-    @cInclude("SDL.h");
-    @cInclude("SDL_mixer.h");
-    @cInclude("SDL_image.h");
-    @cInclude("SDL_net.h");
-    @cInclude("SDL_ttf.h");
-});
+const c = @import("c_headers.zig").c;
 
-extern fn cmain(argv: [*c][*c]u8, argc: c_int) c_int;
-extern fn add(a:c_int, b:c_int) c_int;
+// const c_dr = @cImport({
+//     @cInclude("res.h");
+//     @cInclude("ui.h");
+// });
 
-const std = @import("std");
+const rnd = @import("prng.zig");
+const ui = @import("ui.zig");
+
 const assert = @import("std").debug.assert;
+const std = @import("std");
+const stdout = std.io.getStdOut().writer();
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
     try stdout.print("Hello Dungeon Rush Zig!!!\n", .{});
+    try start();
+}
 
-    _ = cmain(null, @intCast(c_int, std.os.argv.len));
-
-    var result:c_int = add(4, 6);
-    try stdout.print("Here's the result: {d}\n", .{result});
+fn start() !void {
+    // TODO: should use time(NULL) for a seed.
+    rnd.prngSrand(112112);
+    // Start up SDL and create window
+    if (!c.init()) {
+        defer c.cleanup();
+        try stdout.print("Failed to initialize!\n", .{});
+    } else {
+        // Load media
+        if (!c.loadMedia()) {
+            try stdout.print("Failed to load media!\n", .{});
+        } else {
+            try ui.mainUi();
+        }
+    }
 }

@@ -246,10 +246,12 @@ void renderAnimation(Animation* ani) {
   }
 #endif
 }
+
 void pushAnimationToRender(int id, Animation* ani) {
   LinkNode* p = createLinkNode(ani);
   pushLinkNode(&animationsList[id], p);
 }
+
 Animation* createAndPushAnimation(LinkList* list, Texture* texture,
                                   const Effect* effect, LoopType lp,
                                   int duration, int x, int y,
@@ -417,9 +419,10 @@ void renderUi() {
 
   for (int i = 0; i < ANIMATION_LINK_LIST_NUM; i++) {
     updateAnimationLinkList(&animationsList[i]);
-    if (i == RENDER_LIST_SPRITE_ID)
+    if (i == RENDER_LIST_SPRITE_ID) {
       renderAnimationLinkListWithSort(&animationsList[i]);
-    else
+    } else {
       renderAnimationLinkList(&animationsList[i]);
+    }
   }
 }
