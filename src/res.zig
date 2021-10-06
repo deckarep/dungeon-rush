@@ -6,6 +6,7 @@ const stdout = std.io.getStdOut().writer();
 
 // Extern.
 extern var renderer: ?*c.SDL_Renderer;
+extern var weapons: [c.WEAPONS_SIZE]c.Weapon;
 
 // Extern for now.
 extern var originTextures: [c.TILESET_SIZE]?*c.SDL_Texture;
@@ -14,6 +15,8 @@ extern const tilesetPath: [c.TILESET_SIZE][c.PATH_LEN]u8;
 extern const fontPath: []u8;
 extern var font: ?*c.TTF_Font;
 extern var effects: [c.EFFECTS_SIZE]c.Effect;
+extern var commonSprites: [c.COMMON_SPRITE_SIZE]c.Sprite;
+extern var textures: [c.TEXTURES_SIZE]c.Texture;
 
 pub fn init() bool {
     // Initialization flag
@@ -124,7 +127,7 @@ pub fn loadMedia() bool {
 
     // Init common sprites
     c.initWeapons();
-    c.initCommonSprites();
+    initCommonSprites();
 
     if (!c.loadAudio()) {
         stdout.print("Failed to load audio!\n", .{}) catch unreachable;
@@ -137,7 +140,7 @@ pub fn loadMedia() bool {
 pub fn initCommonEffects() void {
     // Effect #0: Death
     c.initEffect(&effects[0], 30, 4, c.SDL_BLENDMODE_BLEND);
-    var death = c.SDL_Color{.r=255, .g=255, .b=255, .a=255};
+    var death = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
 
     effects[0].keys[0] = death;
     death.r = 168;
@@ -155,7 +158,7 @@ pub fn initCommonEffects() void {
 
     // Effect #1: Blink ( white )
     c.initEffect(&effects[1], 30, 3, c.SDL_BLENDMODE_ADD);
-    var blink = c.SDL_Color{.r=0, .g=0, .b=0, .a=255};
+    var blink = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
     effects[1].keys[0] = blink;
     blink.r = 200;
     blink.g = 200;
@@ -169,13 +172,65 @@ pub fn initCommonEffects() void {
     //  puts("Effect #1: Blink (white) loaded");
     //#endif
     c.initEffect(&effects[2], 30, 2, c.SDL_BLENDMODE_BLEND);
-    var vanish = c.SDL_Color{.r=255, .g=255, .b=255, .a=255};
+    var vanish = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
     effects[2].keys[0] = vanish;
     vanish.a = 0;
     effects[2].keys[1] = vanish;
     //#ifdef DBG
     //  puts("Effect #2: Vanish (30fm) loaded");
     //#endif
+}
+
+pub fn initCommonSprite(sprite: *c.Sprite, weapon: *c.Weapon, res_id: c_int, hp: c_int) void {
+    const ani: *c.Animation = c.createAnimation(&textures[@intCast(usize, res_id)], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
+
+    var sp: c.Sprite = c.Sprite{
+        .x = 0,
+        .y = 0,
+        .hp = hp,
+        .totalHp = hp,
+        .weapon = weapon,
+        .ani = ani,
+        .face = c.RIGHT,
+        .direction = c.RIGHT,
+        .lastAttack = 0,
+        .dropRate = 1,
+        // this was not specified in the C version.
+        .posBuffer = undefined,
+    };
+
+    sprite.* = sp;
+}
+
+pub fn initCommonSprites() void {
+    initCommonSprite(&commonSprites[c.SPRITE_KNIGHT], &weapons[c.WEAPON_SWORD], c.RES_KNIGHT_M, 150);
+    initCommonSprite(&commonSprites[c.SPRITE_ELF], &weapons[c.WEAPON_ARROW], c.RES_ELF_M, 100);
+    initCommonSprite(&commonSprites[c.SPRITE_WIZZARD], &weapons[c.WEAPON_FIREBALL], c.RES_WIZZARD_M, 95);
+    initCommonSprite(&commonSprites[c.SPRITE_LIZARD], &weapons[c.WEAPON_MONSTER_CLAW], c.RES_LIZARD_M, 120);
+    initCommonSprite(&commonSprites[c.SPRITE_TINY_ZOMBIE], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_TINY_ZOMBIE, 50);
+    initCommonSprite(&commonSprites[c.SPRITE_GOBLIN], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_GOBLIN, 100);
+    initCommonSprite(&commonSprites[c.SPRITE_IMP], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_IMP, 100);
+    initCommonSprite(&commonSprites[c.SPRITE_SKELET], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_SKELET, 100);
+    initCommonSprite(&commonSprites[c.SPRITE_MUDDY], &weapons[c.WEAPON_SOLID], c.RES_MUDDY, 150);
+    initCommonSprite(&commonSprites[c.SPRITE_SWAMPY], &weapons[c.WEAPON_SOLID_GREEN], c.RES_SWAMPY, 150);
+    initCommonSprite(&commonSprites[c.SPRITE_ZOMBIE], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_ZOMBIE, 120);
+    initCommonSprite(&commonSprites[c.SPRITE_ICE_ZOMBIE], &weapons[c.WEAPON_ICEPICK], c.RES_ICE_ZOMBIE, 120);
+    initCommonSprite(&commonSprites[c.SPRITE_MASKED_ORC], &weapons[c.WEAPON_THROW_AXE], c.RES_MASKED_ORC, 120);
+    initCommonSprite(&commonSprites[c.SPRITE_ORC_WARRIOR], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_ORC_WARRIOR, 200);
+    initCommonSprite(&commonSprites[c.SPRITE_ORC_SHAMAN], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_ORC_SHAMAN, 120);
+    initCommonSprite(&commonSprites[c.SPRITE_NECROMANCER], &weapons[c.WEAPON_PURPLE_BALL], c.RES_NECROMANCER, 120);
+    initCommonSprite(&commonSprites[c.SPRITE_WOGOL], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_WOGOL, 150);
+    initCommonSprite(&commonSprites[c.SPRITE_CHROT], &weapons[c.WEAPON_MONSTER_CLAW2], c.RES_CHORT, 150);
+
+    var now: *c.Sprite = &commonSprites[c.SPRITE_BIG_ZOMBIE];
+    initCommonSprite(now, &weapons[c.WEAPON_THUNDER], c.RES_BIG_ZOMBIE, 3000);
+    now.*.dropRate = 100;
+    now = &commonSprites[c.SPRITE_ORGRE];
+    initCommonSprite(now, &weapons[c.WEAPON_MANY_AXES], c.RES_ORGRE, 3000);
+    now.*.dropRate = 100;
+    now = &commonSprites[c.SPRITE_BIG_DEMON];
+    initCommonSprite(now, &weapons[c.WEAPON_THUNDER], c.RES_BIG_DEMON, 2500);
+    now.*.dropRate = 100;
 }
 
 pub fn cleanup() void {

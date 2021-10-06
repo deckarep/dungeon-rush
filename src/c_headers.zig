@@ -20,4 +20,6 @@ pub const c = @cImport({
     @cInclude("types.h");
     @cInclude("helper.h");
     @cInclude("map.h");
+    @cInclude("sprite.h");
+    @cInclude("weapon.h");
 });

@@ -3,6 +3,8 @@
 
 #include <SDL.h>
 #include "types.h"
+#include "weapon.h"
+#include "sprite.h"
 
 #define VERSION_STRING "v1.1(beta)"
 #define PATH_LEN 1024
@@ -180,6 +182,7 @@ bool loadTextset();
 void initCommonEffects();
 void initCommonAnimations();
 void initCommonSprites();
+void initCommonSprite(Sprite* sprite, Weapon* weapon, int res_id, int hp);
 
 extern SDL_Renderer* renderer;
 #endif
