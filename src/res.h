@@ -173,6 +173,7 @@
 bool init();
 void cleanup();
 bool loadMedia();
+bool loadAudio();
 SDL_Texture* loadSDLTexture(const char* path);
 bool loadTileset(const char* path, SDL_Texture* origin);
 bool loadTextset();
