@@ -97,7 +97,6 @@ pub fn loadSDLTexture(path: [*c]const u8) ?*c.SDL_Texture {
 }
 
 pub fn loadMedia() bool {
-    //return c.loadMedia();
     var success: bool = true;
     initCommonEffects();
 
@@ -132,12 +131,17 @@ pub fn loadMedia() bool {
     weap.initWeapons();
     initCommonSprites();
 
-    if (!c.loadAudio()) {
+    if (!loadAudio()) {
         stdout.print("Failed to load audio!\n", .{}) catch unreachable;
         success = false;
     }
 
     return success;
+}
+
+pub fn loadAudio() bool {
+    // TODO: port this over.
+    return c.loadAudio();
 }
 
 pub fn loadTextset() bool {
