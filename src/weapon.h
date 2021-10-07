@@ -44,5 +44,7 @@ typedef struct {
 } Weapon;
 
 void initWeapons();
+void initWeapon(Weapon* self, int birthTextureId, int deathTextureId,
+                int flyTextureId);
 
 #endif

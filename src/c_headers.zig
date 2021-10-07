@@ -11,13 +11,13 @@ pub const c = @cImport({
     @cInclude("SDL_net.h");
     @cInclude("SDL_ttf.h");
 
+    @cInclude("types.h");
     @cInclude("res.h");
     @cInclude("ui.h");
     @cInclude("audio.h");
     @cInclude("game.h");
     @cInclude("render.h");
     @cInclude("adt.h");
-    @cInclude("types.h");
     @cInclude("helper.h");
     @cInclude("map.h");
     @cInclude("sprite.h");

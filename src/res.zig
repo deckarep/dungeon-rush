@@ -4,6 +4,9 @@ const assert = @import("std").debug.assert;
 const std = @import("std");
 const stdout = std.io.getStdOut().writer();
 
+const types = @import("types.zig");
+const weap = @import("weapons.zig");
+
 // Extern.
 extern var renderer: ?*c.SDL_Renderer;
 extern var weapons: [c.WEAPONS_SIZE]c.Weapon;
@@ -107,7 +110,7 @@ pub fn loadMedia() bool {
         _ = c.sprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &imgPath)), "%s.png", @ptrCast([*c]const u8, @alignCast(@import("std").meta.alignment(u8), &tilesetPath[@intCast(c_uint, i)])));
 
         originTextures[i] = loadSDLTexture(&imgPath);
-        _ = c.loadTileset(c_string, originTextures[i]);
+        _ = loadTileset(c_string, originTextures[i]);
 
         stdout.print("type of originTextures[i] {s}\n", .{@TypeOf(originTextures[i])}) catch unreachable;
         success = originTextures[i] != undefined;
@@ -119,14 +122,14 @@ pub fn loadMedia() bool {
         stdout.print("Failed to load lazy font! SDL_ttf Error: {s}\n", .{c.TTF_GetError()}) catch unreachable;
         success = false;
     } else {
-        if (!c.loadTextset()) {
+        if (!loadTextset()) {
             stdout.print("Failed to load textset!\n", .{}) catch unreachable;
             success = false;
         }
     }
 
     // Init common sprites
-    c.initWeapons();
+    weap.initWeapons();
     initCommonSprites();
 
     if (!c.loadAudio()) {
@@ -137,9 +140,19 @@ pub fn loadMedia() bool {
     return success;
 }
 
+pub fn loadTextset() bool {
+    // TODO: port this over.
+    return c.loadTextset();
+}
+
+pub fn loadTileset(path:[*c]const u8, origin:?*c.SDL_Texture) bool {
+    // TODO: port this over.
+    return c.loadTileset(path, origin);
+}
+
 pub fn initCommonEffects() void {
     // Effect #0: Death
-    c.initEffect(&effects[0], 30, 4, c.SDL_BLENDMODE_BLEND);
+    types.initEffect(&effects[0], 30, 4, c.SDL_BLENDMODE_BLEND);
     var death = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
 
     effects[0].keys[0] = death;
@@ -157,7 +170,7 @@ pub fn initCommonEffects() void {
     //#endif
 
     // Effect #1: Blink ( white )
-    c.initEffect(&effects[1], 30, 3, c.SDL_BLENDMODE_ADD);
+    types.initEffect(&effects[1], 30, 3, c.SDL_BLENDMODE_ADD);
     var blink = c.SDL_Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
     effects[1].keys[0] = blink;
     blink.r = 200;
@@ -171,7 +184,7 @@ pub fn initCommonEffects() void {
     //#ifdef DBG
     //  puts("Effect #1: Blink (white) loaded");
     //#endif
-    c.initEffect(&effects[2], 30, 2, c.SDL_BLENDMODE_BLEND);
+    types.initEffect(&effects[2], 30, 2, c.SDL_BLENDMODE_BLEND);
     var vanish = c.SDL_Color{ .r = 255, .g = 255, .b = 255, .a = 255 };
     effects[2].keys[0] = vanish;
     vanish.a = 0;
