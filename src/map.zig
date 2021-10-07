@@ -11,6 +11,10 @@ pub extern var textures: [c.TILESET_SIZE]c.Texture;
 // Extern for now...
 pub extern var hasMap: [c.MAP_SIZE][c.MAP_SIZE]bool;
 
+pub fn clearMapGenerator() void{
+    c.clearMapGenerator();
+}
+
 pub fn initBlock(self: *c.Block, bp: c.BlockType, x: c_int, y: c_int, bid: c_int, enable: bool) void {
     self.*.x = x;
     self.*.y = y;
@@ -30,7 +34,7 @@ pub fn initBlock(self: *c.Block, bp: c.BlockType, x: c_int, y: c_int, bid: c_int
 }
 
 pub fn initBlankMap(w: c_int, h: c_int) void {
-    c.clearMapGenerator();
+    clearMapGenerator();
 
     var si: c_int = @divTrunc(n, 2) - @divTrunc(w, 2);
     var sj: c_int = @divTrunc(m, 2) - @divTrunc(h, 2);
