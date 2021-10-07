@@ -11,6 +11,7 @@ dungeonrush-zig
 *.o
 *.gch
 build
+res/.DS_Store
 
 # zig related
 zig-cache
