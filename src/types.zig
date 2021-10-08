@@ -35,6 +35,18 @@ pub fn initEffect(self: *c.Effect, duration: c_int, length: c_int, mode: c.SDL_B
     self.*.mode = mode;
 }
 
+pub fn pushLinkNode (list:*c.LinkList, node:*c.LinkNode) void {
+  if (list.*.head == null) {
+    list.*.head = node;
+    list.*.tail = node;
+  } else {
+    list.*.tail.*.nxt = node;
+    node.*.pre = list.*.tail;
+
+    list.*.tail = node;
+  }
+}
+
 pub fn removeLinkNode(list: *c.LinkList, node: *c.LinkNode) void {
     if (node.*.pre != null) {
         node.*.pre.*.nxt = node.*.nxt;

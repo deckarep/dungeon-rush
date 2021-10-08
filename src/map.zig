@@ -4,6 +4,7 @@ const assert = std.debug.assert;
 const stdout = std.io.getStdOut().writer();
 
 const helper = @import("helper.zig");
+const types = @import("types.zig");
 
 pub extern const n: c_int;
 pub extern const m: c_int;
@@ -157,7 +158,7 @@ pub fn pushMapToRender() void {
             //#ifdef DBG
             //     assert(node->element);
             //#endif
-            c.pushLinkNode(&animationsList[c.RENDER_LIST_MAP_ID], node);
+            types.pushLinkNode(&animationsList[c.RENDER_LIST_MAP_ID], node);
         }
     }
 }
