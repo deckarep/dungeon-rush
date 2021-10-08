@@ -11,7 +11,7 @@ pub fn initAnimation(self: *c.Animation, origin: *c.Texture, effect: ?*const c.E
     self.*.origin = origin;
     if (effect != null) {
         self.*.effect = @ptrCast([*c]c.Effect, @alignCast(meta.alignment(c.Effect), c.malloc(@sizeOf(c.Effect))));
-        c.copyEffect(effect, self.*.effect);
+        copyEffect(effect, self.*.effect);
     } else {
         self.*.effect = null;
     }
@@ -27,6 +27,13 @@ pub fn initAnimation(self: *c.Animation, origin: *c.Texture, effect: ?*const c.E
     self.*.dieWithBind = false;
     self.*.scaled = true;
     self.*.lifeSpan = duration;
+}
+
+// deep copy
+pub fn copyEffect(src: [*c]const c.Effect, dest: *c.Effect) void {
+    _ = c.memcpy(dest, src, @sizeOf(c.Effect));
+    dest.*.keys = @ptrCast([*c]c.SDL_Color, @alignCast(meta.alignment(c.SDL_Color), c.malloc(@sizeOf(c.SDL_Color) * @intCast(c_ulong, src.*.length))));
+    _ = c.memcpy(dest.*.keys, src.*.keys, @sizeOf(c.SDL_Color) * @intCast(c_ulong, src.*.length));
 }
 
 pub fn createAnimation(origin: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) *c.Animation {
@@ -52,7 +59,7 @@ pub fn destroyAnimationsByLinkList(list: *c.LinkList) void {
 }
 
 pub fn destroyAnimation(self: *c.Animation) void {
-    c.destroyEffect(self.*.effect);
+    destroyEffect(self.*.effect);
     c.free(self);
 }
 
@@ -62,6 +69,13 @@ pub fn initEffect(self: *c.Effect, duration: c_int, length: c_int, mode: c.SDL_B
     self.*.length = length;
     self.*.currentFrame = 0;
     self.*.mode = mode;
+}
+
+pub fn destroyEffect(self: [*c]c.Effect) void {
+    if (self != null) {
+        c.free(self.*.keys);
+        c.free(self);
+    }
 }
 
 pub fn pushLinkNode(list: *c.LinkList, node: *c.LinkNode) void {
