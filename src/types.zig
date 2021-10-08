@@ -6,6 +6,12 @@ const c = @import("c_headers.zig").c;
 
 pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
 
+pub fn createAnimation(origin: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) *c.Animation {
+    var self: *c.Animation = @ptrCast([*c]c.Animation, @alignCast(meta.alignment(c.Animation), c.malloc(@sizeOf(c.Animation))));
+    c.initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
+    return self;
+}
+
 pub fn destroyAnimationsByLinkList(list: *c.LinkList) void {
     var p: [*c]c.LinkNode = list.*.head;
     var nxt: [*c]c.LinkNode = null;
@@ -35,16 +41,16 @@ pub fn initEffect(self: *c.Effect, duration: c_int, length: c_int, mode: c.SDL_B
     self.*.mode = mode;
 }
 
-pub fn pushLinkNode (list:*c.LinkList, node:*c.LinkNode) void {
-  if (list.*.head == null) {
-    list.*.head = node;
-    list.*.tail = node;
-  } else {
-    list.*.tail.*.nxt = node;
-    node.*.pre = list.*.tail;
+pub fn pushLinkNode(list: *c.LinkList, node: *c.LinkNode) void {
+    if (list.*.head == null) {
+        list.*.head = node;
+        list.*.tail = node;
+    } else {
+        list.*.tail.*.nxt = node;
+        node.*.pre = list.*.tail;
 
-    list.*.tail = node;
-  }
+        list.*.tail = node;
+    }
 }
 
 pub fn removeLinkNode(list: *c.LinkList, node: *c.LinkNode) void {

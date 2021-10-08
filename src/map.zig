@@ -5,6 +5,7 @@ const stdout = std.io.getStdOut().writer();
 
 const helper = @import("helper.zig");
 const types = @import("types.zig");
+const render = @import("render.zig");
 
 pub extern const n: c_int;
 pub extern const m: c_int;
@@ -46,12 +47,12 @@ pub fn initBlock(self: *c.Block, bp: c.BlockType, x: c_int, y: c_int, bid: c_int
 
     if (bp == c.BLOCK_TRAP) {
         const floor: usize = if (enable) c.RES_FLOOR_SPIKE_ENABLED else c.RES_FLOOR_SPIKE_DISABLED;
-        self.*.ani = c.createAnimation(&textures[floor], null, c.LOOP_INFI, 1, x, y, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+        self.*.ani = types.createAnimation(&textures[floor], null, c.LOOP_INFI, 1, x, y, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
     } else if (bp == c.BLOCK_EXIT) {
         const floor: usize = if (enable) c.RES_FLOOR_EXIT else c.RES_FLOOR_2;
-        self.*.ani = c.createAnimation(&textures[floor], null, c.LOOP_INFI, 1, x, y, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+        self.*.ani = types.createAnimation(&textures[floor], null, c.LOOP_INFI, 1, x, y, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
     } else {
-        self.*.ani = c.createAnimation(&textures[@intCast(usize, bid)], null, c.LOOP_INFI, 1, x, y, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+        self.*.ani = types.createAnimation(&textures[@intCast(usize, bid)], null, c.LOOP_INFI, 1, x, y, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
     }
 }
 
@@ -89,57 +90,57 @@ pub fn pushMapToRender() void {
             if (!hasMap[i][j]) {
                 if (helper.inr(@intCast(c_int, j) + 1, 0, @intCast(c_int, m) - 1) and hasMap[i][j + 1]) {
                     if (helper.inr(@intCast(c_int, i) + 1, 0, n - 1) and hasMap[i + 1][j]) {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_FRONT_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_BOTTOM_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_FRONT_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_BOTTOM_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     } else if (helper.inr(@intCast(c_int, i) - 1, 0, @intCast(c_int, n) - 1) and hasMap[i - 1][j]) {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_FRONT_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_BOTTOM_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_FRONT_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_BOTTOM_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     } else {
                         var bid: c_int = if (helper.randDouble() < MAP_HOW_OLD * 5) c.RES_WALL_HOLE_1 + helper.randInt(0, 1) else c.RES_WALL_MID;
                         if (helper.randDouble() < MAP_WALL_HOW_DECORATED) {
                             bid = c.RES_WALL_BANNER_RED + helper.randInt(0, 3);
                         }
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[@intCast(usize, bid)], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_TOP_MID], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[@intCast(usize, bid)], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_TOP_MID], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                 }
                 if (helper.inr(@intCast(c_int, j) - 1, 0, m - 1) and hasMap[i][j - 1]) {
                     const bid: c_int = if (helper.randDouble() < MAP_HOW_OLD * 2) c.RES_WALL_HOLE_1 + helper.randInt(0, 1) else c.RES_WALL_MID;
-                    _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[@intCast(usize, bid)], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                    _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[@intCast(usize, bid)], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     if (hasMap[i - 1][j]) {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_FOREWALL], &textures[c.RES_WALL_CORNER_TOP_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_FOREWALL], &textures[c.RES_WALL_CORNER_TOP_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     } else if (hasMap[i + 1][j]) {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_FOREWALL], &textures[c.RES_WALL_CORNER_TOP_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_FOREWALL], &textures[c.RES_WALL_CORNER_TOP_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     } else {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_FOREWALL], &textures[c.RES_WALL_TOP_MID], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_FOREWALL], &textures[c.RES_WALL_TOP_MID], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                 }
                 if (helper.inr(@intCast(c_int, i) + 1, 0, n - 1) and hasMap[i + 1][j]) {
                     if (helper.inr(@intCast(c_int, j) + 1, 0, m - 1) and hasMap[i][j + 1]) {
                         // Do not render.
                     } else {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_MID_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_MID_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                     if (!hasMap[i + 1][j + 1]) {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_FRONT_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) + 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_FRONT_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) + 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                     if (!hasMap[i + 1][j - 1]) {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_MID_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_TOP_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 2) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_MID_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_TOP_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 2) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                 }
                 if (helper.inr(@intCast(c_int, i) - 1, 0, n - 1) and hasMap[i - 1][j]) {
                     if (helper.inr(@intCast(c_int, j) + 1, 0, m - 1) and hasMap[i][j + 1]) {
                         // Do not render.
                     } else {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_MID_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_MID_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                     if (!hasMap[i - 1][j + 1]) {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_FRONT_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) + 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_FRONT_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) + 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                     if (!hasMap[i - 1][j - 1]) {
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_MID_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
-                        _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_TOP_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 2) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_MID_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+                        _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_SIDE_TOP_RIGHT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 2) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                 }
             }
@@ -153,7 +154,6 @@ pub fn pushMapToRender() void {
             if (!hasMap[i][j]) {
                 continue;
             }
-
             const node: *c.LinkNode = c.createLinkNode(map[i][j].ani);
             //#ifdef DBG
             //     assert(node->element);

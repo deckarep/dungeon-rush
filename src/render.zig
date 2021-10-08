@@ -8,14 +8,14 @@ const zTypes = @import("types.zig");
 extern var renderer: *c.SDL_Renderer;
 pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
 
-var renderFrames:c_ulonglong = undefined;
+var renderFrames: c_ulonglong = undefined;
 
 pub fn initRenderer() void {
-  renderFrames = 0;
-  var i:usize = 0;
-  while( i < c.ANIMATION_LINK_LIST_NUM) : (i+=1) {
-    c.initLinkList(&animationsList[i]);
-  }
+    renderFrames = 0;
+    var i: usize = 0;
+    while (i < c.ANIMATION_LINK_LIST_NUM) : (i += 1) {
+        c.initLinkList(&animationsList[i]);
+    }
 }
 
 fn blacken(duration: i32) void {
@@ -41,14 +41,21 @@ pub fn blackout() void {
 }
 
 pub fn clearRenderer() void {
-    var i:usize = 0;
+    var i: usize = 0;
 
     stdout.print("type of LinkList: {s}\n", .{@TypeOf(&animationsList[i])}) catch unreachable;
 
-    while (i < c.ANIMATION_LINK_LIST_NUM) : ( i+=1 ) {
+    while (i < c.ANIMATION_LINK_LIST_NUM) : (i += 1) {
         //c.destroyAnimationsByLinkList(&animationsList[i]);
         // NOTE: won't compile because header types are confused somehow for the arg into the zig world.
         zTypes.destroyAnimationsByLinkList(&animationsList[i]);
     }
     _ = c.SDL_RenderClear(renderer);
+}
+
+pub fn createAndPushAnimation(list: *c.LinkList, texture: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) *c.Animation {
+    var ani: *c.Animation = c.createAnimation(texture, effect, lp, duration, x, y, flip, angle, at);
+    var node: *c.LinkNode = c.createLinkNode(ani);
+    c.pushLinkNode(list, node);
+    return ani;
 }
