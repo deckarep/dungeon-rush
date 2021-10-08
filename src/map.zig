@@ -15,9 +15,25 @@ pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
 
 // Extern for now...
 pub extern var hasMap: [c.MAP_SIZE][c.MAP_SIZE]bool;
+pub extern var isTrap: [c.MAP_SIZE][c.MAP_SIZE]bool;
+pub extern var primMap: [c.MAP_SIZE][c.MAP_SIZE]bool;
+
+pub extern var exitX: c_int;
+pub extern var exitY: c_int;
 
 pub fn clearMapGenerator() void {
-    c.clearMapGenerator();
+    exitX = -1;
+    exitY = -1;
+
+    // Per the docs: Zig recommends this safer variant instead of memset.
+    //memset(hasMap, 0, sizeof(hasMap));
+    //memset(isTrap, 0, sizeof(isTrap));
+    //memset(primMap, 0, sizeof(primMap));
+
+    // This technique is also leverage comptime array multiplication for initialization.
+    for (hasMap[0..c.MAP_SIZE]) |*b| b.* = [_]bool{false} ** c.MAP_SIZE;
+    for (isTrap[0..c.MAP_SIZE]) |*b| b.* = [_]bool{false} ** c.MAP_SIZE;
+    for (primMap[0..c.MAP_SIZE]) |*b| b.* = [_]bool{false} ** c.MAP_SIZE;
 }
 
 pub fn initBlock(self: *c.Block, bp: c.BlockType, x: c_int, y: c_int, bid: c_int, enable: bool) void {
@@ -65,8 +81,6 @@ pub fn initBlankMap(w: c_int, h: c_int) void {
 extern const MAP_WALL_HOW_DECORATED: f64;
 extern const MAP_HOW_OLD: f64;
 pub fn pushMapToRender() void {
-    stdout.print("**** MAP_WALL_HOW_DECORATED: {d}\n", .{MAP_WALL_HOW_DECORATED}) catch unreachable;
-    stdout.print("**** MAP_HOW_OLD: {d}\n", .{MAP_HOW_OLD}) catch unreachable;
     var i: usize = 0;
     while (i < n) : (i += 1) {
         var j: usize = 0;
