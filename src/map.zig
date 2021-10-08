@@ -80,16 +80,16 @@ pub fn pushMapToRender() void {
                         _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_FRONT_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                         _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_CORNER_BOTTOM_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     } else {
-                        var bid: c_int = if (c.randDouble() < MAP_HOW_OLD * 5) c.RES_WALL_HOLE_1 + c.randInt(0, 1) else c.RES_WALL_MID;
-                        if (c.randDouble() < MAP_WALL_HOW_DECORATED) {
-                            bid = c.RES_WALL_BANNER_RED + c.randInt(0, 3);
+                        var bid: c_int = if (helper.randDouble() < MAP_HOW_OLD * 5) c.RES_WALL_HOLE_1 + helper.randInt(0, 1) else c.RES_WALL_MID;
+                        if (helper.randDouble() < MAP_WALL_HOW_DECORATED) {
+                            bid = c.RES_WALL_BANNER_RED + helper.randInt(0, 3);
                         }
                         _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[@intCast(usize, bid)], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                         _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[c.RES_WALL_TOP_MID], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     }
                 }
                 if (helper.inr(@intCast(c_int, j) - 1, 0, m - 1) and hasMap[i][j - 1]) {
-                    const bid: c_int = if (c.randDouble() < MAP_HOW_OLD * 2) c.RES_WALL_HOLE_1 + c.randInt(0, 1) else c.RES_WALL_MID;
+                    const bid: c_int = if (helper.randDouble() < MAP_HOW_OLD * 2) c.RES_WALL_HOLE_1 + helper.randInt(0, 1) else c.RES_WALL_MID;
                     _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_ID], &textures[@intCast(usize, bid)], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, @intCast(c_int, j) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
                     if (hasMap[i - 1][j]) {
                         _ = c.createAndPushAnimation(&animationsList[c.RENDER_LIST_MAP_FOREWALL], &textures[c.RES_WALL_CORNER_TOP_LEFT], null, c.LOOP_INFI, 1, @intCast(c_int, i) * c.UNIT, (@intCast(c_int, j) - 1) * c.UNIT, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);

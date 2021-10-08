@@ -3,16 +3,16 @@ const stdout = std.io.getStdOut().writer();
 
 const c = @import("c_headers.zig").c;
 
-const prng = @import("prng.c");
+const prng = @import("prng.zig");
 
 pub fn inr(x:c_int, l:c_int, r:c_int) bool { 
     return x <= r and l <= x; 
 }
 
 pub fn randInt(l:c_int, r:c_int) c_int { 
-    return prng.prngRand() % (r - l + 1) + l; 
+    return @mod(@intCast(c_int, prng.prngRand()),  (r - l + 1) + l); 
 }
 
 pub fn randDouble() f64 { 
-    return prng.prngRand() / prng.prngMax;
+    return @intToFloat(f64, prng.prngRand()) / @intToFloat(f64, prng.prngMax);
 }
