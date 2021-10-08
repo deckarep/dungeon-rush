@@ -6,9 +6,32 @@ const c = @import("c_headers.zig").c;
 
 pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
 
+pub fn initAnimation(self: *c.Animation, origin: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) void {
+    // will deep copy effect
+    self.*.origin = origin;
+    if (effect != null) {
+        self.*.effect = @ptrCast([*c]c.Effect, @alignCast(meta.alignment(c.Effect), c.malloc(@sizeOf(c.Effect))));
+        c.copyEffect(effect, self.*.effect);
+    } else {
+        self.*.effect = null;
+    }
+    self.*.lp = lp;
+    self.*.duration = duration;
+    self.*.currentFrame = 0;
+    self.*.x = x;
+    self.*.y = y;
+    self.*.flip = flip;
+    self.*.angle = angle;
+    self.*.at = at;
+    self.*.bind = null;
+    self.*.dieWithBind = false;
+    self.*.scaled = true;
+    self.*.lifeSpan = duration;
+}
+
 pub fn createAnimation(origin: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) *c.Animation {
     var self: *c.Animation = @ptrCast([*c]c.Animation, @alignCast(meta.alignment(c.Animation), c.malloc(@sizeOf(c.Animation))));
-    c.initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
+    initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
     return self;
 }
 
