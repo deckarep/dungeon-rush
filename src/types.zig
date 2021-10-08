@@ -29,19 +29,6 @@ pub fn initAnimation(self: *c.Animation, origin: *c.Texture, effect: ?*const c.E
     self.*.lifeSpan = duration;
 }
 
-// deep copy
-pub fn copyEffect(src: [*c]const c.Effect, dest: *c.Effect) void {
-    _ = c.memcpy(dest, src, @sizeOf(c.Effect));
-    dest.*.keys = @ptrCast([*c]c.SDL_Color, @alignCast(meta.alignment(c.SDL_Color), c.malloc(@sizeOf(c.SDL_Color) * @intCast(c_ulong, src.*.length))));
-    _ = c.memcpy(dest.*.keys, src.*.keys, @sizeOf(c.SDL_Color) * @intCast(c_ulong, src.*.length));
-}
-
-pub fn createAnimation(origin: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) *c.Animation {
-    var self: *c.Animation = @ptrCast([*c]c.Animation, @alignCast(meta.alignment(c.Animation), c.malloc(@sizeOf(c.Animation))));
-    initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
-    return self;
-}
-
 pub fn destroyAnimationsByLinkList(list: *c.LinkList) void {
     var p: [*c]c.LinkNode = list.*.head;
     var nxt: [*c]c.LinkNode = null;
@@ -58,6 +45,12 @@ pub fn destroyAnimationsByLinkList(list: *c.LinkList) void {
     }
 }
 
+pub fn createAnimation(origin: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) *c.Animation {
+    var self: *c.Animation = @ptrCast([*c]c.Animation, @alignCast(meta.alignment(c.Animation), c.malloc(@sizeOf(c.Animation))));
+    initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
+    return self;
+}
+
 pub fn destroyAnimation(self: *c.Animation) void {
     destroyEffect(self.*.effect);
     c.free(self);
@@ -69,6 +62,13 @@ pub fn initEffect(self: *c.Effect, duration: c_int, length: c_int, mode: c.SDL_B
     self.*.length = length;
     self.*.currentFrame = 0;
     self.*.mode = mode;
+}
+
+// deep copy
+pub fn copyEffect(src: [*c]const c.Effect, dest: *c.Effect) void {
+    _ = c.memcpy(dest, src, @sizeOf(c.Effect));
+    dest.*.keys = @ptrCast([*c]c.SDL_Color, @alignCast(meta.alignment(c.SDL_Color), c.malloc(@sizeOf(c.SDL_Color) * @intCast(c_ulong, src.*.length))));
+    _ = c.memcpy(dest.*.keys, src.*.keys, @sizeOf(c.SDL_Color) * @intCast(c_ulong, src.*.length));
 }
 
 pub fn destroyEffect(self: [*c]c.Effect) void {
@@ -96,10 +96,12 @@ pub fn removeLinkNode(list: *c.LinkList, node: *c.LinkNode) void {
     } else {
         list.*.head = node.*.nxt;
     }
+    
     if (node.*.nxt != null) {
         node.*.nxt.*.pre = node.*.pre;
     } else {
         list.*.tail = node.*.pre;
     }
+    
     c.free(node);
 }
