@@ -22,4 +22,5 @@ pub const c = @cImport({
     @cInclude("map.h");
     @cInclude("sprite.h");
     @cInclude("weapon.h");
+    @cInclude("storage.h");
 });
