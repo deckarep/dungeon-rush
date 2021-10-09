@@ -6,6 +6,7 @@ const c = @import("c_headers.zig").c;
 const render = @import("render.zig");
 const map = @import("map.zig");
 const audio = @import("audio.zig");
+const storage = @import("storage.zig");
 
 pub extern var texts: [c.TEXTSET_SIZE]c.Text;
 pub extern var textures: [c.TILESET_SIZE]c.Texture;
@@ -42,12 +43,13 @@ pub fn chooseLevelUi() !bool {
 
 pub fn launchLocalGame(localPlayerNum: c_int) void {
     var scores: [*c][*c]c.Score = c.startGame(localPlayerNum, 0, true);
+
     c.rankListUi(localPlayerNum, scores);
     var i: usize = 0;
     while (i < localPlayerNum) : (i += 1) {
-        c.updateLocalRanklist(scores[i]);
+        storage.updateLocalRanklist(scores[i]);
     }
-    c.destroyRanklist(localPlayerNum, scores);
+    storage.destroyRanklist(localPlayerNum, scores);
 }
 
 pub fn mainUi() !void {
@@ -123,7 +125,7 @@ pub fn mainUi() !void {
         1 => {
             lan = c.chooseOnLanUi();
             if (lan == 0) {
-                if (!c.chooseLevelUi()) {
+                if (!try chooseLevelUi()) {
                     //break;
                 }
                 launchLocalGame(2);
