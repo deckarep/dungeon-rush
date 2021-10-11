@@ -11,6 +11,7 @@ const storage = @import("storage.zig");
 pub extern var texts: [c.TEXTSET_SIZE]c.Text;
 pub extern var textures: [c.TILESET_SIZE]c.Texture;
 pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
+pub extern const WHITE: c.SDL_Color;
 
 fn baseUi(w: c_int, h: c_int) void {
     render.initRenderer();
@@ -41,15 +42,42 @@ pub fn chooseLevelUi() !bool {
     return opt != optsNum;
 }
 
-pub fn launchLocalGame(localPlayerNum: c_int) void {
-    var scores: [*c][*c]c.Score = c.startGame(localPlayerNum, 0, true);
+pub fn launchLocalGame(localPlayerNum: c_int) !void {
+    const scores = c.startGame(localPlayerNum, 0, true);
 
-    c.rankListUi(localPlayerNum, scores);
+    try rankListUi(localPlayerNum, scores);
     var i: usize = 0;
     while (i < localPlayerNum) : (i += 1) {
         storage.updateLocalRanklist(scores[i]);
     }
     storage.destroyRanklist(localPlayerNum, scores);
+}
+
+pub fn rankListUi(count: c_int, scores: [*c][*c]c.Score) !void {
+    baseUi(30, 12 + @maximum(0, count - 4));
+    audio.playBgm(0);
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    var allocator = &arena.allocator;
+
+    const opts = try allocator.alloc([*c]c.Text, @intCast(c_ulong, count));
+    var buf: [1 << 8]u8 = undefined;
+    var i: usize = 0;
+    while (i < count) : (i += 1) {
+        _ = c.sprintf(&buf, "Score: %-6.0lf Got: %-6d Kill: %-6d Damage: %-6d Stand: %-6d", scores[i].*.rank, scores[i].*.got, scores[i].*.killed, scores[i].*.damage, scores[i].*.stand);
+        opts[i] = c.createText(&buf, WHITE);
+    }
+
+    _ = c.chooseOptions(count, &opts[0]);
+
+    i = 0;
+    while (i < count) : (i += 1) {
+        c.destroyText(opts[i]);
+    }
+
+    render.blackout();
+    render.clearRenderer();
 }
 
 pub fn mainUi() !void {
@@ -119,7 +147,7 @@ pub fn mainUi() !void {
             if (!try chooseLevelUi()) {
                 //break;
             }
-            launchLocalGame(1);
+            try launchLocalGame(1);
             //break;
         },
         1 => {
@@ -128,7 +156,7 @@ pub fn mainUi() !void {
                 if (!try chooseLevelUi()) {
                     //break;
                 }
-                launchLocalGame(2);
+                try launchLocalGame(2);
             } else if (lan == 1) {
                 c.launchLanGame();
             }
