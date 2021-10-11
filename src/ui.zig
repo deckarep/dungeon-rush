@@ -7,11 +7,17 @@ const render = @import("render.zig");
 const map = @import("map.zig");
 const audio = @import("audio.zig");
 const storage = @import("storage.zig");
+const types = @import("types.zig");
 
 pub extern var texts: [c.TEXTSET_SIZE]c.Text;
 pub extern var textures: [c.TILESET_SIZE]c.Texture;
 pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
 pub extern const WHITE: c.SDL_Color;
+pub extern var renderer: *c.SDL_Renderer;
+pub extern var renderFrames: c_int;
+
+// Extern for now.
+pub extern var cursorPos: c_int;
 
 fn baseUi(w: c_int, h: c_int) void {
     render.initRenderer();
@@ -34,7 +40,7 @@ pub fn chooseLevelUi() !bool {
         bytes[i] = &texts[i + 10];
     }
 
-    const opt: c_int = c.chooseOptions(optsNum, &bytes[0]);
+    const opt: c_int = chooseOptions(optsNum, &bytes[0]);
     if (opt != optsNum) {
         c.setLevel(opt);
     }
@@ -53,6 +59,39 @@ pub fn launchLocalGame(localPlayerNum: c_int) !void {
     storage.destroyRanklist(localPlayerNum, scores);
 }
 
+pub fn chooseOptions(optionsNum: c_int, options: [*c][*c]c.Text) c_int {
+    cursorPos = 0;
+
+    var player: *c.Snake = c.createSnake(2, 0, c.LOCAL);
+    c.appendSpriteToSnake(player, c.SPRITE_KNIGHT, c.SCREEN_WIDTH / 2, c.SCREEN_HEIGHT / 2, c.UP);
+
+    const lineGap: c_int = c.FONT_SIZE + c.FONT_SIZE / 2;
+    const totalHeight = lineGap * (optionsNum - 1);
+    const startY = @divTrunc(c.SCREEN_HEIGHT - totalHeight, 2);
+
+    while (!c.moveCursor(optionsNum)) {
+        // Note: Zig won't cast implicitly from a ?*c_void' pointer.
+        // We pull out the element and cast to an Sprite type.
+        var sprite: *c.Sprite = @ptrCast([*c]c.Sprite, @alignCast(@import("std").meta.alignment([*c]c.Sprite), player.*.sprites.*.head.*.element));
+        sprite.*.ani.*.at = c.AT_CENTER;
+        sprite.*.x = c.SCREEN_WIDTH / 2 - @divTrunc(options[@intCast(usize, cursorPos)].*.width, 2) - c.UNIT / 2;
+        sprite.*.y = startY + cursorPos * lineGap;
+        c.updateAnimationOfSprite(sprite);
+        c.renderUi();
+        var i: usize = 0;
+        while (i < optionsNum) : (i += 1) {
+            _ = c.renderCenteredText(options[i], c.SCREEN_WIDTH / 2, startY + @intCast(c_int, i) * lineGap, 1);
+        }
+        // Update Screen
+        _ = c.SDL_RenderPresent(renderer);
+        renderFrames += 1;
+    }
+    audio.playAudio(c.AUDIO_BUTTON1);
+    c.destroySnake(player);
+    types.destroyAnimationsByLinkList(&animationsList[c.RENDER_LIST_SPRITE_ID]);
+    return cursorPos;
+}
+
 pub fn rankListUi(count: c_int, scores: [*c][*c]c.Score) !void {
     baseUi(30, 12 + @maximum(0, count - 4));
     audio.playBgm(0);
@@ -69,7 +108,7 @@ pub fn rankListUi(count: c_int, scores: [*c][*c]c.Score) !void {
         opts[i] = c.createText(&buf, WHITE);
     }
 
-    _ = c.chooseOptions(count, &opts[0]);
+    _ = chooseOptions(count, &opts[0]);
 
     i = 0;
     while (i < count) : (i += 1) {
@@ -135,7 +174,7 @@ pub fn mainUi() !void {
         bytes[i] = &texts[i + 6];
     }
 
-    const opt: c_int = c.chooseOptions(optsNum, &bytes[0]);
+    const opt: c_int = chooseOptions(optsNum, &bytes[0]);
     try stdout.print("you chose {d}", .{opt});
 
     render.blackout();

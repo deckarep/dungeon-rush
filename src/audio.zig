@@ -37,7 +37,7 @@ pub fn randomBgm() void {
 pub fn playAudio(id: c_int) void {
     stdout.print("playAudio\n", .{}) catch unreachable;
     if (id >= 0) {
-        _ = c.Mix_PlayChannel(-1, sounds[id], 0);
+        _ = c.Mix_PlayChannel(-1, sounds[@intCast(usize, id)], 0);
     }
 }
 

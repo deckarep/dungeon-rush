@@ -13,4 +13,5 @@ void baseUi(int,int);
 void mainUi();
 void rankListUi(int,Score**);
 void localRankListUi();
+bool moveCursor(int optsNum);
 #endif
