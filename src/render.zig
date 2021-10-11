@@ -18,6 +18,22 @@ pub fn initRenderer() void {
     }
 }
 
+pub fn renderUi() void {
+    // c.RENDER_BG_COLOR => 25,17,23
+    _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
+    _ = c.SDL_RenderClear(renderer);
+
+    var i: usize = 0;
+    while (i < c.ANIMATION_LINK_LIST_NUM) : (i += 1) {
+        c.updateAnimationLinkList(&animationsList[i]);
+        if (i == c.RENDER_LIST_SPRITE_ID) {
+            c.renderAnimationLinkListWithSort(&animationsList[i]);
+        } else {
+            c.renderAnimationLinkList(&animationsList[i]);
+        }
+    }
+}
+
 fn blacken(duration: i32) void {
     // TODO: handle sdl return errors properly in zig.
     _ = c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND);

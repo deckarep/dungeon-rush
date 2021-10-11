@@ -53,6 +53,7 @@ void initInfo();
 void clearRenderer();
 void render();
 void renderUi();
+void renderAnimationLinkListWithSort(LinkList* list);
 void pushAnimationToRender(int id, Animation* ani);
 void blackout();
 void dim();

@@ -77,7 +77,7 @@ pub fn chooseOptions(optionsNum: c_int, options: [*c][*c]c.Text) c_int {
         sprite.*.x = c.SCREEN_WIDTH / 2 - @divTrunc(options[@intCast(usize, cursorPos)].*.width, 2) - c.UNIT / 2;
         sprite.*.y = startY + cursorPos * lineGap;
         c.updateAnimationOfSprite(sprite);
-        c.renderUi();
+        render.renderUi();
         var i: usize = 0;
         while (i < optionsNum) : (i += 1) {
             _ = c.renderCenteredText(options[i], c.SCREEN_WIDTH / 2, startY + @intCast(c_int, i) * lineGap, 1);
