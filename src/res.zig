@@ -149,7 +149,7 @@ pub fn loadTextset() bool {
     return c.loadTextset();
 }
 
-pub fn loadTileset(path:[*c]const u8, origin:?*c.SDL_Texture) bool {
+pub fn loadTileset(path: [*c]const u8, origin: ?*c.SDL_Texture) bool {
     // TODO: port this over.
     return c.loadTileset(path, origin);
 }

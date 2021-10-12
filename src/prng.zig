@@ -42,4 +42,3 @@ test "prngRand advances in a pseudo-random fashion" {
     try expect(prngRand() == 18769);
     // ...infinity
 }
-

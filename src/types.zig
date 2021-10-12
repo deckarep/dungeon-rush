@@ -107,8 +107,8 @@ pub fn removeLinkNode(list: *c.LinkList, node: *c.LinkNode) void {
 }
 
 pub fn destroyLinkList(self: *c.LinkList) void {
-  // TODO: port this over.
-  c.destroyLinkList(self);
+    // TODO: port this over.
+    c.destroyLinkList(self);
 }
 
 pub fn destroyScore(self: *c.Score) void {
