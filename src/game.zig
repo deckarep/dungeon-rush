@@ -5,6 +5,8 @@ const c = @import("c_headers.zig").c;
 const rand = @import("std").rand;
 const meta = @import("std").meta;
 
+const types = @import("types.zig");
+
 // Extern for now.
 pub extern var bullets: ?*c.LinkList;
 
@@ -28,9 +30,9 @@ pub fn destroySnake(snake: *c.Snake) void {
         p = someP.*.nxt;
     }
 
-    c.destroyLinkList(snake.*.sprites);
+    types.destroyLinkList(snake.*.sprites);
     snake.*.sprites = null;
-    c.destroyScore(snake.*.score);
+    types.destroyScore(snake.*.score);
     snake.*.score = null;
     c.free(snake);
 }

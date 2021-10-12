@@ -96,12 +96,21 @@ pub fn removeLinkNode(list: *c.LinkList, node: *c.LinkNode) void {
     } else {
         list.*.head = node.*.nxt;
     }
-    
+
     if (node.*.nxt != null) {
         node.*.nxt.*.pre = node.*.pre;
     } else {
         list.*.tail = node.*.pre;
     }
-    
+
     c.free(node);
+}
+
+pub fn destroyLinkList(self: *c.LinkList) void {
+  // TODO: port this over.
+  c.destroyLinkList(self);
+}
+
+pub fn destroyScore(self: *c.Score) void {
+    c.free(self);
 }
