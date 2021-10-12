@@ -120,6 +120,13 @@ pub fn rankListUi(count: c_int, scores: [*c][*c]c.Score) !void {
     render.clearRenderer();
 }
 
+pub fn localRankListUi() !void {
+    var count: c_int = 0;
+    const scores = c.readRanklist(c.STORAGE_PATH, &count);
+    try rankListUi(count, scores);
+    storage.destroyRanklist(count, scores);
+}
+
 pub fn mainUi() !void {
     try stdout.print("mainUi invoked!\n", .{});
 
@@ -203,7 +210,7 @@ pub fn mainUi() !void {
             //break;
         },
         2 => {
-            c.localRankListUi();
+            try localRankListUi();
             //break;
         },
         3 => {
