@@ -6,24 +6,26 @@ const rand = @import("std").rand;
 const meta = @import("std").meta;
 
 // Extern for now.
-pub extern var bullets: [*c]c.LinkList;
+pub extern var bullets: ?*c.LinkList;
 
 pub fn destroySnake(snake: *c.Snake) void {
-    if (bullets != null) {
-        var p: [*c]c.LinkNode = bullets.*.head;
-        while (p != null) : (p = p.*.nxt) {
-            var bullet: [*c]c.Bullet = @ptrCast([*c]c.Bullet, @alignCast(meta.alignment([*c]c.Bullet), p.*.element));
+    if (bullets) |someBullets| {
+        var p: ?*c.LinkNode = someBullets.*.head;
+        while (p) |someP| {
+            var bullet: *c.Bullet = @ptrCast(*c.Bullet, @alignCast(meta.alignment(*c.Bullet), someP.*.element));
             if (bullet.*.owner == snake) {
                 bullet.*.owner = null;
             }
+            p = someP.*.nxt;
         }
     }
 
-    var p: [*c]c.LinkNode = snake.*.sprites.*.head;
-    while (p != null) : (p = p.*.nxt) {
-        var sprite: [*c]c.Sprite = @ptrCast([*c]c.Sprite, @alignCast(meta.alignment([*c]c.Sprite), p.*.element));
+    var p: ?*c.LinkNode = snake.*.sprites.*.head;
+    while (p) |someP| {
+        var sprite: *c.Sprite = @ptrCast(*c.Sprite, @alignCast(meta.alignment(*c.Sprite), someP.*.element));
         c.free(sprite);
-        p.*.element = null;
+        someP.*.element = null;
+        p = someP.*.nxt;
     }
 
     c.destroyLinkList(snake.*.sprites);
