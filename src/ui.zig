@@ -8,6 +8,7 @@ const map = @import("map.zig");
 const audio = @import("audio.zig");
 const storage = @import("storage.zig");
 const types = @import("types.zig");
+const game = @import("game.zig");
 
 pub extern var texts: [c.TEXTSET_SIZE]c.Text;
 pub extern var textures: [c.TILESET_SIZE]c.Texture;
@@ -87,7 +88,7 @@ pub fn chooseOptions(optionsNum: c_int, options: [*c][*c]c.Text) c_int {
         renderFrames += 1;
     }
     audio.playAudio(c.AUDIO_BUTTON1);
-    c.destroySnake(player);
+    game.destroySnake(player);
     types.destroyAnimationsByLinkList(&animationsList[c.RENDER_LIST_SPRITE_ID]);
     return cursorPos;
 }

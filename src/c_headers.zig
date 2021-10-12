@@ -23,4 +23,5 @@ pub const c = @cImport({
     @cInclude("sprite.h");
     @cInclude("weapon.h");
     @cInclude("storage.h");
+    @cInclude("bullet.h");
 });
