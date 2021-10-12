@@ -20,6 +20,43 @@ pub extern var renderFrames: c_int;
 // Extern for now.
 pub extern var cursorPos: c_int;
 
+pub fn moveCursor(optsNum: c_int) bool {
+    var e: c.SDL_Event = undefined;
+    var quit: bool = false;
+    while (c.SDL_PollEvent(&e) != 0) {
+        if (e.type == c.SDL_QUIT) {
+            quit = true;
+            cursorPos = optsNum;
+            return quit;
+        } else if (e.type == c.SDL_KEYDOWN) {
+            const keyValue: c_int = e.key.keysym.sym;
+            switch (keyValue) {
+                c.SDLK_UP => {
+                    cursorPos -= 1;
+                    audio.playAudio(c.AUDIO_INTER1);
+                },
+                c.SDLK_DOWN => {
+                    cursorPos += 1;
+                    audio.playAudio(c.AUDIO_INTER1);
+                },
+                c.SDLK_RETURN => {
+                    quit = true;
+                },
+                c.SDLK_ESCAPE => {
+                    quit = true;
+                    cursorPos = optsNum;
+                    audio.playAudio(c.AUDIO_BUTTON1);
+                    return quit;
+                },
+                else => {},
+            }
+        }
+    }
+    cursorPos += optsNum;
+    cursorPos = @rem(cursorPos, optsNum);
+    return quit;
+}
+
 fn baseUi(w: c_int, h: c_int) void {
     render.initRenderer();
     map.initBlankMap(w, h);
@@ -70,7 +107,7 @@ pub fn chooseOptions(optionsNum: c_int, options: [*c][*c]c.Text) c_int {
     const totalHeight = lineGap * (optionsNum - 1);
     const startY = @divTrunc(c.SCREEN_HEIGHT - totalHeight, 2);
 
-    while (!c.moveCursor(optionsNum)) {
+    while (!moveCursor(optionsNum)) {
         // Note: Zig won't cast implicitly from a ?*c_void' pointer.
         // We pull out the element and cast to an Sprite type.
         var sprite: *c.Sprite = @ptrCast([*c]c.Sprite, @alignCast(@import("std").meta.alignment([*c]c.Sprite), player.*.sprites.*.head.*.element));
