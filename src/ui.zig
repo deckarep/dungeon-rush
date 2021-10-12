@@ -43,7 +43,7 @@ pub fn chooseLevelUi() !bool {
 
     const opt: c_int = chooseOptions(optsNum, &bytes[0]);
     if (opt != optsNum) {
-        c.setLevel(opt);
+        game.setLevel(opt);
     }
     render.clearRenderer();
     return opt != optsNum;
@@ -77,11 +77,11 @@ pub fn chooseOptions(optionsNum: c_int, options: [*c][*c]c.Text) c_int {
         sprite.*.ani.*.at = c.AT_CENTER;
         sprite.*.x = c.SCREEN_WIDTH / 2 - @divTrunc(options[@intCast(usize, cursorPos)].*.width, 2) - c.UNIT / 2;
         sprite.*.y = startY + cursorPos * lineGap;
-        c.updateAnimationOfSprite(sprite);
+        render.updateAnimationOfSprite(sprite);
         render.renderUi();
         var i: usize = 0;
         while (i < optionsNum) : (i += 1) {
-            _ = c.renderCenteredText(options[i], c.SCREEN_WIDTH / 2, startY + @intCast(c_int, i) * lineGap, 1);
+            _ = render.renderCenteredText(options[i], c.SCREEN_WIDTH / 2, startY + @intCast(c_int, i) * lineGap, 1);
         }
         // Update Screen
         _ = c.SDL_RenderPresent(renderer);
@@ -113,7 +113,7 @@ pub fn rankListUi(count: c_int, scores: [*c][*c]c.Score) !void {
 
     i = 0;
     while (i < count) : (i += 1) {
-        c.destroyText(opts[i]);
+        types.destroyText(opts[i]);
     }
 
     render.blackout();

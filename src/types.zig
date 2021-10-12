@@ -114,3 +114,8 @@ pub fn destroyLinkList(self: *c.LinkList) void {
 pub fn destroyScore(self: *c.Score) void {
     c.free(self);
 }
+
+pub fn destroyText(self: *c.Text) void {
+    _ = c.SDL_DestroyTexture(self.*.origin);
+    c.free(self);
+}
