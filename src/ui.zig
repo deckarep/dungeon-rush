@@ -52,6 +52,7 @@ pub fn moveCursor(optsNum: c_int) bool {
             }
         }
     }
+
     cursorPos += optsNum;
     cursorPos = @rem(cursorPos, optsNum);
     return quit;
