@@ -88,7 +88,7 @@ pub fn chooseLevelUi() !bool {
 }
 
 pub fn launchLocalGame(localPlayerNum: c_int) !void {
-    const scores = c.startGame(localPlayerNum, 0, true);
+    const scores = game.startGame(localPlayerNum, 0, true);
 
     try rankListUi(localPlayerNum, scores);
     var i: usize = 0;

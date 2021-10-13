@@ -8,6 +8,7 @@ const meta = @import("std").meta;
 const types = @import("types.zig");
 
 // Extern for now.
+pub extern var spriteSnake: [c.SPRITES_MAX_NUM]*c.Snake;
 pub extern var bullets: ?*c.LinkList;
 pub extern var GAME_WIN_NUM: c_int;
 pub extern var gameLevel: c_int;
@@ -63,6 +64,37 @@ pub fn setLevel(level: c_int) void {
     }
     spritesSetting += @divTrunc(stage, 2) * (level + 1);
     bossSetting += @divTrunc(stage, 3);
+}
+
+pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*c][*c]c.Score {
+    var scores: [*c][*c]c.Score = @ptrCast([*c][*c]c.Score, @alignCast(meta.alignment([*c]c.Score), c.malloc(@sizeOf([*c]c.Score) * @intCast(c_ulong, localPlayers))));
+
+    var i: usize = 0;
+    while (i < localPlayers) : (i += 1) {
+        scores[i] = c.createScore();
+    }
+
+    var status: c_int = 0;
+    stage = 0;
+
+    while (true) {
+        c.initGame(localPlayers, remotePlayers, localFirst);
+        setLevel(gameLevel);
+        status = c.gameLoop();
+        var j: usize = 0;
+        while (j < localPlayers) : (j += 1) {
+            c.addScore(scores[j], spriteSnake[j].*.score);
+        }
+        c.destroyGame(status);
+        stage += 1;
+
+        // Quit to previous screen.
+        if (status != 0) {
+            break;
+        }
+    }
+
+    return scores;
 }
 
 pub fn destroySnake(snake: *c.Snake) void {
