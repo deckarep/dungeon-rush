@@ -8,6 +8,10 @@ const zTypes = @import("types.zig");
 extern var renderer: *c.SDL_Renderer;
 pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
 
+// Extern for now.
+pub extern var textures: [c.TEXTURES_SIZE]c.Texture;
+pub extern var countDownBar: *c.Animation;
+
 var renderFrames: c_ulonglong = undefined;
 
 pub fn initRenderer() void {
@@ -16,6 +20,11 @@ pub fn initRenderer() void {
     while (i < c.ANIMATION_LINK_LIST_NUM) : (i += 1) {
         c.initLinkList(&animationsList[i]);
     }
+}
+
+pub fn initCountDownBar() void {
+    _ = createAndPushAnimation(&animationsList[c.RENDER_LIST_UI_ID], &textures[c.RES_SLIDER], null, c.LOOP_INFI, 1, c.SCREEN_WIDTH / 2 - 128, 10, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
+    countDownBar = createAndPushAnimation(&animationsList[c.RENDER_LIST_UI_ID], &textures[c.RES_BAR_BLUE], null, c.LOOP_INFI, 1, c.SCREEN_WIDTH / 2 - 128, 10, c.SDL_FLIP_NONE, 0, c.AT_TOP_LEFT);
 }
 
 pub fn renderUi() void {

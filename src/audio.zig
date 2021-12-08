@@ -2,7 +2,9 @@ const std = @import("std");
 const stdout = std.io.getStdOut().writer();
 
 const c = @import("c_headers.zig").c;
-const rand = @import("std").rand;
+// TODO: figure out a random comptime seed.
+var prng = std.rand.DefaultPrng.init(3);
+const rand = &prng.random;
 
 extern const bgmNums: c_int;
 extern var bgms: [c.AUDIO_BGM_SIZE]*c.Mix_Music;
@@ -31,7 +33,8 @@ pub fn stopBgm() void {
 
 pub fn randomBgm() void {
     stdout.print("randomBgm\n", .{}) catch unreachable;
-    playBgm(rand.int(1, bgmNums - 1));
+    const r = rand.intRangeAtMost(c_int, 1, bgmNums - 1);
+    playBgm(r);
 }
 
 pub fn playAudio(id: c_int) void {

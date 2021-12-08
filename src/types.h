@@ -83,6 +83,7 @@ typedef struct {
 } Score;
 Score* createScore();
 void calcScore(Score*);
+void initScore(Score* score);
 void addScore(Score*, Score*);
 void destroyScore(Score*);
 typedef enum { BLOCK_TRAP, BLOCK_WALL, BLOCK_FLOOR, BLOCK_EXIT } BlockType;

@@ -6,14 +6,32 @@ const rand = @import("std").rand;
 const meta = @import("std").meta;
 
 const types = @import("types.zig");
+const audio = @import("audio.zig");
+const render = @import("render.zig");
+const map = @import("map.zig");
+
+const MOVE_STEP: c_int = 2;
+
+// Extern but not sure if this should stay or go.
+extern var renderer: *c.SDL_Renderer;
+
+// Extern.
+pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
 
 // Extern for now.
-pub extern var spriteSnake: [c.SPRITES_MAX_NUM]*c.Snake;
+pub extern var status: c_int;
+pub extern var termCount: c_int;
+pub extern var willTerm: bool;
+
+pub extern var spriteSnake: [c.SPRITES_MAX_NUM]?*c.Snake;
 pub extern var bullets: ?*c.LinkList;
 pub extern var GAME_WIN_NUM: c_int;
 pub extern var gameLevel: c_int;
 pub extern var stage: c_int;
 pub extern var spritesCount: c_int;
+pub extern var playersCount: c_int;
+pub extern var flasksCount: c_int;
+pub extern var herosCount: c_int;
 pub extern var spritesSetting: c_int;
 pub extern var bossSetting: c_int;
 pub extern var herosSetting: c_int;
@@ -71,30 +89,126 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*
 
     var i: usize = 0;
     while (i < localPlayers) : (i += 1) {
-        scores[i] = c.createScore();
+        scores[i] = types.createScore();
     }
 
-    var status: c_int = 0;
+    var myStatus: c_int = 0;
     stage = 0;
 
     while (true) {
-        c.initGame(localPlayers, remotePlayers, localFirst);
+        initGame(localPlayers, remotePlayers, localFirst);
         setLevel(gameLevel);
-        status = c.gameLoop();
+        myStatus = c.gameLoop();
         var j: usize = 0;
         while (j < localPlayers) : (j += 1) {
-            c.addScore(scores[j], spriteSnake[j].*.score);
+            if (spriteSnake[j]) |someSnek| {
+                types.addScore(scores[j], someSnek.*.score);
+            }
         }
-        c.destroyGame(status);
+        destroyGame(status);
         stage += 1;
 
         // Quit to previous screen.
-        if (status != 0) {
+        if (myStatus != 0) {
+            status = myStatus;
             break;
         }
     }
 
     return scores;
+}
+
+pub extern const WHITE: c.SDL_Color;
+fn destroyGame(arg_status: c_int) void {
+    while (spritesCount != 0) {
+        spritesCount -= 1;
+        const sc: usize = @intCast(usize, spritesCount);
+        c.destroySnake(spriteSnake[sc]);
+        spriteSnake[sc] = null;
+    }
+
+    var i: usize = 0;
+    while (i < c.ANIMATION_LINK_LIST_NUM) : (i += 1) {
+        types.destroyAnimationsByLinkList(&animationsList[i]);
+    }
+
+    if (bullets) |someBullets| {
+        var p: ?*c.LinkNode = someBullets.*.head;
+        while (p) |someP| {
+            const b: *c.Bullet = @ptrCast([*c]c.Bullet, @alignCast(@import("std").meta.alignment([*c]c.Bullet), someP.*.element));
+            c.destroyBullet(b);
+            someP.*.element = null;
+            p = someP.*.nxt;
+        }
+        types.destroyLinkList(someBullets);
+    }
+
+    bullets = null;
+
+    render.blackout();
+
+    var msg: [*]const u8 = undefined;
+    if (arg_status == 0) {
+        msg = "Stage Clear";
+    } else {
+        msg = "Game Over";
+    }
+
+    const text: *c.Text = c.createText(msg, WHITE);
+    _ = render.renderCenteredText(text, c.SCREEN_WIDTH / 2, c.SCREEN_HEIGHT / 2, 2);
+    types.destroyText(text);
+
+    // UMMM, where the hell is this extern: renderer coming from??
+    // Well, I added an extern up top...in this file but not entirely sure if this is correct.
+    _ = c.SDL_RenderPresent(renderer);
+    _ = c.sleep(c.RENDER_GAMEOVER_DURATION);
+    render.clearRenderer();
+}
+
+fn initPlayer(playerType: c_int) void {
+    //c.initPlayer(playerType);
+    spritesCount += 1;
+    const p: *c.Snake = c.createSnake(MOVE_STEP, playersCount, @intCast(c_uint, playerType));
+    spriteSnake[@intCast(usize, playersCount)] = p;
+    c.appendSpriteToSnake(p, c.SPRITE_KNIGHT, c.SCREEN_WIDTH / 2, c.SCREEN_HEIGHT / 2 + playersCount * 2 * c.UNIT, c.RIGHT);
+    playersCount += 1;
+}
+
+fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
+    audio.randomBgm();
+
+    status = 0;
+    termCount = 0;
+    willTerm = false;
+    spritesCount = 0;
+    playersCount = 0;
+    flasksCount = 0;
+    herosCount = 0;
+
+    render.initRenderer();
+    render.initCountDownBar();
+
+    // create default hero at (w/2, h/2) (as well push ani)
+    var i: usize = 0;
+    while (i < localPlayers + remotePlayers) : (i += 1) {
+        var playerType: c_int = c.LOCAL;
+        if (localFirst) {
+            playerType = if (i < localPlayers) c.LOCAL else c.REMOTE;
+        } else {
+            playerType = if (i < remotePlayers) c.REMOTE else c.LOCAL;
+        }
+        initPlayer(playerType);
+        c.shieldSnake(spriteSnake[i], 300);
+    }
+    c.initInfo();
+    // create map
+    c.initRandomMap(0.7, 7, GAME_TRAP_RATE);
+
+    c.clearItemMap();
+    // create enemies
+    c.initEnemies(spritesSetting);
+    map.pushMapToRender();
+    bullets = c.createLinkList();
 }
 
 pub fn destroySnake(snake: *c.Snake) void {

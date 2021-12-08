@@ -119,3 +119,17 @@ pub fn destroyText(self: *c.Text) void {
     _ = c.SDL_DestroyTexture(self.*.origin);
     c.free(self);
 }
+
+pub fn createScore() *c.Score {
+    var score: *c.Score = @ptrCast([*c]c.Score, @alignCast(meta.alignment(c.Score), c.malloc(@sizeOf(c.Score))));
+    c.initScore(score);
+    return score;
+}
+
+pub fn addScore(a: *c.Score, b: *c.Score) void {
+    a.*.got += b.*.got;
+    a.*.damage += b.*.damage;
+    a.*.killed += b.*.killed;
+    a.*.stand += b.*.stand;
+    c.calcScore(a);
+}

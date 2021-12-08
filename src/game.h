@@ -35,6 +35,8 @@
 void pushMapToRender();
 Score** startGame(int localPlayers, int remotePlayers, bool localFirst);
 void initGame(int localPlayers, int remotePlayers, bool localFirst);
+void initPlayer(int playerType);
+void initEnemies(int enemiesCount);
 void destroyGame(int);
 int gameLoop();
 void updateAnimationOfSprite(Sprite* self);
@@ -49,7 +51,9 @@ bool crushVerdict(Sprite* sprite, bool loose, bool useAnimationBox);
 void moveSprite(Sprite*, int);
 void moveSnake(Snake* snake);
 void shieldSprite(Sprite* sprite, int duration);
+void shieldSnake(Snake* snake, int duration);
 void appendSpriteToSnake(Snake* snake, int sprite_id, int x, int y,
                          Direction direcion);
 void setLevel(int level);
+void clearItemMap();
 #endif

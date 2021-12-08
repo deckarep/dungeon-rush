@@ -4,6 +4,7 @@
 // Perhaps splitting out SDL to its own would be ideal.. :/
 pub const c = @cImport({
     @cInclude("stdlib.h");
+    @cInclude("unistd.h"); //sleep
 
     @cInclude("SDL.h");
     @cInclude("SDL_mixer.h");
