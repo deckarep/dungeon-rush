@@ -34,7 +34,7 @@ pub fn destroyAnimationsByLinkList(list: *c.LinkList) void {
     var nxt: [*c]c.LinkNode = null;
 
     while (p != undefined) {
-        stdout.print("type of while p: {s}\n", .{@TypeOf(p)}) catch unreachable;
+        //stdout.print("type of while p: {s}\n", .{@TypeOf(p)}) catch unreachable;
         nxt = p.*.nxt;
 
         // Note: Zig won't cast implicitly from a ?*c_void' pointer.

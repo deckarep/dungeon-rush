@@ -4,7 +4,7 @@ const stdout = std.io.getStdOut().writer();
 const c = @import("c_headers.zig").c;
 // TODO: figure out a random comptime seed.
 var prng = std.rand.DefaultPrng.init(3);
-const rand = &prng.random;
+const rand = prng.random();
 
 extern const bgmNums: c_int;
 extern var bgms: [c.AUDIO_BGM_SIZE]*c.Mix_Music;

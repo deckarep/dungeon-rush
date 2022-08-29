@@ -85,7 +85,7 @@ pub fn blackout() void {
 pub fn clearRenderer() void {
     var i: usize = 0;
 
-    stdout.print("type of LinkList: {s}\n", .{@TypeOf(&animationsList[i])}) catch unreachable;
+    //stdout.print("type of LinkList: {s}\n", .{@TypeOf(&animationsList[i])}) catch unreachable;
 
     while (i < c.ANIMATION_LINK_LIST_NUM) : (i += 1) {
         //c.destroyAnimationsByLinkList(&animationsList[i]);

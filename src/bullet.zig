@@ -55,5 +55,5 @@ pub export fn moveBullet(bullet: [*c]Bullet) void {
 
 pub export fn destroyBullet(arg_bullet: [*c]Bullet) void {
     var bullet = arg_bullet;
-    c_stdlib.free(@ptrCast(?*c_void, bullet));
+    c_stdlib.free(@ptrCast(?*anyopaque, bullet));
 }

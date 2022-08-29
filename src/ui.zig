@@ -71,7 +71,7 @@ pub fn chooseLevelUi() !bool {
     // TODO: consolidate allocators.
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    var allocator = &arena.allocator;
+    var allocator = arena.allocator();
 
     const bytes = try allocator.alloc([*c]c.Text, optsNum);
     var i: usize = 0;
@@ -137,7 +137,7 @@ pub fn rankListUi(count: c_int, scores: [*c][*c]c.Score) !void {
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    var allocator = &arena.allocator;
+    var allocator = arena.allocator();
 
     const opts = try allocator.alloc([*c]c.Text, @intCast(c_ulong, count));
     var buf: [1 << 8]u8 = undefined;
@@ -171,8 +171,8 @@ pub fn mainUi() !void {
     baseUi(30, 12);
     audio.playBgm(0);
 
-    try stdout.print("ll type: {s}\n", .{@TypeOf(&animationsList[c.RENDER_LIST_UI_ID])});
-    try stdout.print("texture type: {s}\n", .{@TypeOf(&textures[c.RES_TITLE])});
+    // try stdout.print("ll type: {s}\n", .{@TypeOf(&animationsList[c.RENDER_LIST_UI_ID])});
+    //try stdout.print("texture type: {s}\n", .{@TypeOf(&textures[c.RES_TITLE])});
 
     var startY: c_int = c.SCREEN_HEIGHT / 2 - 70;
     var startX: c_int = c.SCREEN_WIDTH / 5 + 32;
@@ -211,7 +211,7 @@ pub fn mainUi() !void {
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    var allocator = &arena.allocator;
+    var allocator = arena.allocator();
 
     const optsNum: c_int = 4;
     const bytes = try allocator.alloc([*c]c.Text, optsNum);
@@ -221,7 +221,7 @@ pub fn mainUi() !void {
     }
 
     const opt: c_int = chooseOptions(optsNum, &bytes[0]);
-    try stdout.print("you chose {d}", .{opt});
+    //try stdout.print("you chose {d}", .{opt});
 
     render.blackout();
     render.clearRenderer();

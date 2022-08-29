@@ -111,7 +111,7 @@ pub fn loadMedia() bool {
         originTextures[i] = loadSDLTexture(&imgPath);
         _ = loadTileset(c_string, originTextures[i]);
 
-        stdout.print("type of originTextures[i] {s}\n", .{@TypeOf(originTextures[i])}) catch unreachable;
+        //stdout.print("type of originTextures[i] {s}\n", .{@TypeOf(originTextures[i])}) catch unreachable;
         success = originTextures[i] != undefined;
     }
 
