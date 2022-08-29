@@ -56,12 +56,14 @@ const char tilesetPath[TILESET_SIZE][PATH_LEN] = {
 const char fontPath[] = "res/font/m5x7.ttf";
 const char textsetPath[] = "res/text.txt";
 
-const int bgmNums = 4;
+// FOUND ISSUE: latest sdl2_mixer/ogg doesn't like bg1.ogg or bg3.ogg because they have
+// some kind of image asset embeded in them. This used to not be a problem but it is now.
+const int bgmNums = 2;
 const char bgmsPath[AUDIO_BGM_SIZE][PATH_LEN] = {
   "res/audio/main_title.ogg",
-  "res/audio/bg1.ogg",
+  //"res/audio/bg1.ogg",
   "res/audio/bg2.ogg",
-  "res/audio/bg3.ogg"
+  //"res/audio/bg3.ogg"
 };
 const char soundsPath[PATH_LEN] = "res/audio/sounds";
 const char soundsPathPrefix[PATH_LEN] = "res/audio/";

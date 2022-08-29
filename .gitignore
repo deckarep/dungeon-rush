@@ -1,4 +1,6 @@
 # C and original.
+.DS_Store
+
 .vscode
 dist
 snake

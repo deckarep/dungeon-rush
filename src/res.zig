@@ -141,6 +141,9 @@ pub fn loadMedia() bool {
 
 pub fn loadAudio() bool {
     // TODO: port this over.
+    //return true;
+    // NOTE: calling this c function crashes with Ogg vorbis loading for some reason.
+    // This used to work.
     return c.loadAudio();
 }
 
