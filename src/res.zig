@@ -232,12 +232,12 @@ pub fn loadTextset() bool {
         // IMPORTANT: pass a proper c-string!!!
         var buf: [200]u8 = undefined;
         const cText = fmt.bufPrintZ(buf[0..], "{s}", .{txt}) catch unreachable;
-        if (!c.initText(&texts[@intCast(usize, textsCount)], cText.ptr, WHITE)) {
+        if (!types.initText(&texts[@intCast(usize, textsCount)], cText.ptr, WHITE)) {
             success = false;
         }
         textsCount += 1;
     }
-    
+
     return success;
 }
 

@@ -5,6 +5,8 @@ const stdout = std.io.getStdOut().writer();
 const c = @import("c_headers.zig").c;
 
 pub extern var animationsList: [c.ANIMATION_LINK_LIST_NUM]c.LinkList;
+extern var font: ?*c.TTF_Font;
+extern var renderer: *c.SDL_Renderer;
 
 pub fn initAnimation(self: *c.Animation, origin: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) void {
     // will deep copy effect
@@ -27,6 +29,29 @@ pub fn initAnimation(self: *c.Animation, origin: *c.Texture, effect: ?*const c.E
     self.*.dieWithBind = false;
     self.*.scaled = true;
     self.*.lifeSpan = duration;
+}
+
+pub fn initText(txt: *c.Text, str: [*c]const u8, color: c.SDL_Color) bool {
+    txt.*.color = color;
+    _ = c.strcpy(&txt.*.text[0], str);
+    // Render text surface
+    const textSurface = c.TTF_RenderText_Solid(font, str, color);
+    if (textSurface == null) {
+        stdout.print("Unable to render text surface! SDL_ttf Error: {s}\n", .{c.TTF_GetError()}) catch unreachable;
+    } else {
+        // Create texture from surface pixels
+        var texture = c.SDL_CreateTextureFromSurface(renderer, textSurface);
+        txt.*.width = textSurface.*.w;
+        txt.*.height = textSurface.*.h;
+        c.SDL_FreeSurface(textSurface);
+        if (texture == null) {
+            stdout.print("Unable to create texture from rendered text! SDL Error: {s}\n", .{c.SDL_GetError()}) catch unreachable;
+        } else {
+            txt.*.origin = texture;
+            return true;
+        }
+    }
+    return false;
 }
 
 pub fn destroyAnimationsByLinkList(list: *c.LinkList) void {
