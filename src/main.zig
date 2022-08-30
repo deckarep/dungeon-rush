@@ -4,7 +4,6 @@ const rnd = @import("prng.zig");
 const ui = @import("ui.zig");
 const res = @import("res.zig");
 
-const assert = @import("std").debug.assert;
 const std = @import("std");
 const stdout = std.io.getStdOut().writer();
 

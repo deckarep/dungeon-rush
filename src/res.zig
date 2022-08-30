@@ -2,6 +2,7 @@ const c = @import("c_headers.zig").c;
 
 const assert = @import("std").debug.assert;
 const std = @import("std");
+const fmt = std.fmt;
 const stdout = std.io.getStdOut().writer();
 
 const types = @import("types.zig");
@@ -12,6 +13,10 @@ extern var renderer: ?*c.SDL_Renderer;
 extern var weapons: [c.WEAPONS_SIZE]c.Weapon;
 
 // Extern for now.
+extern const bgmNums: c_int;
+extern var bgms: [c.AUDIO_BGM_SIZE]*c.Mix_Music;
+extern const bgmsPath: [c.AUDIO_BGM_SIZE][c.PATH_LEN]u8;
+
 extern var originTextures: [c.TILESET_SIZE]?*c.SDL_Texture;
 extern var window: ?*c.SDL_Window;
 extern const tilesetPath: [c.TILESET_SIZE][c.PATH_LEN]u8;
@@ -20,6 +25,8 @@ extern var font: ?*c.TTF_Font;
 extern var effects: [c.EFFECTS_SIZE]c.Effect;
 extern var commonSprites: [c.COMMON_SPRITE_SIZE]c.Sprite;
 extern var textures: [c.TEXTURES_SIZE]c.Texture;
+extern var soundsCount: c_int;
+extern var sounds: [c.AUDIO_SOUND_SIZE]*c.Mix_Chunk;
 
 pub fn init() bool {
     // Initialization flag
@@ -140,11 +147,57 @@ pub fn loadMedia() bool {
 }
 
 pub fn loadAudio() bool {
-    // TODO: port this over.
-    //return true;
-    // NOTE: calling this c function crashes with Ogg vorbis loading for some reason.
-    // This used to work.
-    return c.loadAudio();
+    var success = true;
+    var i: usize = 0;
+    while (i < bgmNums) : (i += 1) {
+        const somePath = bgmsPath[i];
+        if (c.Mix_LoadMUS(&somePath[0])) |loaded| {
+            bgms[i] = loaded;
+        } else {
+            stdout.print("Failed to load music {s}: SDL_mixer Error: {s}\n", .{ bgmsPath[i], c.Mix_GetError() }) catch unreachable;
+            success = false;
+        }
+    }
+
+    // NOTE: fuck this shit of loading a file...i'll do it later in a cleaner fashion.
+    // NOTE: for now hardcoding a table.
+    const soundEffectsTable = &[_][]const u8{
+        "win.wav",
+        "lose_2v.wav",
+        "powerloss.wav",
+        "hit_0.5v.wav",
+        "sword_hit.wav",
+        "claw_hit.wav",
+        "arrow_hit.wav",
+        "shoot.wav",
+        "fireball_explosion.wav",
+        "ice_shoot_0.5v.wav",
+        "interaction1_0.75v.wav",
+        "button1.wav",
+        "thunder_2v.wav",
+        "light_shoot.wav",
+        "human_death.wav",
+        "claw_hit_heavy.wav",
+        "coin.wav",
+        "med.wav",
+    };
+
+    i = 0;
+    while (i < soundEffectsTable.len) : (i += 1) {
+        var buf: [200]u8 = undefined;
+        const soundsPathPrefix = "res/audio/";
+        // IMPORTANT: pass a proper c-string!!!
+        const soundEffectPath = fmt.bufPrintZ(buf[0..], "{s}{s}", .{ soundsPathPrefix, soundEffectsTable[i] }) catch unreachable;
+        if (c.Mix_LoadWAV(soundEffectPath.ptr)) |loaded| {
+            sounds[@intCast(usize, soundsCount)] = loaded;
+            soundsCount += 1;
+        } else {
+            stdout.print("Failed to load sound effect \"{s}\": SDL_mixer Error: {s}\n", .{ soundEffectPath, c.Mix_GetError() }) catch unreachable;
+            success = false;
+        }
+    }
+
+    return success;
 }
 
 pub fn loadTextset() bool {
