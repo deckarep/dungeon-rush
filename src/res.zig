@@ -11,6 +11,7 @@ const weap = @import("weapons.zig");
 // Extern.
 extern var renderer: ?*c.SDL_Renderer;
 extern var weapons: [c.WEAPONS_SIZE]c.Weapon;
+extern const WHITE: c.SDL_Color;
 
 // Extern for now.
 extern const bgmNums: c_int;
@@ -27,6 +28,8 @@ extern var commonSprites: [c.COMMON_SPRITE_SIZE]c.Sprite;
 extern var textures: [c.TEXTURES_SIZE]c.Texture;
 extern var soundsCount: c_int;
 extern var sounds: [c.AUDIO_SOUND_SIZE]*c.Mix_Chunk;
+extern var textsCount: c_int;
+extern var texts: [c.TEXTSET_SIZE]c.Text;
 
 pub fn init() bool {
     // Initialization flag
@@ -184,9 +187,9 @@ pub fn loadAudio() bool {
 
     i = 0;
     while (i < soundEffectsTable.len) : (i += 1) {
-        var buf: [200]u8 = undefined;
         const soundsPathPrefix = "res/audio/";
         // IMPORTANT: pass a proper c-string!!!
+        var buf: [200]u8 = undefined;
         const soundEffectPath = fmt.bufPrintZ(buf[0..], "{s}{s}", .{ soundsPathPrefix, soundEffectsTable[i] }) catch unreachable;
         if (c.Mix_LoadWAV(soundEffectPath.ptr)) |loaded| {
             sounds[@intCast(usize, soundsCount)] = loaded;
@@ -201,8 +204,41 @@ pub fn loadAudio() bool {
 }
 
 pub fn loadTextset() bool {
-    // TODO: port this over.
-    return c.loadTextset();
+    const textTable = &[_][]const u8{
+        "DungeonRush",
+        "By Rapiz",
+        "PLACEHOLDER",
+        "PLACEHOLDER",
+        "Player 1",
+        "Player 2",
+        "Singleplayer",
+        "Multiplayers",
+        "Ranklist",
+        "Exit",
+        "Normal",
+        "Hard",
+        "Insane",
+        "Local",
+        "Lan",
+        "Host a game",
+        "Join a game",
+    };
+
+    var success = true;
+
+    var i: usize = 0;
+    while (i < textTable.len) : (i += 1) {
+        const txt = textTable[i];
+        // IMPORTANT: pass a proper c-string!!!
+        var buf: [200]u8 = undefined;
+        const cText = fmt.bufPrintZ(buf[0..], "{s}", .{txt}) catch unreachable;
+        if (!c.initText(&texts[@intCast(usize, textsCount)], cText.ptr, WHITE)) {
+            success = false;
+        }
+        textsCount += 1;
+    }
+    
+    return success;
 }
 
 pub fn loadTileset(path: [*c]const u8, origin: ?*c.SDL_Texture) bool {
