@@ -28,6 +28,7 @@ extern var commonSprites: [c.COMMON_SPRITE_SIZE]c.Sprite;
 extern var textures: [c.TEXTURES_SIZE]c.Texture;
 extern var soundsCount: c_int;
 extern var sounds: [c.AUDIO_SOUND_SIZE]*c.Mix_Chunk;
+extern var texturesCount: c_int;
 extern var textsCount: c_int;
 extern var texts: [c.TEXTSET_SIZE]c.Text;
 
@@ -242,8 +243,60 @@ pub fn loadTextset() bool {
 }
 
 pub fn loadTileset(path: [*c]const u8, origin: ?*c.SDL_Texture) bool {
-    // TODO: port this over.
-    return c.loadTileset(path, origin);
+    // TODO: convert all catch unreachable into "try" lines.
+
+    // This code references text files in res/drawable/ that have 6 fields per line
+    // like the following: "wall_fountain_top 64 0 16 16 1"
+    // for each asset file...so a better way to do this would be to use a single JSON config file i'm thinking.
+
+    // Note: std.mem.span is used to convert c-string to slice.
+    const zigPath = std.mem.span(path);
+    var file = std.fs.cwd().openFile(zigPath, .{}) catch unreachable;
+    defer file.close();
+
+    var buf_reader = std.io.bufferedReader(file.reader());
+    var in_stream = buf_reader.reader();
+
+    var buf: [256]u8 = undefined;
+    while (in_stream.readUntilDelimiterOrEof(&buf, '\n')) |perhapsLine| {
+        if (perhapsLine) |line| {
+            var it = std.mem.split(u8, line, " ");
+
+            // We know there are 6 parts for each line.
+            const name = it.next().?;
+            const x = it.next().?;
+            const y = it.next().?;
+            const w = it.next().?;
+            const h = it.next().?;
+            const f = it.next().?; // frames count.
+
+            const xInt = std.fmt.parseInt(c_int, x, 10) catch unreachable;
+            const yInt = std.fmt.parseInt(c_int, y, 10) catch unreachable;
+            const wInt = std.fmt.parseInt(c_int, w, 10) catch unreachable;
+            const hInt = std.fmt.parseInt(c_int, h, 10) catch unreachable;
+            const fInt = std.fmt.parseInt(c_int, f, 10) catch unreachable;
+
+            var p = &textures[@intCast(usize, texturesCount)];
+            c.initTexture(p, origin, wInt, hInt, fInt);
+            texturesCount += 1;
+
+            var i: usize = 0;
+            while (i < @intCast(usize, fInt)) : (i += 1) {
+                p.*.crops[i].x = xInt + @intCast(c_int, i) * wInt;
+                p.*.crops[i].y = yInt;
+                p.*.crops[i].h = hInt;
+                p.*.crops[i].w = wInt;
+            }
+
+            stdout.print("line =>   {s} {s} {s} {s} {s} {s}\n", .{ name, x, y, w, h, f }) catch unreachable;
+        } else {
+            break;
+        }
+    } else |_| {
+        // TODO: don't ignore the err.
+    }
+
+    return true;
 }
 
 pub fn initCommonEffects() void {
