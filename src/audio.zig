@@ -18,9 +18,9 @@ pub fn playBgm(id: c_int) void {
         return;
     }
     if (nowBgmId == -1) {
-        _ = c.Mix_PlayMusic(bgms[@intCast(usize, id)], -1);
+        _ = c.Mix_PlayMusic(bgms[@intCast(id)], -1);
     } else {
-        _ = c.Mix_FadeInMusic(bgms[@intCast(usize, id)], -1, c.BGM_FADE_DURATION);
+        _ = c.Mix_FadeInMusic(bgms[@intCast(id)], -1, c.BGM_FADE_DURATION);
     }
     nowBgmId = id;
 }
@@ -40,7 +40,7 @@ pub fn randomBgm() void {
 pub fn playAudio(id: c_int) void {
     stdout.print("playAudio\n", .{}) catch unreachable;
     if (id >= 0) {
-        _ = c.Mix_PlayChannel(-1, sounds[@intCast(usize, id)], 0);
+        _ = c.Mix_PlayChannel(-1, sounds[@intCast(id)], 0);
     }
 }
 

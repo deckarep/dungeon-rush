@@ -10,9 +10,9 @@ pub fn inr(x: c_int, l: c_int, r: c_int) bool {
 }
 
 pub fn randInt(l: c_int, r: c_int) c_int {
-    return @mod(@intCast(c_int, prng.prngRand()), (r - l + 1) + l);
+    return @mod(@as(c_int, @intCast(prng.prngRand())), (r - l + 1) + l);
 }
 
 pub fn randDouble() f64 {
-    return @intToFloat(f64, prng.prngRand()) / @intToFloat(f64, prng.prngMax);
+    return @as(f64, @floatFromInt(prng.prngRand())) / @as(f64, @floatFromInt(prng.prngMax));
 }

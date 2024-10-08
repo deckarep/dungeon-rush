@@ -12,7 +12,7 @@ pub fn initAnimation(self: *c.Animation, origin: *c.Texture, effect: ?*const c.E
     // will deep copy effect
     self.*.origin = origin;
     if (effect != null) {
-        self.*.effect = @ptrCast([*c]c.Effect, @alignCast(meta.alignment(c.Effect), c.malloc(@sizeOf(c.Effect))));
+        self.*.effect = @ptrCast(@alignCast(c.malloc(@sizeOf(c.Effect))));
         copyEffect(effect, self.*.effect);
     } else {
         self.*.effect = null;
@@ -40,7 +40,7 @@ pub fn initText(txt: *c.Text, str: [*c]const u8, color: c.SDL_Color) bool {
         stdout.print("Unable to render text surface! SDL_ttf Error: {s}\n", .{c.TTF_GetError()}) catch unreachable;
     } else {
         // Create texture from surface pixels
-        var texture = c.SDL_CreateTextureFromSurface(renderer, textSurface);
+        const texture = c.SDL_CreateTextureFromSurface(renderer, textSurface);
         txt.*.width = textSurface.*.w;
         txt.*.height = textSurface.*.h;
         c.SDL_FreeSurface(textSurface);
@@ -54,24 +54,21 @@ pub fn initText(txt: *c.Text, str: [*c]const u8, color: c.SDL_Color) bool {
     return false;
 }
 
+// Crash here in this routine.
 pub fn destroyAnimationsByLinkList(list: *c.LinkList) void {
-    var p: [*c]c.LinkNode = list.*.head;
-    var nxt: [*c]c.LinkNode = null;
+    var p: ?*c.LinkNode = list.head;
 
-    while (p != undefined) {
-        //stdout.print("type of while p: {s}\n", .{@TypeOf(p)}) catch unreachable;
-        nxt = p.*.nxt;
-
-        // Note: Zig won't cast implicitly from a ?*c_void' pointer.
-        // We pull out the element and cast to an Animation type.
-        const ani: *c.Animation = @ptrCast([*c]c.Animation, @alignCast(@import("std").meta.alignment([*c]c.Animation), p.*.element));
+    while (p) |node| {
+        const nxt = node.nxt;
+        const ani: *c.Animation = @ptrCast(@alignCast(node.element));
         destroyAnimation(ani);
-        removeLinkNode(list, p);
+        removeLinkNode(list, node);
+        p = nxt;
     }
 }
 
 pub fn createAnimation(origin: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) *c.Animation {
-    var self: *c.Animation = @ptrCast([*c]c.Animation, @alignCast(meta.alignment(c.Animation), c.malloc(@sizeOf(c.Animation))));
+    const self: *c.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(c.Animation))));
     initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
     return self;
 }
@@ -82,7 +79,7 @@ pub fn destroyAnimation(self: *c.Animation) void {
 }
 
 pub fn initEffect(self: *c.Effect, duration: c_int, length: c_int, mode: c.SDL_BlendMode) void {
-    self.*.keys = @ptrCast([*c]c.SDL_Color, @alignCast(meta.alignment(c.Effect), c.malloc(@sizeOf(c.SDL_Color) * @intCast(c_ulong, length))));
+    self.*.keys = @ptrCast(@alignCast(c.malloc(@sizeOf(c.SDL_Color) * @as(usize, @intCast(length)))));
     self.*.duration = duration;
     self.*.length = length;
     self.*.currentFrame = 0;
@@ -92,8 +89,8 @@ pub fn initEffect(self: *c.Effect, duration: c_int, length: c_int, mode: c.SDL_B
 // deep copy
 pub fn copyEffect(src: [*c]const c.Effect, dest: *c.Effect) void {
     _ = c.memcpy(dest, src, @sizeOf(c.Effect));
-    dest.*.keys = @ptrCast([*c]c.SDL_Color, @alignCast(meta.alignment(c.SDL_Color), c.malloc(@sizeOf(c.SDL_Color) * @intCast(c_ulong, src.*.length))));
-    _ = c.memcpy(dest.*.keys, src.*.keys, @sizeOf(c.SDL_Color) * @intCast(c_ulong, src.*.length));
+    dest.*.keys = @ptrCast(@alignCast(c.malloc(@sizeOf(c.SDL_Color) * @as(usize, @intCast(src.*.length)))));
+    _ = c.memcpy(dest.*.keys, src.*.keys, @sizeOf(c.SDL_Color) * @as(usize, @intCast(src.*.length)));
 }
 
 pub fn destroyEffect(self: [*c]c.Effect) void {
@@ -146,7 +143,7 @@ pub fn destroyText(self: *c.Text) void {
 }
 
 pub fn createScore() *c.Score {
-    var score: *c.Score = @ptrCast([*c]c.Score, @alignCast(meta.alignment(c.Score), c.malloc(@sizeOf(c.Score))));
+    const score: *c.Score = @ptrCast(@alignCast(c.malloc(@sizeOf(c.Score))));
     c.initScore(score);
     return score;
 }

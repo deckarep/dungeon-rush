@@ -101,7 +101,7 @@ pub fn launchLocalGame(localPlayerNum: c_int) !void {
 pub fn chooseOptions(optionsNum: c_int, options: [*c][*c]c.Text) c_int {
     cursorPos = 0;
 
-    var player: *c.Snake = c.createSnake(2, 0, c.LOCAL);
+    const player: *c.Snake = c.createSnake(2, 0, c.LOCAL);
     c.appendSpriteToSnake(player, c.SPRITE_KNIGHT, c.SCREEN_WIDTH / 2, c.SCREEN_HEIGHT / 2, c.UP);
 
     const lineGap: c_int = c.FONT_SIZE + c.FONT_SIZE / 2;
@@ -111,15 +111,15 @@ pub fn chooseOptions(optionsNum: c_int, options: [*c][*c]c.Text) c_int {
     while (!moveCursor(optionsNum)) {
         // Note: Zig won't cast implicitly from a ?*c_void' pointer.
         // We pull out the element and cast to an Sprite type.
-        var sprite: *c.Sprite = @ptrCast([*c]c.Sprite, @alignCast(@import("std").meta.alignment([*c]c.Sprite), player.*.sprites.*.head.*.element));
+        const sprite: *c.Sprite = @ptrCast(@alignCast(player.*.sprites.*.head.*.element));
         sprite.*.ani.*.at = c.AT_CENTER;
-        sprite.*.x = c.SCREEN_WIDTH / 2 - @divTrunc(options[@intCast(usize, cursorPos)].*.width, 2) - c.UNIT / 2;
+        sprite.*.x = c.SCREEN_WIDTH / 2 - @divTrunc(options[@intCast(cursorPos)].*.width, 2) - c.UNIT / 2;
         sprite.*.y = startY + cursorPos * lineGap;
         render.updateAnimationOfSprite(sprite);
         render.renderUi();
         var i: usize = 0;
         while (i < optionsNum) : (i += 1) {
-            _ = render.renderCenteredText(options[i], c.SCREEN_WIDTH / 2, startY + @intCast(c_int, i) * lineGap, 1);
+            _ = render.renderCenteredText(options[i], c.SCREEN_WIDTH / 2, startY + @as(c_int, @intCast(i)) * lineGap, 1);
         }
         // Update Screen
         _ = c.SDL_RenderPresent(renderer);
@@ -132,14 +132,14 @@ pub fn chooseOptions(optionsNum: c_int, options: [*c][*c]c.Text) c_int {
 }
 
 pub fn rankListUi(count: c_int, scores: [*c][*c]c.Score) !void {
-    baseUi(30, 12 + @maximum(0, count - 4));
+    baseUi(30, 12 + @max(0, count - 4));
     audio.playBgm(0);
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     var allocator = arena.allocator();
 
-    const opts = try allocator.alloc([*c]c.Text, @intCast(c_ulong, count));
+    const opts = try allocator.alloc([*c]c.Text, @intCast(count));
     var buf: [1 << 8]u8 = undefined;
     var i: usize = 0;
     while (i < count) : (i += 1) {
@@ -180,23 +180,23 @@ pub fn mainUi() !void {
     // These createAndPushAnimations create the animation intro sprites when selecting a setting. (intro screen)
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_UI_ID], &textures[c.RES_TITLE], null, c.LOOP_INFI, 80, c.SCREEN_WIDTH / 2, 280, c.SDL_FLIP_NONE, 0, c.AT_CENTER);
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_SPRITE_ID], &textures[c.RES_KNIGHT_M], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX, startY, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
-    var a = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_EFFECT_ID], &textures[c.RES_SwordFx], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX + c.UI_MAIN_GAP_ALT * 2, startY - 32, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
+    const a = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_EFFECT_ID], &textures[c.RES_SwordFx], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX + c.UI_MAIN_GAP_ALT * 2, startY - 32, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
     a.*.scaled = false;
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_SPRITE_ID], &textures[c.RES_CHORT], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX + c.UI_MAIN_GAP_ALT * 2, startY - 32, c.SDL_FLIP_HORIZONTAL, 0, c.AT_BOTTOM_CENTER);
 
-    startX += c.UI_MAIN_GAP_ALT * (6 + 2 * @floatToInt(c_int, c.randDouble()));
-    startY += c.UI_MAIN_GAP * (1 + @floatToInt(c_int, c.randDouble()));
+    startX += c.UI_MAIN_GAP_ALT * (6 + 2 * @as(c_int, @intFromFloat(c.randDouble())));
+    startY += c.UI_MAIN_GAP * (1 + @as(c_int, @intFromFloat(c.randDouble())));
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_SPRITE_ID], &textures[c.RES_ELF_M], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX, startY, c.SDL_FLIP_HORIZONTAL, 0, c.AT_BOTTOM_CENTER);
-    _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_EFFECT_ID], &textures[c.RES_HALO_EXPLOSION2], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, @floatToInt(c_int, @intToFloat(f64, startX) - @intToFloat(f64, c.UI_MAIN_GAP) * 1.5), startY, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
-    _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_SPRITE_ID], &textures[c.RES_ZOMBIE], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, @floatToInt(c_int, @intToFloat(f64, startX) - @intToFloat(f64, c.UI_MAIN_GAP) * 1.5), startY, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
+    _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_EFFECT_ID], &textures[c.RES_HALO_EXPLOSION2], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, @intFromFloat(@as(f64, @floatFromInt(startX)) - @as(f64, @floatFromInt(c.UI_MAIN_GAP)) * 1.5), startY, c.SDL_FLIP_NONE, 0, @as(f64, @floatFromInt(c.AT_BOTTOM_CENTER)));
+    _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_SPRITE_ID], &textures[c.RES_ZOMBIE], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, @intFromFloat(@as(f64, @floatFromInt(startX)) - @as(f64, @floatFromInt(c.UI_MAIN_GAP)) * 1.5), startY, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
 
-    startX -= @floatToInt(c_int, @intToFloat(f64, c.UI_MAIN_GAP_ALT) * (1.0 + 2.0 * c.randDouble()));
-    startY += @floatToInt(c_int, @intToFloat(f64, c.UI_MAIN_GAP) * (2.0 + c.randDouble()));
+    startX -= @intFromFloat(@as(f64, c.UI_MAIN_GAP_ALT) * (1.0 + 2.0 * c.randDouble()));
+    startY += @intFromFloat(@as(f64, c.UI_MAIN_GAP) * (2.0 + c.randDouble()));
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_SPRITE_ID], &textures[c.RES_WIZZARD_M], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX, startY, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_EFFECT_ID], &textures[c.RES_FIREBALL], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX + c.UI_MAIN_GAP, startY, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
 
-    startX += @floatToInt(c_int, @intToFloat(f64, c.UI_MAIN_GAP_ALT) * (18.0 + 4.0 * c.randDouble()));
-    startY -= @floatToInt(c_int, @intToFloat(f64, c.UI_MAIN_GAP) * (1.0 + 3.0 * c.randDouble()));
+    startX += @intFromFloat(@as(f64, c.UI_MAIN_GAP_ALT) * (18.0 + 4.0 * c.randDouble()));
+    startY -= @intFromFloat(@as(f64, c.UI_MAIN_GAP) * (1.0 + 3.0 * c.randDouble()));
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_SPRITE_ID], &textures[c.RES_LIZARD_M], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX, startY, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_EFFECT_ID], &textures[c.RES_CLAWFX2], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX, startY - c.UI_MAIN_GAP + 16, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
     _ = render.createAndPushAnimation(&animationsList[c.RENDER_LIST_SPRITE_ID], &textures[c.RES_MUDDY], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, startX, startY - c.UI_MAIN_GAP, c.SDL_FLIP_HORIZONTAL, 0, c.AT_BOTTOM_CENTER);

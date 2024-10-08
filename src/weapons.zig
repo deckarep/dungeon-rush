@@ -15,13 +15,13 @@ pub fn initWeapon(wep: *c.Weapon, birthTextureId: c_int, deathTextureId: c_int, 
     var flyAni: ?*c.Animation = null;
 
     if (birthTextureId != -1) {
-        birthAni = c.createAnimation(&textures[@intCast(usize, birthTextureId)], null, c.LOOP_ONCE, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_CENTER);
+        birthAni = c.createAnimation(&textures[@intCast(birthTextureId)], null, c.LOOP_ONCE, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_CENTER);
     }
     if (deathTextureId != -1) {
-        deathAni = c.createAnimation(&textures[@intCast(usize, deathTextureId)], null, c.LOOP_ONCE, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
+        deathAni = c.createAnimation(&textures[@intCast(deathTextureId)], null, c.LOOP_ONCE, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
     }
     if (flyTextureId != -1) {
-        flyAni = c.createAnimation(&textures[@intCast(usize, flyTextureId)], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_CENTER);
+        flyAni = c.createAnimation(&textures[@intCast(flyTextureId)], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_CENTER);
     }
 
     var w: c.Weapon = undefined;

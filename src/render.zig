@@ -44,8 +44,8 @@ pub fn renderUi() void {
 }
 
 pub fn renderCenteredText(text: *const c.Text, x: c_int, y: c_int, scale: f64) c.SDL_Point {
-    const width: c_int = @floatToInt(c_int, @intToFloat(f64, text.*.width) * scale + 0.5);
-    const height: c_int = @floatToInt(c_int, @intToFloat(f64, text.*.height) * scale + 0.5);
+    const width: c_int = @intFromFloat(@as(f64, @floatFromInt(text.*.width)) * scale + 0.5);
+    const height: c_int = @intFromFloat(@as(f64, @floatFromInt(text.*.height)) * scale + 0.5);
 
     const dst: c.SDL_Rect = c.SDL_Rect{
         .x = x - @divTrunc(width, 2),
@@ -96,14 +96,14 @@ pub fn clearRenderer() void {
 }
 
 pub fn createAndPushAnimation(list: *c.LinkList, texture: *c.Texture, effect: ?*const c.Effect, lp: c.LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: c.At) *c.Animation {
-    var ani: *c.Animation = c.createAnimation(texture, effect, lp, duration, x, y, flip, angle, at);
-    var node: *c.LinkNode = c.createLinkNode(ani);
+    const ani: *c.Animation = c.createAnimation(texture, effect, lp, duration, x, y, flip, angle, at);
+    const node: *c.LinkNode = c.createLinkNode(ani);
     c.pushLinkNode(list, node);
     return ani;
 }
 
 pub fn updateAnimationOfSprite(self: *c.Sprite) void {
-    var ani: *c.Animation = self.*.ani;
+    const ani: *c.Animation = self.*.ani;
     ani.*.x = self.*.x;
     ani.*.y = self.*.y;
     ani.*.flip = if (self.*.face == c.RIGHT) c.SDL_FLIP_NONE else c.SDL_FLIP_HORIZONTAL;

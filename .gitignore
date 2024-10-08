@@ -17,4 +17,5 @@ res/.DS_Store
 
 # zig related
 zig-cache
+.zig-cache
 zig-out

@@ -90,7 +90,7 @@ pub fn loadSDLTexture(path: [*c]const u8) ?*c.SDL_Texture {
     var newTexture: ?*c.SDL_Texture = null;
 
     // Load image at specified path
-    var loadedSurface: ?*c.SDL_Surface = c.IMG_Load(path);
+    const loadedSurface: ?*c.SDL_Surface = c.IMG_Load(path);
     if (loadedSurface == null) {
         stdout.print("Unable to load image {s}! SDL_image Error: {s}\n", .{ path, c.IMG_GetError() }) catch unreachable;
     } else {
@@ -115,9 +115,9 @@ pub fn loadMedia() bool {
     var i: usize = 0;
     while (i < c.TILESET_SIZE) : (i += 1) {
         // TODO: refactor this nonsense.
-        const c_string = @ptrCast([*c]const u8, @alignCast(@import("std").meta.alignment(u8), &tilesetPath[@intCast(c_uint, i)]));
+        const c_string: [*c]const u8 = @ptrCast(@alignCast(&tilesetPath[@intCast(i)]));
         if (!(c.strlen(c_string) != 0)) break;
-        _ = c.sprintf(@ptrCast([*c]u8, @alignCast(@import("std").meta.alignment(u8), &imgPath)), "%s.png", @ptrCast([*c]const u8, @alignCast(@import("std").meta.alignment(u8), &tilesetPath[@intCast(c_uint, i)])));
+        _ = c.sprintf(@as([*c]u8, @ptrCast(@alignCast(&imgPath))), "%s.png", @as([*c]const u8, @ptrCast(@alignCast(&tilesetPath[@intCast(i)]))));
 
         originTextures[i] = loadSDLTexture(&imgPath);
         _ = loadTileset(c_string, originTextures[i]);
@@ -193,7 +193,7 @@ pub fn loadAudio() bool {
         var buf: [200]u8 = undefined;
         const soundEffectPath = fmt.bufPrintZ(buf[0..], "{s}{s}", .{ soundsPathPrefix, soundEffectsTable[i] }) catch unreachable;
         if (c.Mix_LoadWAV(soundEffectPath.ptr)) |loaded| {
-            sounds[@intCast(usize, soundsCount)] = loaded;
+            sounds[@intCast(soundsCount)] = loaded;
             soundsCount += 1;
         } else {
             stdout.print("Failed to load sound effect \"{s}\": SDL_mixer Error: {s}\n", .{ soundEffectPath, c.Mix_GetError() }) catch unreachable;
@@ -233,7 +233,7 @@ pub fn loadTextset() bool {
         // IMPORTANT: pass a proper c-string!!!
         var buf: [200]u8 = undefined;
         const cText = fmt.bufPrintZ(buf[0..], "{s}", .{txt}) catch unreachable;
-        if (!types.initText(&texts[@intCast(usize, textsCount)], cText.ptr, WHITE)) {
+        if (!types.initText(&texts[@intCast(textsCount)], cText.ptr, WHITE)) {
             success = false;
         }
         textsCount += 1;
@@ -276,13 +276,13 @@ pub fn loadTileset(path: [*c]const u8, origin: ?*c.SDL_Texture) bool {
             const hInt = std.fmt.parseInt(c_int, h, 10) catch unreachable;
             const fInt = std.fmt.parseInt(c_int, f, 10) catch unreachable;
 
-            var p = &textures[@intCast(usize, texturesCount)];
+            const p = &textures[@intCast(texturesCount)];
             c.initTexture(p, origin, wInt, hInt, fInt);
             texturesCount += 1;
 
             var i: usize = 0;
-            while (i < @intCast(usize, fInt)) : (i += 1) {
-                p.*.crops[i].x = xInt + @intCast(c_int, i) * wInt;
+            while (i < @as(usize, @intCast(fInt))) : (i += 1) {
+                p.*.crops[i].x = xInt + @as(c_int, @intCast(i)) * wInt;
                 p.*.crops[i].y = yInt;
                 p.*.crops[i].h = hInt;
                 p.*.crops[i].w = wInt;
@@ -344,9 +344,9 @@ pub fn initCommonEffects() void {
 }
 
 pub fn initCommonSprite(sprite: *c.Sprite, weapon: *c.Weapon, res_id: c_int, hp: c_int) void {
-    const ani: *c.Animation = c.createAnimation(&textures[@intCast(usize, res_id)], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
+    const ani: *c.Animation = c.createAnimation(&textures[@intCast(res_id)], null, c.LOOP_INFI, c.SPRITE_ANIMATION_DURATION, 0, 0, c.SDL_FLIP_NONE, 0, c.AT_BOTTOM_CENTER);
 
-    var sp: c.Sprite = c.Sprite{
+    const sp: c.Sprite = c.Sprite{
         .x = 0,
         .y = 0,
         .hp = hp,
@@ -399,8 +399,8 @@ pub fn cleanup() void {
     // Deallocate surface
     var i: c_int = 0;
     while (i < c.TILESET_SIZE) : (i += 1) {
-        _ = c.SDL_DestroyTexture(originTextures[@intCast(usize, i)]);
-        originTextures[@intCast(usize, i)] = undefined;
+        _ = c.SDL_DestroyTexture(originTextures[@intCast(i)]);
+        originTextures[@intCast(i)] = undefined;
     }
 
     // Destroy window

@@ -47,8 +47,8 @@ pub extern var GAME_MONSTERS_WEAPON_BUFF_ADJUST: f64;
 pub extern var GAME_MONSTERS_GEN_FACTOR: f64;
 
 pub fn setLevel(level: c_int) void {
-    const levelFloat: f64 = @intToFloat(f64, level);
-    const stageFloat: f64 = @intToFloat(f64, stage);
+    const levelFloat: f64 = @floatFromInt(level);
+    const stageFloat: f64 = @floatFromInt(stage);
 
     gameLevel = level;
     spritesSetting = 25;
@@ -62,7 +62,7 @@ pub fn setLevel(level: c_int) void {
     GAME_MONSTERS_HP_ADJUST = 1 + levelFloat * 0.8 + stageFloat * levelFloat * 0.1;
     GAME_MONSTERS_GEN_FACTOR = 1 + levelFloat * 0.5 + stageFloat * levelFloat * 0.05;
     GAME_MONSTERS_WEAPON_BUFF_ADJUST = 1 + levelFloat * 0.8 + stageFloat * levelFloat * 0.02;
-    AI_LOCK_LIMIT = @maximum(1, 7 - levelFloat * 2 - stageFloat / 2);
+    AI_LOCK_LIMIT = @max(1, 7 - levelFloat * 2 - stageFloat / 2);
     GAME_WIN_NUM = 10 + level * 5 + stage * 3;
     if (level == 0) {
         // do nothing.
@@ -85,7 +85,7 @@ pub fn setLevel(level: c_int) void {
 }
 
 pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*c][*c]c.Score {
-    var scores: [*c][*c]c.Score = @ptrCast([*c][*c]c.Score, @alignCast(meta.alignment([*c]c.Score), c.malloc(@sizeOf([*c]c.Score) * @intCast(c_ulong, localPlayers))));
+    var scores: [*c][*c]c.Score = @ptrCast(@alignCast(c.malloc(@sizeOf([*c]c.Score) * @as(usize, @intCast(localPlayers)))));
 
     var i: usize = 0;
     while (i < localPlayers) : (i += 1) {
@@ -122,7 +122,7 @@ pub extern const WHITE: c.SDL_Color;
 fn destroyGame(arg_status: c_int) void {
     while (spritesCount != 0) {
         spritesCount -= 1;
-        const sc: usize = @intCast(usize, spritesCount);
+        const sc: usize = @intCast(spritesCount);
         c.destroySnake(spriteSnake[sc]);
         spriteSnake[sc] = null;
     }
@@ -135,7 +135,7 @@ fn destroyGame(arg_status: c_int) void {
     if (bullets) |someBullets| {
         var p: ?*c.LinkNode = someBullets.*.head;
         while (p) |someP| {
-            const b: *c.Bullet = @ptrCast([*c]c.Bullet, @alignCast(@import("std").meta.alignment([*c]c.Bullet), someP.*.element));
+            const b: *c.Bullet = @ptrCast(@alignCast(someP.*.element));
             c.destroyBullet(b);
             someP.*.element = null;
             p = someP.*.nxt;
@@ -168,8 +168,8 @@ fn destroyGame(arg_status: c_int) void {
 fn initPlayer(playerType: c_int) void {
     //c.initPlayer(playerType);
     spritesCount += 1;
-    const p: *c.Snake = c.createSnake(MOVE_STEP, playersCount, @intCast(c_uint, playerType));
-    spriteSnake[@intCast(usize, playersCount)] = p;
+    const p: *c.Snake = c.createSnake(MOVE_STEP, playersCount, @as(c_uint, @intCast(playerType)));
+    spriteSnake[@intCast(playersCount)] = p;
     c.appendSpriteToSnake(p, c.SPRITE_KNIGHT, c.SCREEN_WIDTH / 2, c.SCREEN_HEIGHT / 2 + playersCount * 2 * c.UNIT, c.RIGHT);
     playersCount += 1;
 }
@@ -215,7 +215,7 @@ pub fn destroySnake(snake: *c.Snake) void {
     if (bullets) |someBullets| {
         var p: ?*c.LinkNode = someBullets.*.head;
         while (p) |someP| {
-            var bullet: *c.Bullet = @ptrCast(*c.Bullet, @alignCast(meta.alignment(*c.Bullet), someP.*.element));
+            const bullet: *c.Bullet = @ptrCast(@alignCast(someP.*.element));
             if (bullet.*.owner == snake) {
                 bullet.*.owner = null;
             }
@@ -225,7 +225,7 @@ pub fn destroySnake(snake: *c.Snake) void {
 
     var p: ?*c.LinkNode = snake.*.sprites.*.head;
     while (p) |someP| {
-        var sprite: *c.Sprite = @ptrCast(*c.Sprite, @alignCast(meta.alignment(*c.Sprite), someP.*.element));
+        const sprite: *c.Sprite = @ptrCast(@alignCast(someP.*.element));
         c.free(sprite);
         someP.*.element = null;
         p = someP.*.nxt;

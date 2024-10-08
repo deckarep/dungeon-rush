@@ -20,7 +20,7 @@ pub export fn prngRand() c_uint {
     //return nSeed % @bitCast(c_uint, @as(c_int, 32767));
 }
 pub export fn prngSrand(arg_seed: c_uint) void {
-    var seed = arg_seed;
+    const seed = arg_seed;
     nSeed = seed;
 }
 
