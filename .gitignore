@@ -9,3 +9,5 @@ dungeonrush
 *.o
 *.gch
 build
+
+.zig-cache
