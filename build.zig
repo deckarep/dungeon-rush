@@ -42,7 +42,6 @@ pub fn build(b: *std.Build) void {
         "-Wextra",
     };
 
-    //exe.addCSourceFile("src/prng.c", cflags);
     exe.addCSourceFiles(.{
         .files = &.{
             "src/ui.c",
@@ -67,12 +66,6 @@ pub fn build(b: *std.Build) void {
     // Needed for Zig files to find C header files.
     exe.addIncludePath(b.path("src"));
 
-    // b.default_step.dependOn(&exe.step);
-    // b.installArtifact(exe);
-
-    // const run = b.step("run", "Run the demo");
-    // const run_cmd = exe.run();
-    // run.dependOn(&run_cmd.step);
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
