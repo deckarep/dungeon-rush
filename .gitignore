@@ -11,3 +11,4 @@ dungeonrush
 build
 
 .zig-cache
+*.zig.raw
