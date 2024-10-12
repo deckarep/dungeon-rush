@@ -60,6 +60,10 @@ pub fn dim() void {
     blacken(RENDER_DIM_DURATION);
 }
 
+pub fn initInfo() void {
+    // TODO: shows stage and text and what not.
+}
+
 pub fn initRenderer() void {
     renderFrames = 0;
     for (0..ANIMATION_LINK_LIST_NUM) |idx| {

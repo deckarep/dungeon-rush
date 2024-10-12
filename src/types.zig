@@ -456,7 +456,7 @@ fn calcScore(self: *Score) void {
     self.rank *= gl + 1;
 }
 
-fn addScore(a: *Score, b: *Score) void {
+pub fn addScore(a: *Score, b: *Score) void {
     a.got += b.got;
     a.damage += b.damage;
     a.killed += b.killed;

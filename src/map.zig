@@ -35,18 +35,20 @@ fn count(x: c_int, y: c_int) c_int {
     var ret: c_int = 0;
 
     var dx: c_int = -1;
-    var dy: c_int = -1;
     while (dx <= 1) : (dx += 1) {
+        var dy: c_int = -1;
         while (dy <= 1) : (dy += 1) {
-            if (dx > 0 or dy > 0) {
+            if (dx != 0 or dy != 0) {
                 const xx: c_int = x + dx;
-                const yy = y + dy;
+                const yy: c_int = y + dy;
                 if (hlp.inr(xx, 0, res.n - 1) and hlp.inr(yy, 0, res.m - 1)) {
-                    ret += primMap[xx][yy];
+                    // r.c. - how many "trues" get tallied.
+                    ret += @intFromBool(primMap[@intCast(xx)][@intCast(yy)]);
                 }
             }
         }
     }
+
     return ret;
 }
 
@@ -63,9 +65,9 @@ fn cellularAutomata() void {
             const jj: c_int = @intCast(j);
             const cc = count(ii, jj);
             if (cc <= 3) {
-                S.tmp[i][j] = 0;
+                S.tmp[i][j] = false;
             } else if (cc >= 6) {
-                S.tmp[i][j] = 1;
+                S.tmp[i][j] = true;
             } else {
                 S.tmp[i][j] = primMap[i][j];
             }
@@ -76,12 +78,97 @@ fn cellularAutomata() void {
 }
 
 // DBG print methods.
-// fn printMap() void {}
-// fn phasMap() void {}
+fn printMap(name: []const u8, whichMap: *const [MAP_SIZE][MAP_SIZE]bool) void {
+    std.debug.print("printMap({s}) output\n", .{name});
+    for (0..res.n) |i| {
+        // NOTE: r.c. what the fuck is this inner-middle "t" loop for?
+        // I guess it's for printing the map double wide.
+        for (0..2) |_| {
+            for (0..res.m) |j| {
+                const ch = if (whichMap[i][j]) "#" else ".";
+                std.debug.print("{s}{s}", .{ ch, ch });
+            }
+            std.debug.print("\n", .{});
+        }
+    }
+}
+
+fn phasMap() void {
+    std.debug.print("phasMap() output\n", .{});
+    for (0..(res.SCREEN_WIDTH / res.UNIT)) |i| {
+        for (0..(res.SCREEN_HEIGHT / res.UNIT)) |j| {
+            const ch = if (hasMap[i][j]) "#" else ".";
+            std.debug.print("{s}", .{ch});
+        }
+        std.debug.print("\n", .{});
+    }
+}
 
 fn initPrimMap(floorPercent: f64, smoothTimes: c_int) void {
-    _ = floorPercent;
-    _ = smoothTimes;
+    // @memset(primMap[0..], 0);
+    primMap = std.mem.zeroes([MAP_SIZE][MAP_SIZE]bool);
+
+    const nn: c_int = res.SCREEN_WIDTH / res.UNIT;
+    const mm: c_int = res.SCREEN_HEIGHT / res.UNIT;
+    const n: c_int = nn / 2;
+    const m: c_int = mm / 2;
+    const floors: c_int = @intFromFloat(@as(f64, res.n) * @as(f64, res.m) * floorPercent);
+
+    for (0..@intCast(floors)) |_| {
+        var x: c_int = undefined;
+        var y: c_int = undefined;
+        var xx: usize = undefined;
+        var yy: usize = undefined;
+
+        // NOTE: Converted do-while => while(true) with if/break.
+        while (true) {
+            x = hlp.randInt(0, res.n - 1);
+            y = hlp.randInt(0, res.m - 1);
+
+            xx = @intCast(x);
+            yy = @intCast(y);
+
+            const cond = primMap[xx][yy];
+            if (!cond) break;
+        }
+
+        primMap[xx][yy] = true;
+    }
+
+    const ltx: c_int = n / 4;
+    const lty: c_int = m / 4;
+    const w: c_int = n / 2;
+    const h: c_int = m / 2;
+
+    {
+        // r.c.: in block, to keep i scope small.
+        var i = ltx;
+        while (i < ltx + w) : (i += 1) {
+            var j = lty;
+            while (j < lty + h) : (j += 1) {
+                primMap[@intCast(i)][@intCast(j)] = true;
+            }
+        }
+    }
+
+    for (0..n) |i| {
+        primMap[i][0] = false;
+        primMap[i][m - 1] = false;
+    }
+
+    for (0..m) |j| {
+        primMap[0][j] = false;
+        primMap[n - 1][j] = false;
+    }
+
+    // r.c. - In zig can't mutate incoming parameters.
+    var st = smoothTimes;
+    while (st > 0) : (st -= 1) {
+        cellularAutomata();
+        // #ifdef DBG
+        // // printMap(n, m);
+        // #endif
+    }
 }
 
 fn initBlock(
@@ -171,7 +258,7 @@ fn initMap() void {
 
 fn decorateMap() void {
     var i: c_int = 0;
-    const lim: c_int = res.n * res.m * MAP_HOW_OLD;
+    const lim: c_int = @intFromFloat(@as(f64, res.n) * @as(f64, res.m) * MAP_HOW_OLD);
     var x: usize = 0;
     var y: usize = 0;
 
@@ -180,10 +267,11 @@ fn decorateMap() void {
             x = @intCast(hlp.randInt(0, res.n - 2));
             y = @intCast(hlp.randInt(0, res.m - 2));
 
-            const condition = (hasMap[x][y] and !isTrap[x][y]) +
-                (hasMap[x + 1][y] and !isTrap[x + 1][y]) +
-                (hasMap[x][y + 1] and !isTrap[x][y + 1]) +
-                (hasMap[x + 1][y + 1] and !isTrap[x + 1][y + 1]) < 4;
+            // r.c. - need ints because how many "trues" get counted.
+            const condition = @as(c_int, @intFromBool((hasMap[x][y] and !isTrap[x][y]))) +
+                @as(c_int, @intFromBool((hasMap[x + 1][y] and !isTrap[x + 1][y]))) +
+                @as(c_int, @intFromBool((hasMap[x][y + 1] and !isTrap[x][y + 1]))) +
+                @as(c_int, @intFromBool((hasMap[x + 1][y + 1] and !isTrap[x + 1][y + 1]))) < 4;
 
             // Since we ported a do-while loop, we negate the condition.
             if (!condition) break;
@@ -221,12 +309,96 @@ pub fn initBlankMap(w: c_int, h: c_int) void {
             );
         }
     }
+
+    std.log.info("initBlankMap finished...", .{});
 }
 
-fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void {
-    _ = floorPercent;
-    _ = smoothTimes;
-    _ = trapRate;
+pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void {
+    clearMapGenerator();
+    initPrimMap(floorPercent, smoothTimes);
+
+    // this will create a good-looking cave map in primMap[][]
+    const nn = res.n / 2;
+    const mm = res.m / 2;
+    for (0..nn) |i| {
+        for (0..mm) |j| {
+            if (primMap[i][j]) {
+                std.log.info("fuck hell", .{});
+                hasMap[i * 2][j * 2] = true;
+                hasMap[i * 2 + 1][j * 2] = true;
+                hasMap[i * 2][j * 2 + 1] = true;
+                hasMap[2 * i + 1][2 * j + 1] = true;
+            }
+        }
+    }
+
+    var t: c_int = res.n * res.m * @as(c_int, @intFromFloat(trapRate));
+    while (t > 0) : (t -= 1) {
+        var x: c_int = undefined;
+        var y: c_int = undefined;
+        var xx: usize = undefined;
+        var yy: usize = undefined;
+
+        // Converted from do-while nonsense to while w/negated if condition.
+        while (true) {
+            x = hlp.randInt(0, res.n - 2);
+            y = hlp.randInt(0, res.m - 2);
+
+            xx = @intCast(x);
+            yy = @intCast(y);
+
+            // Since hasMap stores booleans, need to convert to integers to do this math.
+            const ha: u8 = @intFromBool(hasMap[xx][yy]);
+            const hb: u8 = @intFromBool(hasMap[xx + 1][yy]);
+            const hc: u8 = @intFromBool(hasMap[xx][yy + 1]);
+            const hd: u8 = @intFromBool(hasMap[xx + 1][yy + 1]);
+
+            const cond = ((ha + hb + hc + hd) <= 1);
+            if (!cond) break;
+        }
+
+        isTrap[xx][yy] = true;
+        if (hasMap[xx + 1][yy]) {
+            isTrap[xx + 1][yy] = true;
+        }
+        if (hasMap[xx][yy + 1]) {
+            isTrap[xx][yy + 1] = true;
+        }
+        if (hasMap[xx + 1][yy + 1]) {
+            isTrap[xx + 1][yy + 1] = true;
+        }
+    }
+
+    // Converted from do-while nonsense to while w/negated if condition.
+    while (true) {
+        exitX = hlp.randInt(0, res.n - 1);
+        exitY = hlp.randInt(0, res.m - 1);
+
+        // Original code, was already negating this condition.
+        const cond = !(hasMap[@intCast(exitX)][@intCast(exitY)] and
+            !isTrap[@intCast(exitX)][@intCast(exitY)]);
+
+        // So we negate again (to simulate do-while crap)
+        if (!cond) break;
+    }
+
+    initBlock(
+        &gm.map[@intCast(exitX)][@intCast(exitY)],
+        .BLOCK_EXIT,
+        exitX * res.UNIT,
+        exitY * res.UNIT,
+        res.RES_FLOOR_EXIT,
+        false,
+    );
+
+    // #ifdef DBG
+    //   printf("exit: %d %d\n", exitX, exitY);
+    // #endif
+
+    initMap();
+    decorateMap();
+
+    std.log.info("initRandomMap finished...", .{});
 }
 
 pub fn pushMapToRender() void {

@@ -2,20 +2,24 @@ const std = @import("std");
 const pl = @import("player.zig");
 const tps = @import("types.zig");
 const res = @import("res.zig");
-const c = @import("cdefs.zig").c;
 const adt = @import("adt.zig");
 const spr = @import("sprite.zig");
 const blt = @import("bullet.zig");
 const ren = @import("render.zig");
 const mp = @import("map.zig");
 const ai = @import("ai.zig");
+const aud = @import("audio.zig");
+const c = @import("cdefs.zig").c;
 
 const SPRITES_MAX_NUM = 1024;
 const MOVE_STEP = 2;
 
 // Map
 pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
+var itemMap: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Item = undefined;
+var hasEnemy: [mp.MAP_SIZE][mp.MAP_SIZE]bool = undefined;
 var spriteSnake: [SPRITES_MAX_NUM]*pl.Snake = undefined;
+
 var bullets: ?*adt.LinkList = null;
 
 pub var gameLevel: c_int = undefined;
@@ -84,14 +88,32 @@ pub fn setLevel(level: c_int) void {
 }
 
 pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*]*tps.Score {
-    _ = remotePlayers;
-    _ = localFirst;
     std.log.info("startGame!! was reached!", .{});
 
-    // This gets free'd in the storage.zig code (not built yet!)
+    // NOTE: This gets free'd in the storage.zig code (not built yet!)
     const scores: [*]*tps.Score = @alignCast(@ptrCast(c.malloc(
         @sizeOf(*tps.Score) * @as(usize, @intCast(localPlayers)),
     )));
+
+    for (0..@intCast(localPlayers)) |i| {
+        scores[i] = tps.createScore();
+    }
+
+    var currentStatus: c_int = undefined;
+    stage = 0;
+    // NOTE: r.c.: ugly do-while converted to while with a break.
+    while (true) {
+        initGame(localPlayers, remotePlayers, localFirst);
+        setLevel(gameLevel);
+        currentStatus = gameLoop();
+        for (0..@intCast(localPlayers)) |i| {
+            tps.addScore(scores[i], spriteSnake[i].score);
+        }
+        destroyGame(currentStatus);
+        stage += 1;
+        if (currentStatus != 0) break;
+    }
+
     return scores;
 }
 
@@ -154,10 +176,78 @@ pub fn appendSpriteToSnake(
 
 pub fn initPlayer(playerType: pl.PlayerType) void {
     spritesCount += 1;
-    spriteSnake[playersCount] = pl.createSnake(MOVE_STEP, playersCount, playerType);
-    const p = spriteSnake[playersCount];
+    spriteSnake[@intCast(playersCount)] = pl.createSnake(MOVE_STEP, playersCount, playerType);
+    const p = spriteSnake[@intCast(playersCount)];
     appendSpriteToSnake(p, res.SPRITE_KNIGHT, res.SCREEN_WIDTH / 2, res.SCREEN_HEIGHT / 2 + playersCount * 2 * res.UNIT, .RIGHT);
     playersCount += 1;
+}
+
+fn isWin() bool {
+    if (playersCount != 1) return false;
+    return spriteSnake[0].num >= GAME_WIN_NUM;
+}
+
+const GameStatus = enum {
+    STAGE_CLEAR,
+    GAME_OVER,
+};
+
+fn setTerm(s: GameStatus) void {
+    aud.stopBgm();
+    if (s == 0) {
+        aud.playAudio(res.AUDIO_WIN);
+    } else {
+        aud.playAudio(res.AUDIO_LOSE);
+    }
+    status = s;
+    willTerm = true;
+    termCount = ren.RENDER_TERM_COUNT;
+}
+
+fn pauseGame() void {
+    aud.pauseSound();
+    aud.playAudio(res.AUDIO_BUTTON1);
+
+    ren.dim();
+
+    const text = tps.createText("Paused", tps.WHITE);
+    ren.renderCenteredText(text, tps.SCREEN_WIDTH / 2, tps.SCREEN_HEIGHT / 2, 1);
+    _ = c.SDL_RenderPresent(ren.renderer);
+    tps.destroyText(text);
+
+    var e: c.SDL_Event = undefined;
+    var quit = false;
+    while (!quit) {
+        while (c.SDL_PollEvent(&e)) {
+            if (e.type == .SDL_QUIT or e.type == .SDL_KEYDOWN) {
+                quit = true;
+                break;
+            }
+        }
+    }
+
+    aud.resumeSound();
+    aud.playAudio(res.AUDIO_BUTTON1);
+}
+
+fn arrowsToDirection(keyValue: c_int) c_int {
+    switch (keyValue) {
+        c.SDLK_LEFT => return .LEFT,
+        c.SDLK_RIGHT => return .RIGHT,
+        c.SDLK_UP => return .UP,
+        c.SDLK_DOWN => return .DOWN,
+        else => return -1,
+    }
+}
+
+fn wasdToDirection(keyValue: c_int) c_int {
+    switch (keyValue) {
+        c.SDLK_a => return .LEFT,
+        c.SDLK_d => return .RIGHT,
+        c.SDLK_w => return .UP,
+        c.SDLK_s => return .DOWN,
+        else => return -1,
+    }
 }
 
 pub fn destroySnake(snake: *pl.Snake) void {
@@ -184,6 +274,10 @@ pub fn destroySnake(snake: *pl.Snake) void {
     c.free(snake);
 }
 
+fn initEnemies(enemiesCount: c_int) void {
+    _ = enemiesCount;
+}
+
 // Put buff animation on snake
 
 fn shieldSprite(sprite: *spr.Sprite, duration: c_int) void {
@@ -207,9 +301,114 @@ pub fn shieldSnake(snake: *pl.Snake, duration: c_int) void {
     if (snake.buffs[tps.BUFF_DEFENCE] == 1) return;
     snake.buffs[tps.BUFF_DEFENCE] += duration;
 
-    const p = snake.sprites.head;
-    while (p != null) : (p = p.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.element));
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
         shieldSprite(sprite, duration);
     }
+}
+
+// Initialize and deinitialize game and snake.
+
+fn clearItemMap() void {
+    for (0..res.n) |i| {
+        for (0..res.m) |j| {
+            itemMap[i][j].type = .ITEM_NONE;
+        }
+    }
+}
+
+fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
+    aud.randomBgm();
+    status = 0;
+    termCount = 0;
+    willTerm = false;
+    spritesCount = 0;
+    playersCount = 0;
+    flasksCount = 0;
+    herosCount = 0;
+    ren.initRenderer();
+    //initCountDownBar();
+
+    // create default hero at (w/2, h/2) (as well push ani)
+    for (0..(@as(usize, @intCast(localPlayers)) + @as(usize, @intCast(remotePlayers)))) |i| {
+        var playerType: pl.PlayerType = .LOCAL;
+        if (localFirst) {
+            playerType = if (i < localPlayers) .LOCAL else .REMOTE;
+        } else {
+            playerType = if (i < remotePlayers) .REMOTE else .LOCAL;
+        }
+        initPlayer(playerType);
+        shieldSnake(spriteSnake[i], 300);
+    }
+    ren.initInfo();
+    // create map
+    mp.initRandomMap(0.7, 7, GAME_TRAP_RATE);
+
+    clearItemMap();
+
+    // create enemies
+    initEnemies(spritesSetting);
+    mp.pushMapToRender();
+    bullets = tps.createLinkList();
+
+    std.log.info("initGame finished...", .{});
+}
+
+fn destroyGame(currentStatus: c_int) void {
+    _ = currentStatus;
+    // TODO
+}
+
+///  Helper function to determine whehter a snake is a player
+inline fn isPlayer(snake: *pl.Snake) bool {
+    for (0..@intCast(playersCount)) |i| {
+        if (snake == spriteSnake[i]) return true;
+    }
+    return false;
+}
+
+fn handleLocalKeypress() bool {
+    // Static var in Zig.
+    const S = struct {
+        var e: c.SDL_Event = undefined;
+    };
+    var quit = false;
+
+    while (c.SDL_PollEvent(&S.e)) {
+        if (&S.e.type == c.SDL_QUIT) {
+            quit = true;
+            setTerm(.GAME_OVER);
+        } else if (S.e.type == c.SDL_KEYDOWN) {
+            const keyValue = S.e.key.keysym.sym;
+            if (keyValue == c.SDLK_ESCAPE) {
+                pauseGame();
+            }
+
+            var id: c_int = 0;
+            while (id <= 1 and id < playersCount) : (id += 1) {
+                const player = spriteSnake[id];
+                if (player.playerType == .LOCAL) {
+                    if (!player.buffs[tps.BUFF_FROZEN] and player.sprites.head != null) {
+                        const direction = if (id == 0) arrowsToDirection(keyValue) else wasdToDirection(keyValue);
+                        if (direction >= 0) {
+                            //sendPlayerMovePacket(id, direction); // TODO for networking.
+                            tps.changeSpriteDirection(player.sprites.head, direction);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return quit;
+}
+
+fn gameLoop() c_int {
+    // TODO:
+    for (0..3_000) |_| {
+        ren.render();
+    }
+
+    return 0;
 }
