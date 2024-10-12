@@ -7,6 +7,11 @@ pub fn inr(x: c_int, l: c_int, r: c_int) bool {
     return x <= r and l <= x;
 }
 
+pub fn randInt(l: c_int, r: c_int) c_int {
+    const rdm: c_int = @intCast(rng.prngRand());
+    return @mod(rdm, (r - l + 1) + l);
+}
+
 pub fn randDouble() f64 {
     return @as(f64, @floatFromInt(rng.prngRand())) / rng.PRNG_MAX;
 }

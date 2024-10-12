@@ -89,13 +89,13 @@ pub fn renderCenteredText(text: *const tps.Text, x: c_int, y: c_int, scale: f64)
     const width: c_int = @intFromFloat(@as(f64, @floatFromInt(text.width)) * scale + 0.5);
     const height: c_int = @intFromFloat(@as(f64, @floatFromInt(text.height)) * scale + 0.5);
     const dst: c.SDL_Rect = .{
-        .x = x - width >> 1,
-        .y = y - height >> 1,
+        .x = x - @divTrunc(width, 2),
+        .y = y - @divTrunc(height, 2),
         .w = width,
         .h = height,
     };
     _ = c.SDL_RenderCopy(renderer, text.origin, null, &dst);
-    return .{ .x = x - width >> 1, .y = y - height >> 1 };
+    return .{ .x = x - @divTrunc(width, 2), .y = y - @divTrunc(height, 1) };
 }
 
 pub fn setEffect(texture: *tps.Texture, ef: ?*tps.Effect) void {
@@ -160,7 +160,7 @@ pub fn renderAnimation(a: ?*tps.Animation) void {
     var height = ani.origin.height;
     var poi: c.SDL_Point = .{
         .x = ani.origin.width,
-        .y = ani.origin.height >> 1, // rc: original code divided by 2 but didn't want to convert.
+        .y = @divTrunc(ani.origin.height, 2),
     };
 
     if (ani.scaled) {
@@ -169,18 +169,19 @@ pub fn renderAnimation(a: ?*tps.Animation) void {
     }
 
     var dst = c.SDL_Rect{
-        .x = ani.x - width >> 1, // rc: same here.
+        .x = ani.x - @divTrunc(width, 2),
         .y = ani.y - height,
         .w = width,
         .h = height,
     };
+
     if (ani.at == .AT_TOP_LEFT) {
         dst.x = ani.x;
         dst.y = ani.y;
     } else if (ani.at == .AT_CENTER) {
-        dst.x = ani.x - width >> 1;
-        dst.y = ani.y - height >> 1;
-        poi.x = ani.origin.width >> 1;
+        dst.x = ani.x - @divTrunc(width, 2);
+        dst.y = ani.y - @divTrunc(height, 2);
+        poi.x = @divTrunc(ani.origin.width, 2);
     } else if (ani.at == .AT_BOTTOM_LEFT) {
         dst.x = ani.x;
         dst.y = ani.y + res.UNIT - height - 3;
@@ -199,7 +200,15 @@ pub fn renderAnimation(a: ?*tps.Animation) void {
         const interval: f64 = @as(f64, @floatFromInt(ani.duration)) / @as(f64, @floatFromInt(ani.origin.frames));
         stage = @intFromFloat(@floor(@as(f64, @floatFromInt(ani.currentFrame)) / interval));
     }
-    _ = c.SDL_RenderCopyEx(renderer, ani.origin.origin, &(ani.origin.crops[stage]), &dst, ani.angle, &poi, ani.flip);
+    _ = c.SDL_RenderCopyEx(
+        renderer,
+        ani.origin.origin,
+        &(ani.origin.crops[stage]),
+        &dst,
+        ani.angle,
+        &poi,
+        ani.flip,
+    );
     if (ani.effect) |_| {
         unsetEffect(ani.origin);
     }

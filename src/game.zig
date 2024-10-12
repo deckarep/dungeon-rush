@@ -6,10 +6,13 @@ const adt = @import("adt.zig");
 const spr = @import("sprite.zig");
 const blt = @import("bullet.zig");
 const ren = @import("render.zig");
+const mp = @import("map.zig");
 
 const SPRITES_MAX_NUM = 1024;
 const MOVE_STEP = 2;
 
+// Map
+pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
 var spriteSnake: [SPRITES_MAX_NUM]*pl.Snake = undefined;
 var bullets: ?*adt.LinkList = null;
 
@@ -47,8 +50,8 @@ pub fn appendSpriteToSnake(
         snakeHead = @alignCast(@ptrCast(snake.sprites.head.?.element));
         newX = snakeHead.?.x;
         newY = snakeHead.?.y;
-        const delta = (snakeHead.?.ani.origin.width * ren.SCALE_FACTOR +
-            res.commonSprites[@intCast(sprite_id)].ani.origin.width * ren.SCALE_FACTOR) >> 1;
+        const delta = @divTrunc((snakeHead.?.ani.origin.width * ren.SCALE_FACTOR +
+            res.commonSprites[@intCast(sprite_id)].ani.origin.width * ren.SCALE_FACTOR), 2);
         if (snakeHead.?.direction == .LEFT) {
             newX -= delta;
         } else if (snakeHead.?.direction == .RIGHT) {

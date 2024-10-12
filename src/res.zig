@@ -166,6 +166,8 @@ pub const AUDIO_MED = 17;
 pub const UNIT = 32;
 pub const SCREEN_WIDTH = 1440;
 pub const SCREEN_HEIGHT = 960;
+pub const n = SCREEN_WIDTH / UNIT;
+pub const m = SCREEN_HEIGHT / UNIT;
 
 pub const FONT_SIZE = 32;
 pub const PATH_LEN = 1024;
@@ -389,8 +391,8 @@ fn loadTileset(path: [*]const u8, origin: ?*c.SDL_Texture) bool {
 pub fn loadAudio() !bool {
     for (0..bgmNums) |i| {
         const mus = c.Mix_LoadMUS(bgmsPath[i].ptr);
-        if (mus) |m| {
-            bgms[i] = m;
+        if (mus) |mu| {
+            bgms[i] = mu;
         } else {
             _ = c.printf(
                 "Failed to load %s: SDL_mixer Error: %s\n",

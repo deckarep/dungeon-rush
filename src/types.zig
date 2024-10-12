@@ -115,6 +115,42 @@ pub const Score = struct {
     rank: f64,
 };
 
+pub const BlockType = enum {
+    BLOCK_TRAP,
+    BLOCK_WALL,
+    BLOCK_FLOOR,
+    BLOCK_EXIT,
+};
+
+pub const Block = struct {
+    bp: BlockType,
+    x: c_int,
+    y: c_int,
+    // Block id
+    bid: c_int,
+    // Used for trap block
+    enable: bool,
+    ani: *Animation,
+};
+
+pub const ItemType = enum {
+    ITEM_NONE,
+    // Unpicked hero on the floor
+    ITEM_HERO,
+    // Red meds
+    ITEM_HP_MEDICINE,
+    // Yellow meds
+    ITEM_EXTRA_MEDICINE,
+    ITEM_WEAPON,
+};
+
+pub const Item = struct {
+    type: ItemType,
+    id: c_int,
+    belong: c_int,
+    ani: *Animation,
+};
+
 pub fn initTexture(
     self: *Texture,
     origin: *c.SDL_Texture,

@@ -7,6 +7,7 @@ const tps = @import("types.zig");
 const pl = @import("player.zig");
 const gm = @import("game.zig");
 const spr = @import("sprite.zig");
+const mp = @import("map.zig");
 const c = @import("cdefs.zig").c;
 
 const UI_MAIN_GAP = 40;
@@ -39,8 +40,6 @@ fn moveCursor(optsNum: c_int) bool {
                     break;
                 },
                 c.SDLK_ESCAPE => {
-                    // rc: sleep added by me to give audio enough time.
-                    defer std.time.sleep(std.time.ns_per_ms * 200);
                     quit = true;
                     cursorPos = optsNum;
                     aud.playAudio(res.AUDIO_BUTTON1);
@@ -65,20 +64,20 @@ fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
         res.SCREEN_HEIGHT / 2,
         .UP,
     );
-    const lineGap: c_int = res.FONT_SIZE + (res.FONT_SIZE >> 1);
+    const lineGap: c_int = res.FONT_SIZE + res.FONT_SIZE / 2;
     const totalHeight: c_int = lineGap * (optionsNum - 1);
-    const startY: c_int = (res.SCREEN_HEIGHT - totalHeight) >> 1;
+    const startY: c_int = @divTrunc((res.SCREEN_HEIGHT - totalHeight), 2);
     while (!moveCursor(optionsNum)) {
         const sprite: *spr.Sprite = @alignCast(@ptrCast(player.sprites.head.?.element));
         sprite.ani.at = .AT_CENTER;
-        sprite.x = (res.SCREEN_WIDTH >> 1) - (options[@intCast(cursorPos)].width >> 1) - (res.UNIT >> 1);
+        sprite.x = (res.SCREEN_WIDTH / 2) - @divTrunc(options[@intCast(cursorPos)].width, 2) - (res.UNIT / 2);
         sprite.y = startY + cursorPos * lineGap;
         ren.updateAnimationOfSprite(sprite);
         ren.renderUi();
         const optsNum: usize = @intCast(optionsNum);
         for (0..optsNum) |i| {
             const ii: c_int = @intCast(i);
-            _ = ren.renderCenteredText(options[i], res.SCREEN_WIDTH >> 1, startY + ii * lineGap, 1);
+            _ = ren.renderCenteredText(options[i], res.SCREEN_WIDTH / 2, startY + ii * lineGap, 1);
         }
         // Update Screen
         c.SDL_RenderPresent(ren.renderer);
@@ -91,20 +90,21 @@ fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
 }
 
 pub fn baseUi(w: c_int, h: c_int) void {
-    _ = w;
-    _ = h;
     ren.initRenderer();
-    // initBlankMap(w, h);
-    // pushMapToRender();
+
+    // if (true) {
+    //     @panic("Now I'm here!");
+    // }
+    mp.initBlankMap(w, h);
+    mp.pushMapToRender();
 }
 
 pub fn mainUi() void {
     baseUi(30, 12);
-    std.log.info("about to playBgm(0)", .{});
     aud.playBgm(0);
 
-    var startX: c_int = res.SCREEN_WIDTH / 5 + 32;
-    var startY: c_int = res.SCREEN_HEIGHT / 2 - 70;
+    var startY: c_int = (res.SCREEN_HEIGHT / 2) - 70;
+    var startX: c_int = (res.SCREEN_WIDTH / 5) + 32;
 
     // Title
     _ = ren.createAndPushAnimation(

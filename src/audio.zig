@@ -3,19 +3,16 @@ const res = @import("res.zig");
 
 const BGM_FADE_DURATION = 800;
 
-var nowBgmId: usize = undefined;
+var nowBgmId: c_int = -1;
 
-pub fn playBgm(id: usize) void {
+pub fn playBgm(id: c_int) void {
     if (nowBgmId == id) {
-        _ = c.printf("returning...");
         return;
     }
-    if (nowBgmId == undefined) {
-        _ = c.printf("a...");
-        _ = c.Mix_PlayMusic(res.bgms[id], -1);
+    if (nowBgmId == -1) {
+        _ = c.Mix_PlayMusic(res.bgms[@intCast(id)], -1);
     } else {
-        _ = c.printf("b...");
-        _ = c.Mix_FadeInMusic(res.bgms[id], -1, BGM_FADE_DURATION);
+        _ = c.Mix_FadeInMusic(res.bgms[@intCast(id)], -1, BGM_FADE_DURATION);
     }
 
     nowBgmId = id;
@@ -23,7 +20,7 @@ pub fn playBgm(id: usize) void {
 
 pub fn stopBgm() void {
     _ = c.Mix_FadeOutMusic(BGM_FADE_DURATION);
-    nowBgmId = undefined;
+    nowBgmId = -1;
 }
 
 pub fn playAudio(id: usize) void {
