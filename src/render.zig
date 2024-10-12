@@ -142,6 +142,56 @@ pub fn updateAnimationOfSnake(snake: *pl.Snake) void {
     }
 }
 
+pub fn updateAnimationOfBlock(self: *tps.Block) void {
+    const ani = self.ani;
+    ani.x = self.x;
+    ani.y = self.y;
+
+    if (self.bp == .BLOCK_TRAP) {
+        self.ani.origin = &res.textures[
+            if (self.enable) res.RES_FLOOR_SPIKE_ENABLED else res.RES_FLOOR_SPIKE_DISABLED
+        ];
+    } else if (self.bp == .BLOCK_EXIT) {
+        if (self.enable and self.ani.origin != &res.textures[res.RES_FLOOR_EXIT]) {
+            self.ani.origin = &res.textures[res.RES_FLOOR_EXIT];
+            _ = createAndPushAnimation(
+                &animationsList[RENDER_LIST_MAP_SPECIAL_ID],
+                &res.textures[res.RES_FLOOR_EXIT],
+                &res.effects[res.EFFECT_BLINK],
+                .LOOP_INFI,
+                30,
+                self.x,
+                self.y,
+                c.SDL_FLIP_NONE,
+                0,
+                .AT_TOP_LEFT,
+            );
+        }
+    }
+}
+
+pub fn clearBindInAnimationsList(sprite: *spr.Sprite, id: c_int) void {
+    const p = animationsList[id].head;
+    const nxt: ?*adt.LinkNode = null;
+    while (p != null) : (p = nxt) {
+        nxt = p.nxt;
+        const ani: *tps.Animation = @alignCast(@ptrCast(p.element));
+        if (ani.bind == sprite) {
+            ani.bind = null;
+            if (ani.dieWithBind) {
+                tps.removeLinkNode(&animationsList[id], p);
+                tps.destroyAnimation(ani);
+            }
+        }
+    }
+}
+
+pub fn bindAnimationToSprite(ani: *tps.Animation, sprite: *spr.Sprite, isStrong: bool) void {
+    ani.bind = sprite;
+    ani.dieWithBind = isStrong;
+    updateAnimationFromBind(ani);
+}
+
 pub fn updateAnimationFromBind(ani: *tps.Animation) void {
     if (ani.bind) |bnd| {
         const sprite: *spr.Sprite = @alignCast(@ptrCast(bnd));

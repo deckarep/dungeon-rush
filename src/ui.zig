@@ -91,12 +91,42 @@ fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
 
 pub fn baseUi(w: c_int, h: c_int) void {
     ren.initRenderer();
-
-    // if (true) {
-    //     @panic("Now I'm here!");
-    // }
     mp.initBlankMap(w, h);
     mp.pushMapToRender();
+}
+
+fn chooseLevelUi() bool {
+    baseUi(30, 12);
+    const optsNum = 3;
+
+    const opts: [*]*tps.Text = @alignCast(@ptrCast(c.malloc(@sizeOf(*tps.Text) * optsNum)));
+    for (0..optsNum) |i| {
+        opts[i] = &res.texts[i + 10];
+    }
+    const opt = chooseOptions(optsNum, opts);
+    if (opt != optsNum) {
+        gm.setLevel(opt);
+    }
+    ren.clearRenderer();
+
+    // NOTE: Original code didn't free the opts!!!
+    // NOTE: when I move away from malloc/free this crap goes away
+    // But c.free doesn't know how to deal with a Zig multi-pointer.
+    // So we cast it to a an opaque.
+    const freeStylePointer: ?*anyopaque = @ptrCast(opts);
+    c.free(freeStylePointer);
+
+    return opt != optsNum;
+}
+
+fn launchLocalGame(localPlayerNum: c_int) void {
+    const scores = gm.startGame(localPlayerNum, 0, true);
+    _ = scores;
+    //rankListUi(localPlayerNum, scores);
+    //   for (int i = 0; i < localPlayerNum; i++) {
+    //     updateLocalRanklist(scores[i]);
+    //   }
+    //   destroyRanklist(localPlayerNum, scores);
 }
 
 pub fn mainUi() void {
@@ -344,6 +374,9 @@ pub fn mainUi() void {
     // Working on chooseOptions next switch case below.
     switch (opt) {
         0 => {
+            if (chooseLevelUi()) {
+                launchLocalGame(1);
+            }
             _ = c.printf("option 0 - local game!!\n");
         },
         1 => {

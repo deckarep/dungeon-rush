@@ -1,3 +1,4 @@
+const std = @import("std");
 const pl = @import("player.zig");
 const tps = @import("types.zig");
 const res = @import("res.zig");
@@ -44,7 +45,10 @@ var GAME_MONSTERS_HP_ADJUST: f64 = undefined;
 var GAME_MONSTERS_WEAPON_BUFF_ADJUST: f64 = undefined;
 var GAME_MONSTERS_GEN_FACTOR: f64 = undefined;
 
-fn setLevel(level: c_int) void {
+pub fn setLevel(level: c_int) void {
+    const fLvl: f64 = @floatFromInt(level);
+    const fStg: f64 = @floatFromInt(stage);
+
     gameLevel = level;
     spritesSetting = 25;
     bossSetting = 2;
@@ -53,11 +57,11 @@ fn setLevel(level: c_int) void {
     GAME_LUCKY = 1.0;
     GAME_DROPOUT_YELLOW_FLASKS = 0.3;
     GAME_DROPOUT_WEAPONS = 0.7;
-    GAME_TRAP_RATE = 0.005 * (level + 1);
-    GAME_MONSTERS_HP_ADJUST = 1 + level * 0.8 + stage * level * 0.1;
-    GAME_MONSTERS_GEN_FACTOR = 1 + level * 0.5 + stage * level * 0.05;
-    GAME_MONSTERS_WEAPON_BUFF_ADJUST = 1 + level * 0.8 + stage * level * 0.02;
-    ai.AI_LOCK_LIMIT = @max(1, 7 - level * 2 - stage / 2);
+    GAME_TRAP_RATE = 0.005 * (fLvl + 1);
+    GAME_MONSTERS_HP_ADJUST = 1 + fLvl * 0.8 + fStg * fLvl * 0.1;
+    GAME_MONSTERS_GEN_FACTOR = 1 + fLvl * 0.5 + fStg * fLvl * 0.05;
+    GAME_MONSTERS_WEAPON_BUFF_ADJUST = 1 + fLvl * 0.8 + fStg * fLvl * 0.02;
+    ai.AI_LOCK_LIMIT = @max(1, 7 - fLvl * 2 - fStg / 2);
     GAME_WIN_NUM = 10 + level * 5 + stage * 3;
     if (level == 0) {
         // wow, such empty.
@@ -75,8 +79,20 @@ fn setLevel(level: c_int) void {
         flasksSetting = 3;
         bossSetting = 5;
     }
-    spritesSetting += stage / 2 * (level + 1);
-    bossSetting += stage / 3;
+    spritesSetting += @divTrunc(stage, 2) * (level + 1);
+    bossSetting += @divTrunc(stage, 3);
+}
+
+pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*]*tps.Score {
+    _ = remotePlayers;
+    _ = localFirst;
+    std.log.info("startGame!! was reached!", .{});
+
+    // This gets free'd in the storage.zig code (not built yet!)
+    const scores: [*]*tps.Score = @alignCast(@ptrCast(c.malloc(
+        @sizeOf(*tps.Score) * @as(usize, @intCast(localPlayers)),
+    )));
+    return scores;
 }
 
 pub fn appendSpriteToSnake(
@@ -130,10 +146,10 @@ pub fn appendSpriteToSnake(
     // push ani
     ren.pushAnimationToRender(ren.RENDER_LIST_SPRITE_ID, sprite.ani);
 
-    // TODO!!!
-    // apply buff
-    //if (snake->buffs[BUFF_DEFFENCE])
-    //     shieldSprite(sprite, snake->buffs[BUFF_DEFFENCE]);
+    // TODO: I think the buffs array should be booleans (possibly, confirm later)
+    if (snake.buffs[tps.BUFF_DEFENCE] == 1) {
+        shieldSprite(sprite, snake.buffs[tps.BUFF_DEFENCE]);
+    }
 }
 
 pub fn initPlayer(playerType: pl.PlayerType) void {
@@ -166,4 +182,34 @@ pub fn destroySnake(snake: *pl.Snake) void {
     tps.destroyScore(snake.score);
     //snake.score = null; // currently it's non-nullable.
     c.free(snake);
+}
+
+// Put buff animation on snake
+
+fn shieldSprite(sprite: *spr.Sprite, duration: c_int) void {
+    const ani = ren.createAndPushAnimation(
+        &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
+        &res.textures[res.RES_HOLY_SHIELD],
+        null,
+        .LOOP_LIFESPAN,
+        40,
+        sprite.x,
+        sprite.y,
+        c.SDL_FLIP_NONE,
+        0,
+        .AT_BOTTOM_CENTER,
+    );
+    ren.bindAnimationToSprite(ani, sprite, true);
+    ani.lifeSpan = duration;
+}
+
+pub fn shieldSnake(snake: *pl.Snake, duration: c_int) void {
+    if (snake.buffs[tps.BUFF_DEFENCE] == 1) return;
+    snake.buffs[tps.BUFF_DEFENCE] += duration;
+
+    const p = snake.sprites.head;
+    while (p != null) : (p = p.nxt) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.element));
+        shieldSprite(sprite, duration);
+    }
 }
