@@ -41,9 +41,9 @@ pub fn createBullet(
 }
 
 pub fn moveBullet(bullet: *Bullet) void {
-    const speed = bullet.parent.bulletSpeed;
-    bullet.x += @cos(bullet.rad) * speed;
-    bullet.y += @sin(bullet.rad) * speed;
+    const speed: f64 = @floatFromInt(bullet.parent.bulletSpeed);
+    bullet.x += @intFromFloat(@cos(bullet.rad) * speed);
+    bullet.y += @intFromFloat(@sin(bullet.rad) * speed);
     bullet.ani.x = bullet.x;
     bullet.ani.y = bullet.y;
 }

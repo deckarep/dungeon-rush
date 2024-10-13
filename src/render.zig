@@ -140,9 +140,9 @@ pub fn updateAnimationOfSprite(self: *spr.Sprite) void {
 }
 
 pub fn updateAnimationOfSnake(snake: *pl.Snake) void {
-    const p = snake.sprites.head;
-    while (p != null) : (p = p.nxt) {
-        updateAnimationOfSprite(p.element);
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        updateAnimationOfSprite(@alignCast(@ptrCast(p.?.element)));
     }
 }
 

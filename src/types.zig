@@ -60,7 +60,7 @@ pub const Texture = struct {
 };
 
 pub const Text = struct {
-    text: []const u8,
+    text: [*:0]const u8,
     width: c_int,
     height: c_int,
     origin: *c.SDL_Texture,
@@ -225,12 +225,12 @@ pub fn copyAnimation(src: *const Animation, dest: *Animation) void {
     }
 }
 
-pub fn initText(self: *Text, str: []const u8, color: c.SDL_Color) bool {
+pub fn initText(self: *Text, str: [*:0]const u8, color: c.SDL_Color) bool {
     self.color = color;
     self.text = str; // safe to just reference global static read-only strings.
 
     // Render text surface
-    const textSurface = c.TTF_RenderText_Solid(res.font, str.ptr, color);
+    const textSurface = c.TTF_RenderText_Solid(res.font, str, color);
     if (textSurface == null) {
         _ = c.printf("Unable to render text surface! SDL_ttf Error: %s\n", c.TTF_GetError());
     } else {
@@ -254,7 +254,7 @@ pub fn initText(self: *Text, str: []const u8, color: c.SDL_Color) bool {
 
 pub fn createText(str: [*:0]const u8, color: c.SDL_Color) *Text {
     const self: *Text = @alignCast(@ptrCast(c.malloc(@sizeOf(Text))));
-    initText(self, str, color);
+    _ = initText(self, str, color);
     return self;
 }
 
@@ -399,7 +399,7 @@ pub fn removeAnimationFromLinkList(self: *adt.LinkList, ani: *Animation) void {
     }
 }
 
-fn changeSpriteDirection(self: *adt.LinkNode, newDirection: Direction) void {
+pub fn changeSpriteDirection(self: *adt.LinkNode, newDirection: Direction) void {
     const sprite: *spr.Sprite = @alignCast(@ptrCast(self.element.?));
     if (sprite.direction == newDirection) {
         return;

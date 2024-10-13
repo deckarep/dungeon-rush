@@ -218,7 +218,7 @@ const tilesetPath = &[_][]const u8{
     "res/drawable/powerful_bow",
 };
 
-const textList = &[_][]const u8{
+const textList = &[_][*:0]const u8{
     // r.c.: Moved to a static embedded list cause I don't want to do file-io right now.
     "DungeonRush",
     "By Rapiz",

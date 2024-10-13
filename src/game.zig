@@ -12,6 +12,9 @@ const aud = @import("audio.zig");
 const hlp = @import("helper.zig");
 const c = @import("cdefs.zig").c;
 
+const SPIKE_ANI_DURATION = 20;
+const SPIKE_OUT_INTERVAL = 120;
+const SPIKE_TIME_MASK = 600;
 const SPRITES_MAX_NUM = 1024;
 const MOVE_STEP = 2;
 const GAME_MONSTERS_TEAM = 9;
@@ -39,7 +42,7 @@ var bossSetting: c_int = undefined;
 // Win
 var GAME_WIN_NUM: c_int = undefined;
 var termCount: c_int = undefined;
-var status: c_int = undefined;
+var status: GameStatus = undefined;
 var willTerm: bool = undefined;
 
 // Drop rate
@@ -101,7 +104,7 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*
         scores[i] = tps.createScore();
     }
 
-    var currentStatus: c_int = undefined;
+    var currentStatus: GameStatus = undefined;
     stage = 0;
     // NOTE: r.c.: ugly do-while converted to while with a break.
     while (true) {
@@ -113,7 +116,7 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*
         }
         destroyGame(currentStatus);
         stage += 1;
-        if (currentStatus != 0) break;
+        if (currentStatus != .STAGE_CLEAR) break;
     }
 
     return scores;
@@ -184,6 +187,63 @@ pub fn initPlayer(playerType: pl.PlayerType) void {
     playersCount += 1;
 }
 
+fn updateMap() void {
+    const maskedTime = ren.renderFrames % SPIKE_TIME_MASK;
+
+    for (0..res.SCREEN_WIDTH / res.UNIT) |i| {
+        for (0..res.SCREEN_HEIGHT / res.UNIT) |j| {
+            const ii: c_int = @intCast(i);
+            const jj: c_int = @intCast(j);
+            // Bug maybe: why no .BLOCK_TRAP tiles found?
+            if (mp.hasMap[i][j] and map[i][j].bp == .BLOCK_TRAP) {
+                if (maskedTime == 0) {
+                    _ = ren.createAndPushAnimation(
+                        &ren.animationsList[ren.RENDER_LIST_MAP_SPECIAL_ID],
+                        &res.textures[res.RES_FLOOR_SPIKE_OUT_ANI],
+                        null,
+                        .LOOP_ONCE,
+                        SPIKE_ANI_DURATION,
+                        ii * res.UNIT,
+                        jj * res.UNIT,
+                        c.SDL_FLIP_NONE,
+                        0,
+                        .AT_TOP_LEFT,
+                    );
+                } else if (maskedTime == SPIKE_ANI_DURATION - 1) {
+                    map[i][j].enable = true;
+                    map[i][j].ani.origin = &res.textures[res.RES_FLOOR_SPIKE_ENABLED];
+                } else if (maskedTime == SPIKE_ANI_DURATION + SPIKE_OUT_INTERVAL - 1) {
+                    _ = ren.createAndPushAnimation(
+                        &ren.animationsList[ren.RENDER_LIST_MAP_SPECIAL_ID],
+                        &res.textures[res.RES_FLOOR_SPIKE_IN_ANI],
+                        null,
+                        .LOOP_ONCE,
+                        SPIKE_ANI_DURATION,
+                        ii * res.UNIT,
+                        jj * res.UNIT,
+                        c.SDL_FLIP_NONE,
+                        0,
+                        .AT_TOP_LEFT,
+                    );
+                    map[i][j].enable = false;
+                    map[i][j].ani.origin = &res.textures[res.RES_FLOOR_SPIKE_DISABLED];
+                }
+            }
+        }
+    }
+}
+
+fn updateBuffDuration() void {
+    for (0..@intCast(spritesCount)) |i| {
+        const snake = spriteSnake[i];
+        for (tps.BUFF_BEGIN..tps.BUFF_END) |j| {
+            if (snake.buffs[j] > 0) {
+                snake.buffs[j] -= 1;
+            }
+        }
+    }
+}
+
 fn isWin() bool {
     if (playersCount != 1) return false;
     return spriteSnake[0].num >= GAME_WIN_NUM;
@@ -196,11 +256,12 @@ const GameStatus = enum {
 
 fn setTerm(s: GameStatus) void {
     aud.stopBgm();
-    if (s == 0) {
-        aud.playAudio(res.AUDIO_WIN);
-    } else {
-        aud.playAudio(res.AUDIO_LOSE);
+
+    switch (s) {
+        .STAGE_CLEAR => aud.playAudio(res.AUDIO_WIN),
+        .GAME_OVER => aud.playAudio(res.AUDIO_LOSE),
     }
+
     status = s;
     willTerm = true;
     termCount = ren.RENDER_TERM_COUNT;
@@ -213,15 +274,15 @@ fn pauseGame() void {
     ren.dim();
 
     const text = tps.createText("Paused", tps.WHITE);
-    ren.renderCenteredText(text, tps.SCREEN_WIDTH / 2, tps.SCREEN_HEIGHT / 2, 1);
+    _ = ren.renderCenteredText(text, res.SCREEN_WIDTH / 2, res.SCREEN_HEIGHT / 2, 1);
     _ = c.SDL_RenderPresent(ren.renderer);
     tps.destroyText(text);
 
     var e: c.SDL_Event = undefined;
     var quit = false;
     while (!quit) {
-        while (c.SDL_PollEvent(&e)) {
-            if (e.type == .SDL_QUIT or e.type == .SDL_KEYDOWN) {
+        while (c.SDL_PollEvent(&e) != 0) {
+            if (e.type == c.SDL_QUIT or e.type == c.SDL_KEYDOWN) {
                 quit = true;
                 break;
             }
@@ -232,23 +293,23 @@ fn pauseGame() void {
     aud.playAudio(res.AUDIO_BUTTON1);
 }
 
-fn arrowsToDirection(keyValue: c_int) c_int {
+fn arrowsToDirection(keyValue: c_int) ?tps.Direction {
     switch (keyValue) {
         c.SDLK_LEFT => return .LEFT,
         c.SDLK_RIGHT => return .RIGHT,
         c.SDLK_UP => return .UP,
         c.SDLK_DOWN => return .DOWN,
-        else => return -1,
+        else => return null,
     }
 }
 
-fn wasdToDirection(keyValue: c_int) c_int {
+fn wasdToDirection(keyValue: c_int) ?tps.Direction {
     switch (keyValue) {
         c.SDLK_a => return .LEFT,
         c.SDLK_d => return .RIGHT,
         c.SDLK_w => return .UP,
         c.SDLK_s => return .DOWN,
-        else => return -1,
+        else => return null,
     }
 }
 
@@ -446,6 +507,7 @@ fn initEnemies(enemiesCount: c_int) void {
         ));
     }
 
+    // Adds bosses depending on bossSetting.
     for (0..@intCast(bossSetting)) |_| {
         const pos = getAvailablePos();
         _ = generateEnemy(
@@ -502,7 +564,7 @@ fn clearItemMap() void {
 
 fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
     aud.randomBgm();
-    status = 0;
+    status = .STAGE_CLEAR;
     termCount = 0;
     willTerm = false;
     spritesCount = 0;
@@ -537,9 +599,39 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
     std.log.info("initGame finished...", .{});
 }
 
-fn destroyGame(currentStatus: c_int) void {
-    _ = currentStatus;
-    // TODO
+fn destroyGame(currentStatus: GameStatus) void {
+    while (spritesCount > 0) {
+        spritesCount -= 1;
+        destroySnake(spriteSnake[@intCast(spritesCount)]);
+        // spriteSnake[@intCast(spritesCount)] = null; r.c. - current non-nullable is used.
+    }
+
+    for (0..ren.ANIMATION_LINK_LIST_NUM) |i| {
+        tps.destroyAnimationsByLinkList(&ren.animationsList[i]);
+    }
+
+    var p = bullets.?.head;
+    while (p != null) : (p = p.?.nxt) {
+        blt.destroyBullet(@alignCast(@ptrCast(p.?.element)));
+        p.?.element = null;
+    }
+
+    tps.destroyLinkList(bullets.?);
+    bullets = null;
+
+    ren.blackout();
+
+    var msg: [*:0]const u8 = "Game Over";
+    if (currentStatus == .STAGE_CLEAR) {
+        msg = "Stage Clear";
+    }
+
+    const text = tps.createText(msg, tps.WHITE);
+    _ = ren.renderCenteredText(text, res.SCREEN_WIDTH / 2, res.SCREEN_HEIGHT / 2, 2);
+    tps.destroyText(text);
+    _ = c.SDL_RenderPresent(ren.renderer);
+    std.time.sleep(ren.RENDER_GAMEOVER_DURATION * std.time.ns_per_s);
+    ren.clearRenderer();
 }
 
 ///  Helper function to determine whehter a snake is a player
@@ -550,15 +642,55 @@ inline fn isPlayer(snake: *pl.Snake) bool {
     return false;
 }
 
+fn moveSprite(sprite: *spr.Sprite, step: c_int) void {
+    const dir = sprite.direction;
+
+    switch (dir) {
+        .LEFT => sprite.x -= step,
+        .RIGHT => sprite.x += step,
+        .UP => sprite.y -= step,
+        .DOWN => sprite.y += step,
+    }
+}
+
+fn moveSnake(snake: *pl.Snake) void {
+    if (snake.buffs[tps.BUFF_FROZEN] == 1) return;
+
+    var step = snake.moveStep;
+    if (snake.buffs[tps.BUFF_SLOWDOWN] == 1) {
+        step = @max(@divTrunc(step, 2), 1);
+    }
+
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        const sprite: *spr.Sprite = @ptrCast(@alignCast(p.?.element));
+
+        for (0..@intCast(step)) |_| {
+            const b = &sprite.posBuffer;
+            var firstSlot = b.buffer[0];
+
+            while (b.size > 0 and sprite.x == firstSlot.x and sprite.y == firstSlot.y) {
+                tps.changeSpriteDirection(p.?, firstSlot.direction);
+                b.size -= 1;
+                for (0..@intCast(b.size)) |j| {
+                    b.buffer[j] = b.buffer[j + 1];
+                }
+                firstSlot = b.buffer[0];
+            }
+            moveSprite(sprite, 1);
+        }
+    }
+}
+
 fn handleLocalKeypress() bool {
     // Static var in Zig.
     const S = struct {
         var e: c.SDL_Event = undefined;
     };
-    var quit = false;
 
-    while (c.SDL_PollEvent(&S.e)) {
-        if (&S.e.type == c.SDL_QUIT) {
+    var quit = false;
+    while (c.SDL_PollEvent(&S.e) != 0) {
+        if (S.e.type == c.SDL_QUIT) {
             quit = true;
             setTerm(.GAME_OVER);
         } else if (S.e.type == c.SDL_KEYDOWN) {
@@ -569,13 +701,14 @@ fn handleLocalKeypress() bool {
 
             var id: c_int = 0;
             while (id <= 1 and id < playersCount) : (id += 1) {
-                const player = spriteSnake[id];
+                const player = spriteSnake[@intCast(id)];
+                // BUG: for player 0, why isn't .LOCAL condition passing????
                 if (player.playerType == .LOCAL) {
-                    if (!player.buffs[tps.BUFF_FROZEN] and player.sprites.head != null) {
+                    if (player.buffs[tps.BUFF_FROZEN] != 0 and player.sprites.head != null) {
                         const direction = if (id == 0) arrowsToDirection(keyValue) else wasdToDirection(keyValue);
-                        if (direction >= 0) {
+                        if (direction) |dir| {
                             //sendPlayerMovePacket(id, direction); // TODO for networking.
-                            tps.changeSpriteDirection(player.sprites.head, direction);
+                            tps.changeSpriteDirection(player.sprites.head.?, dir);
                         }
                     }
                 }
@@ -586,11 +719,52 @@ fn handleLocalKeypress() bool {
     return quit;
 }
 
-fn gameLoop() c_int {
-    // TODO:
-    for (0..3_000) |_| {
+fn gameLoop() GameStatus {
+    var quit = false;
+    while (!quit) {
+        quit = handleLocalKeypress();
+        // if (quit) sendGameOverPacket(3);
+        // if (lanClientSocket != NULL) handleLanKeypress();
+
+        updateMap();
+
+        for (0..@intCast(spritesCount)) |i| {
+            if (spriteSnake[i].sprites.head == null) {
+                continue; // some snakes killed by before but not clean up yet
+
+            }
+            // if (i >= playersCount && renderFrames % AI_DECIDE_RATE == 0)
+            //     AiInput(spriteSnake[i]);
+            moveSnake(spriteSnake[i]);
+            // makeSnakeAttack(spriteSnake[i]);
+        }
+
+        // Move bullets.
+        if (bullets) |b| {
+            var p = b.head;
+            while (p != null) : (p = p.?.nxt) {
+                blt.moveBullet(@ptrCast(@alignCast(p.?.element)));
+            }
+        }
+
+        // if (renderFrames % GAME_MAP_RELOAD_PERIOD == 0)
+        // initItemMap(herosSetting - herosCount, flasksSetting - flasksCount);
+
+        // Frozen behavior.
+        for (0..@intCast(spritesCount)) |i| {
+            ren.updateAnimationOfSnake(spriteSnake[i]);
+            if (spriteSnake[i].buffs[tps.BUFF_FROZEN] == 1) {
+                var p = spriteSnake[i].sprites.head;
+                while (p != null) : (p = p.?.nxt) {
+                    const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                    sprite.ani.currentFrame -= 1;
+                }
+            }
+        }
+
         ren.render();
+        updateBuffDuration();
     }
 
-    return 0;
+    return status;
 }
