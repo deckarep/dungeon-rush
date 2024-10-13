@@ -17,7 +17,7 @@ const MAP_WALL_HOW_DECORATED = 0.1;
 
 var isTrap: [MAP_SIZE][MAP_SIZE]bool = undefined;
 var primMap: [MAP_SIZE][MAP_SIZE]bool = undefined;
-var hasMap: [MAP_SIZE][MAP_SIZE]bool = undefined;
+pub var hasMap: [MAP_SIZE][MAP_SIZE]bool = undefined;
 
 var exitX: c_int = undefined;
 var exitY: c_int = undefined;
@@ -323,7 +323,6 @@ pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void 
     for (0..nn) |i| {
         for (0..mm) |j| {
             if (primMap[i][j]) {
-                std.log.info("fuck hell", .{});
                 hasMap[i * 2][j * 2] = true;
                 hasMap[i * 2 + 1][j * 2] = true;
                 hasMap[i * 2][j * 2 + 1] = true;

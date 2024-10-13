@@ -1,10 +1,8 @@
 const tps = @import("types.zig");
 const rng = @import("prng.zig");
-// int randInt(int l, int r) { return prngRand() % (r - l + 1) + l; }
-// double randDouble() { return (double)prngRand() / PRNG_MAX; }
 
-pub fn inr(x: c_int, l: c_int, r: c_int) bool {
-    return x <= r and l <= x;
+pub inline fn inr(val: c_int, lower: c_int, upper: c_int) bool {
+    return lower <= val and val <= upper;
 }
 
 pub fn randInt(l: c_int, r: c_int) c_int {

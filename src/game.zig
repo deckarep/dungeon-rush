@@ -9,10 +9,12 @@ const ren = @import("render.zig");
 const mp = @import("map.zig");
 const ai = @import("ai.zig");
 const aud = @import("audio.zig");
+const hlp = @import("helper.zig");
 const c = @import("cdefs.zig").c;
 
 const SPRITES_MAX_NUM = 1024;
 const MOVE_STEP = 2;
+const GAME_MONSTERS_TEAM = 9;
 
 // Map
 pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
@@ -274,8 +276,188 @@ pub fn destroySnake(snake: *pl.Snake) void {
     c.free(snake);
 }
 
+fn generateEnemy(
+    x: c_int,
+    y: c_int,
+    minLen: c_int,
+    maxLen: c_int,
+    minId: c_int,
+    maxId: c_int,
+    step: c_int,
+) c_int {
+    spriteSnake[@intCast(spritesCount)] = pl.createSnake(step, GAME_MONSTERS_TEAM, .COMPUTER);
+    const snake = spriteSnake[@intCast(spritesCount)];
+    spritesCount += 1;
+    hasEnemy[@intCast(x)][@intCast(y)] = true;
+    const vertical: bool = hlp.randInt(0, 1) == 1;
+    var len: c_int = 1;
+
+    if (vertical) {
+        // just 3 casted aliaes
+        const xx: usize = @intCast(x);
+        const yy: usize = @intCast(y);
+        const llen: usize = @intCast(len);
+
+        while (hlp.inr(y + len, 0, res.m - 1) and mp.hasMap[xx][yy + llen] and
+            map[xx][yy + llen].bp == .BLOCK_FLOOR and
+            itemMap[xx][yy + llen].type == .ITEM_NONE and !hasEnemy[xx][yy + llen])
+        {
+            len += 1;
+        }
+    } else {
+        // just 3 casted aliaes
+        const xx: usize = @intCast(x);
+        const yy: usize = @intCast(y);
+        const llen: usize = @intCast(len);
+        while (hlp.inr(x + len, 0, res.n - 1) and mp.hasMap[xx + llen][yy] and
+            map[xx + llen][yy].bp == .BLOCK_FLOOR and
+            itemMap[xx + llen][yy].type == .ITEM_NONE and !hasEnemy[xx + llen][yy])
+        {
+            len += 1;
+        }
+    }
+
+    // NOTE: r.c. - since Zig can't shadow, and don't want to create new vars, just passing
+    // @min() output directly into hlp.randInt below.
+    len = hlp.randInt(@min(minLen, len), @min(maxLen, len));
+
+    for (0..@intCast(len)) |i| {
+        var xx: c_int = x;
+        var yy: c_int = y;
+
+        if (vertical) {
+            yy += @intCast(i);
+        } else {
+            xx += @intCast(i);
+        }
+
+        hasEnemy[@intCast(xx)][@intCast(yy)] = true;
+        xx *= res.UNIT;
+        yy *= res.UNIT;
+        yy += res.UNIT;
+        xx += res.UNIT / 2;
+        const spriteId: c_int = hlp.randInt(minId, maxId);
+        appendSpriteToSnake(
+            snake,
+            spriteId,
+            xx,
+            yy,
+            if (vertical) .DOWN else .RIGHT,
+        );
+    }
+    return len;
+}
+
+fn getAvailablePos() tps.Point {
+    var x: c_int = undefined;
+    var y: c_int = undefined;
+
+    while (true) {
+        x = hlp.randInt(0, res.n - 1);
+        y = hlp.randInt(0, res.m - 1);
+
+        // r.c. - This code is different than the C version, the C one has undefined behavior.
+        if (!hlp.inr(x, 1, res.n - 2) or !hlp.inr(y, 1, res.m - 2)) {
+            // NOTE: Seems like a bug was caught in Zig.
+            // Anytime x or y falls on the edge of the map we just pick a new random tuple.
+            // Otherwise the code below can panic for example: xx - 1 panics when xx is a 0.
+            continue;
+        }
+
+        const xx: usize = @intCast(x);
+        const yy: usize = @intCast(y);
+
+        // std.log.info("xx => {d}", .{xx});
+        // std.log.info("yy => {d}", .{yy});
+
+        const ha: c_int = @intFromBool(!mp.hasMap[xx - 1][yy]);
+        const hb: c_int = @intFromBool(!mp.hasMap[xx + 1][yy]);
+        const hc: c_int = @intFromBool(!mp.hasMap[xx][yy + 1]);
+        const hd: c_int = @intFromBool(!mp.hasMap[xx][yy - 1]);
+
+        const cond = !mp.hasMap[xx][yy] or map[xx][yy].bp != .BLOCK_FLOOR or
+            itemMap[xx][yy].type != .ITEM_NONE or hasEnemy[xx][yy] or (ha + hb + hc + hd) >= 1;
+
+        if (!cond) break;
+    }
+
+    return .{ .x = x, .y = y };
+}
+
 fn initEnemies(enemiesCount: c_int) void {
-    _ = enemiesCount;
+    hasEnemy = std.mem.zeroes([mp.MAP_SIZE][mp.MAP_SIZE]bool);
+
+    // NOTE: r.c. - limit scope of i indexer.
+    {
+        var i: c_int = -2;
+        while (i <= 2) : (i += 1) {
+            var j: c_int = -2;
+            while (j <= 2) : (j += 1) {
+                const a: c_int = res.n / 2 + i;
+                const b: c_int = res.m / 2 + j;
+                hasEnemy[@intCast(a)][@intCast(b)] = true;
+            }
+        }
+    }
+
+    var i: usize = 0;
+    while (i < enemiesCount) {
+        const rand = hlp.randDouble() * GAME_MONSTERS_GEN_FACTOR;
+        const pos = getAvailablePos();
+        const x = pos.x;
+        const y = pos.y;
+
+        const minLen: c_int = 2;
+        const maxLen: c_int = 4;
+        var step: c_int = 1;
+
+        var startId: c_int = res.SPRITE_TINY_ZOMBIE;
+        var endId: c_int = res.SPRITE_TINY_ZOMBIE;
+
+        // NOTE: r.c. - line below commented out in original.
+        // double random = i * GAME_MONSTERS_GEN_FACTOR / enemiesCount;
+
+        if (rand < 0.3) {
+            startId = res.SPRITE_TINY_ZOMBIE;
+            endId = res.SPRITE_SKELET;
+        } else if (rand < 0.4) {
+            startId = res.SPRITE_WOGOL;
+            endId = res.SPRITE_CHROT;
+            step = 2;
+        } else if (rand < 0.5) {
+            startId = res.SPRITE_ZOMBIE;
+            endId = res.SPRITE_ICE_ZOMBIE;
+        } else if (rand < 0.8) {
+            startId = res.SPRITE_MUDDY;
+            endId = res.SPRITE_SWAMPY;
+        } else {
+            startId = res.SPRITE_MASKED_ORC;
+            endId = res.SPRITE_NECROMANCER;
+        }
+
+        i += @intCast(generateEnemy(
+            x,
+            y,
+            minLen,
+            maxLen,
+            startId,
+            endId,
+            step,
+        ));
+    }
+
+    for (0..@intCast(bossSetting)) |_| {
+        const pos = getAvailablePos();
+        _ = generateEnemy(
+            pos.x,
+            pos.y,
+            1,
+            1,
+            res.SPRITE_BIG_ZOMBIE,
+            res.SPRITE_BIG_DEMON,
+            1,
+        );
+    }
 }
 
 // Put buff animation on snake
