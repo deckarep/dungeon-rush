@@ -331,7 +331,7 @@ pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void 
         }
     }
 
-    var t: c_int = res.n * res.m * @as(c_int, @intFromFloat(trapRate));
+    var t: c_int = @intFromFloat(@as(f64, res.n) * @as(f64, res.m) * trapRate);
     while (t > 0) : (t -= 1) {
         var x: c_int = undefined;
         var y: c_int = undefined;
