@@ -1,3 +1,4 @@
+const std = @import("std");
 const c = @import("cdefs.zig").c;
 const res = @import("res.zig");
 const tps = @import("types.zig");
@@ -360,6 +361,47 @@ pub fn renderAnimationLinkList(list: *adt.LinkList) void {
     }
 }
 
+// NOTE: currently this is the only callconv(.C) cause I'm still using qsort.
+// TODO: Migrate to Zig's sorting facility at some pointer.
+fn compareAnimationByY(x: ?*const anyopaque, y: ?*const anyopaque) callconv(.C) c_int {
+    // NOTE: r.c. - this gives a pointer to a pointer.
+    const a: *const *tps.Animation = @alignCast(@ptrCast(x));
+    const b: *const *tps.Animation = @alignCast(@ptrCast(y));
+    //std.log.info("doing compare: b.y:{d} - a.y:{d} = {d}", .{ b.*.y, a.*.y, b.*.y - a.*.y });
+    return b.*.y - a.*.y;
+}
+
+fn renderAnimationLinkListWithSort(list: *adt.LinkList) void {
+    // NOTE: While this code is rendering the sprites, i'm not yet sure if it's
+    // doing the correct z-depth sorting logic.
+    // TODO: verify sort works.
+
+    // Ported C static array to Zig's static array.
+    const S = struct {
+        var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;
+    };
+
+    var count: c_int = 0;
+    var p = list.head;
+    while (p != null) : (p = p.?.nxt) {
+        S.buffer[@intCast(count)] = @alignCast(@ptrCast(p.?.element));
+        count += 1;
+    }
+
+    c.qsort(@ptrCast(&S.buffer), @intCast(count), @sizeOf(*tps.Animation), compareAnimationByY);
+
+    // This iteration verified y are in descending order.
+    // for (0..@intCast(count)) |i| {
+    //     std.log.info("y=>{d}", .{S.buffer[i].y});
+    // }
+    // std.process.exit(0);
+
+    while (count > 0) {
+        count -= 1;
+        renderAnimation(S.buffer[@intCast(count)]);
+    }
+}
+
 pub fn render() void {
     _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
     _ = c.SDL_RenderClear(renderer);
@@ -367,9 +409,7 @@ pub fn render() void {
     for (0..ANIMATION_LINK_LIST_NUM) |i| {
         updateAnimationLinkList(&animationsList[i]);
         if (i == RENDER_LIST_SPRITE_ID) {
-            // TODO: sprites must be sorted...this is just temporary.
-            //renderAnimationLinkListWithSort(&animationsList[i]);
-            renderAnimationLinkList(&animationsList[i]);
+            renderAnimationLinkListWithSort(&animationsList[i]);
         } else {
             renderAnimationLinkList(&animationsList[i]);
         }
@@ -397,9 +437,7 @@ pub fn renderUi() void {
     for (0..ANIMATION_LINK_LIST_NUM) |i| {
         updateAnimationLinkList(&animationsList[i]);
         if (i == RENDER_LIST_SPRITE_ID) {
-            // TODO: sprites must be sorted...this is just temporary.
-            //renderAnimationLinkListWithSort(&animationsList[i]);
-            renderAnimationLinkList(&animationsList[i]);
+            renderAnimationLinkListWithSort(&animationsList[i]);
         } else {
             renderAnimationLinkList(&animationsList[i]);
         }

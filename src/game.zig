@@ -9,6 +9,7 @@ const ren = @import("render.zig");
 const mp = @import("map.zig");
 const ai = @import("ai.zig");
 const aud = @import("audio.zig");
+const wp = @import("weapons.zig");
 const hlp = @import("helper.zig");
 const c = @import("cdefs.zig").c;
 
@@ -18,6 +19,7 @@ const SPIKE_TIME_MASK = 600;
 const SPRITES_MAX_NUM = 1024;
 const MOVE_STEP = 2;
 const GAME_MONSTERS_TEAM = 9;
+const GAME_MAP_RELOAD_PERIOD = 120;
 
 // Map
 pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
@@ -187,6 +189,112 @@ pub fn initPlayer(playerType: pl.PlayerType) void {
     playersCount += 1;
 }
 
+pub fn generateHeroItem(x: c_int, y: c_int) void {
+    var xx = x;
+    var yy = y;
+
+    // BUG: Not seeing hero items show up.
+
+    const heroId = hlp.randInt(res.SPRITE_KNIGHT, res.SPRITE_LIZARD);
+    const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
+
+    itemMap[@intCast(x)][@intCast(y)] = .{
+        .type = .ITEM_HERO,
+        .id = heroId,
+        .belong = 0,
+        .ani = ani,
+    };
+
+    const srcAni = res.commonSprites[@intCast(heroId)].ani;
+    // std.log.info("about to copy src ani:", .{});
+    // std.log.info("{?}", .{srcAni});
+    tps.copyAnimation(srcAni, ani);
+
+    // std.log.info("dst ani:", .{});
+    // std.log.info("{?}", .{ani});
+
+    xx *= res.UNIT;
+    yy *= res.UNIT;
+
+    // TODO:Dangerous (r.c. - no idea why? or what this TODO was for, it was in original C code)
+    // Original code: ani.origin--;
+    // if (true) {
+    //     @panic("wtf!");
+    // }
+
+    // r.c. - Just spit-balling, with this dangerous non-sense...
+    // If I keep this code, I think this would be about the same.
+    // const oldPtr = @intFromPtr(ani.origin);
+    // const newPtr = oldPtr - @sizeOf(tps.Texture);
+    // ani.origin = @ptrFromInt(newPtr);
+
+    ani.x = xx + (res.UNIT / 2);
+    ani.y = yy + (res.UNIT - 3);
+    ani.at = .AT_BOTTOM_CENTER;
+    std.log.info("dst ani:", .{});
+    std.log.info("{?}", .{ani});
+    ren.pushAnimationToRender(ren.RENDER_LIST_SPRITE_ID, ani);
+}
+
+pub fn generateItem(x: c_int, y: c_int, @"type": tps.ItemType) void {
+    var textureId: usize = res.RES_FLASK_BIG_RED;
+    var id: c_int = 0;
+    var belong: c_int = res.SPRITE_KNIGHT;
+
+    if (@"type" == .ITEM_HP_MEDICINE) {
+        textureId = res.RES_FLASK_BIG_RED;
+    } else if (@"type" == .ITEM_HP_EXTRA_MEDICINE) {
+        textureId = res.RES_FLASK_BIG_YELLOW;
+    } else if (@"type" == .ITEM_WEAPON) {
+        const kind = hlp.randInt(0, 5);
+        if (kind == 0) {
+            textureId = res.RES_ICE_SWORD;
+            id = wp.WEAPON_ICE_SWORD;
+            belong = res.SPRITE_KNIGHT;
+        } else if (kind == 1) {
+            textureId = res.RES_HOLY_SWORD;
+            id = wp.WEAPON_HOLY_SWORD;
+            belong = res.SPRITE_KNIGHT;
+        } else if (kind == 2) {
+            textureId = res.RES_THUNDER_STAFF;
+            id = wp.WEAPON_THUNDER_STAFF;
+            belong = res.SPRITE_WIZZARD;
+        } else if (kind == 3) {
+            textureId = res.RES_PURPLE_STAFF;
+            id = wp.WEAPON_PURPLE_STAFF;
+            belong = res.SPRITE_WIZZARD;
+        } else if (kind == 4) {
+            textureId = res.RES_GRASS_SWORD;
+            id = wp.WEAPON_SOLID_CLAW;
+            belong = res.SPRITE_LIZARD;
+        } else if (kind == 5) {
+            textureId = res.RES_POWERFUL_BOW;
+            id = wp.WEAPON_POWERFUL_BOW;
+            belong = res.SPRITE_ELF;
+        }
+    }
+
+    const ani = ren.createAndPushAnimation(
+        &ren.animationsList[ren.RENDER_LIST_MAP_ITEMS_ID],
+        &res.textures[textureId],
+        null,
+        .LOOP_INFI,
+        3,
+        x * res.UNIT,
+        y * res.UNIT,
+        c.SDL_FLIP_NONE,
+        0,
+        .AT_BOTTOM_LEFT,
+    );
+
+    itemMap[@intCast(x)][@intCast(y)] = .{
+        .type = @"type",
+        .id = id,
+        .belong = belong,
+        .ani = ani,
+    };
+}
+
 fn updateMap() void {
     const maskedTime = ren.renderFrames % SPIKE_TIME_MASK;
 
@@ -194,7 +302,6 @@ fn updateMap() void {
         for (0..res.SCREEN_HEIGHT / res.UNIT) |j| {
             const ii: c_int = @intCast(i);
             const jj: c_int = @intCast(j);
-            // Bug maybe: why no .BLOCK_TRAP tiles found?
             if (mp.hasMap[i][j] and map[i][j].bp == .BLOCK_TRAP) {
                 if (maskedTime == 0) {
                     _ = ren.createAndPushAnimation(
@@ -554,11 +661,79 @@ pub fn shieldSnake(snake: *pl.Snake, duration: c_int) void {
 
 // Initialize and deinitialize game and snake.
 
+fn generateHeroItemAllMap() void {
+    var x: c_int = undefined;
+    var y: c_int = undefined;
+
+    // Converted from do-while to while(true) w/ negated condition and break
+    while (true) {
+        x = hlp.randInt(1, res.n - 2);
+        y = hlp.randInt(1, res.m - 2);
+
+        // r.c. - This code is different than the C version, the C one has undefined behavior.
+        if (!hlp.inr(x, 1, res.n - 2) or !hlp.inr(y, 1, res.m - 2)) {
+            // NOTE: Seems like a bug was caught in Zig.
+            // Anytime x or y falls on the edge of the map we just pick a new random tuple.
+            // Otherwise the code below can panic for example: xx - 1 panics when xx is a 0.
+            continue;
+        }
+
+        const xx: usize = @intCast(x);
+        const yy: usize = @intCast(y);
+
+        const ha: c_int = @intFromBool(!mp.hasMap[xx - 1][yy]);
+        const hb: c_int = @intFromBool(!mp.hasMap[xx + 1][yy]);
+        const hc: c_int = @intFromBool(!mp.hasMap[xx][yy + 1]);
+        const hd: c_int = @intFromBool(!mp.hasMap[xx][yy - 1]);
+
+        const cond = !mp.hasMap[xx][yy] or
+            map[xx][yy].bp != .BLOCK_FLOOR or
+            itemMap[xx][yy].type != .ITEM_NONE or
+            ha + hb + hc + hd >= 1;
+
+        if (!cond) break;
+    }
+
+    generateHeroItem(x, y);
+}
+
 fn clearItemMap() void {
     for (0..res.n) |i| {
         for (0..res.m) |j| {
             itemMap[i][j].type = .ITEM_NONE;
         }
+    }
+}
+
+fn initItemMap(incomingHerosCount: c_int, incomingFlasksCount: c_int) void {
+    var hc = incomingHerosCount;
+    var fc = incomingFlasksCount;
+
+    var x: c_int = undefined;
+    var y: c_int = undefined;
+
+    while (hc > 0) : (hc -= 1) {
+        generateHeroItemAllMap();
+        herosCount += 1;
+    }
+
+    while (fc > 0) : (fc -= 1) {
+        // Converted from do-while to while w/negated break
+        while (true) {
+            x = hlp.randInt(0, res.n - 1);
+            y = hlp.randInt(0, res.m - 1);
+
+            const xx: usize = @intCast(x);
+            const yy: usize = @intCast(y);
+            const cond = !mp.hasMap[xx][yy] or
+                map[xx][yy].bp != .BLOCK_FLOOR or
+                itemMap[xx][yy].type != .ITEM_NONE;
+
+            if (!cond) break;
+        }
+
+        generateItem(x, y, .ITEM_HP_MEDICINE);
+        flasksCount += 1;
     }
 }
 
@@ -747,8 +922,9 @@ fn gameLoop() GameStatus {
             }
         }
 
-        // if (renderFrames % GAME_MAP_RELOAD_PERIOD == 0)
-        // initItemMap(herosSetting - herosCount, flasksSetting - flasksCount);
+        if (ren.renderFrames % GAME_MAP_RELOAD_PERIOD == 0) {
+            initItemMap(herosSetting - herosCount, flasksSetting - flasksCount);
+        }
 
         // Frozen behavior.
         for (0..@intCast(spritesCount)) |i| {

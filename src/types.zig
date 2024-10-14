@@ -140,7 +140,7 @@ pub const ItemType = enum {
     // Red meds
     ITEM_HP_MEDICINE,
     // Yellow meds
-    ITEM_EXTRA_MEDICINE,
+    ITEM_HP_EXTRA_MEDICINE,
     ITEM_WEAPON,
 };
 
