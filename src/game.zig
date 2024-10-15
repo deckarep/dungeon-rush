@@ -43,6 +43,7 @@ const SPRITES_MAX_NUM = 1024;
 const MOVE_STEP = 2;
 const GAME_MONSTERS_TEAM = 9;
 const GAME_MAP_RELOAD_PERIOD = 120;
+const GAME_HP_MEDICINE_EXTRA_DELTA = 33;
 
 // Map
 pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
@@ -621,15 +622,78 @@ fn initEnemies(enemiesCount: c_int) void {
 // Put buff animation on snake
 
 fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
-    _ = snake;
-    _ = duration;
-    // TODO!
+    if (snake.buffs[tps.BUFF_FROZEN] > 0) return;
+
+    if (snake.buffs[tps.BUFF_DEFFENCE] <= 0) {
+        snake.buffs[tps.BUFF_FROZEN] += duration;
+    }
+
+    var effect: ?*tps.Effect = null;
+    if (snake.buffs[tps.BUFF_DEFFENCE] > 0) {
+        effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
+        tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect);
+        duration = 30;
+    }
+
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+        const ani = ren.createAndPushAnimation(
+            &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
+            &res.textures[res.RES_ICE],
+            effect,
+            .LOOP_ONCE,
+            duration,
+            sprite.x,
+            sprite.y,
+            c.SDL_FLIP_NONE,
+            0,
+            .AT_BOTTOM_CENTER,
+        );
+        ani.scaled = false;
+        if (snake.buffs[tps.BUFF_DEFFENCE] > 0) {
+            continue;
+        }
+        ren.bindAnimationToSprite(ani, sprite, true);
+    }
 }
 
 fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
-    _ = snake;
-    _ = duration;
-    // TODO!
+    if (snake.buffs[tps.BUFF_SLOWDOWN] > 0) return;
+
+    if (snake.buffs[tps.BUFF_DEFFENCE] <= 0) {
+        snake.buffs[tps.BUFF_SLOWDOWN] += duration;
+    }
+
+    var effect: ?*tps.Effect = null;
+    if (snake.buffs[tps.BUFF_DEFFENCE] > 0) {
+        effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
+        tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect);
+        duration = 30;
+    }
+
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+        const ani = ren.createAndPushAnimation(
+            &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
+            &res.textures[res.RES_SOLIDFX],
+            effect,
+            .LOOP_LIFESPAN,
+            40,
+            sprite.x,
+            sprite.y,
+            c.SDL_FLIP_NONE,
+            0,
+            .AT_BOTTOM_CENTER,
+        );
+        ani.lifeSpan = duration;
+        ani.scaled = false;
+        if (snake.buffs[tps.BUFF_DEFFENCE] > 0) {
+            continue;
+        }
+        ren.bindAnimationToSprite(ani, sprite, true);
+    }
 }
 
 fn shieldSprite(sprite: *spr.Sprite, duration: c_int) void {
@@ -685,6 +749,104 @@ fn attackUpSnake(snake: *pl.Snake, duration: c_int) void {
     var p = snake.sprites.head;
     while (p != null) : (p = p.?.nxt) {
         attackUpSprite(@alignCast(@ptrCast(p.?.element)), duration);
+    }
+}
+
+fn takeHpMedcine(snake: *pl.Snake, delta: c_int, extra: bool) void {
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+        if (sprite.hp == sprite.totalHp and !extra) {
+            continue;
+        }
+
+        var addHp: c_int = @intFromFloat(@as(f64, @floatFromInt(delta)) * @as(f64, @floatFromInt(sprite.totalHp)) / 100.0);
+
+        if (!extra) {
+            addHp = @max(0, @min(sprite.totalHp - sprite.hp, addHp));
+        }
+        sprite.hp += addHp;
+
+        const ani = ren.createAndPushAnimation(
+            &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
+            &res.textures[res.RES_HP_MED],
+            null,
+            .LOOP_ONCE,
+            ren.SPRITE_ANIMATION_DURATION,
+            sprite.x,
+            sprite.y,
+            c.SDL_FLIP_NONE,
+            0,
+            .AT_BOTTOM_CENTER,
+        );
+
+        ren.bindAnimationToSprite(ani, sprite, false);
+    }
+}
+
+fn takeWeapon(snake: *pl.Snake, weaponItem: *tps.Item) bool {
+    const weapon = &wp.weapons[weaponItem.id];
+    var taken = false;
+
+    var p = snake.sprite.head;
+    while (p != null) : (p = p.?.nxt) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+        if (sprite.ani.origin == res.commonSprites[weaponItem.belong].ani.origin and
+            sprite.weapon == res.commonSprites[weaponItem.belong].weapon)
+        {
+            sprite.weapon = weapon;
+            var ani = ren.createAndPushAnimation(
+                &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
+                weaponItem.ani.origin,
+                null,
+                .LOOP_INFI,
+                3,
+                sprite.x,
+                sprite.y,
+                c.SDL_FLIP_NONE,
+                0,
+                .AT_BOTTOM_CENTER,
+            );
+            ren.bindAnimationToSprite(ani, sprite, true);
+
+            sprite.hp += GAME_HP_MEDICINE_EXTRA_DELTA / 100.0 * sprite.totalHp * 5;
+
+            ani = ren.createAndPushAnimation(
+                &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
+                &res.textures[res.RES_HP_MED],
+                null,
+                .LOOP_ONCE,
+                ren.SPRITE_ANIMATION_DURATION,
+                0,
+                0,
+                c.SDL_FLIP_NONE,
+                0,
+                .AT_BOTTOM_CENTER,
+            );
+            ren.bindAnimationToSprite(ani, sprite, true);
+            taken = true;
+            break;
+        }
+    }
+    return taken;
+}
+
+fn dropItemNearSprite(sprite: *spr.Sprite, itemType: tps.ItemType) void {
+    var dx: c_int = -1;
+    while (dx <= 1) : (dx += 1) {
+        var dy: c_int = -1;
+        while (dy <= 1) : (dy += 1) {
+            const x = (sprite.x / res.UNIT) + dx;
+            const y = (sprite.y / res.UNIT) + dy;
+
+            if (hlp.inr(x, 0, res.n - 1) and
+                hlp.inr(y, 0, res.m - 1) and
+                mp.hasMap[@intCast(x)][@intCast(y)] and itemMap[@intCast(x)][@intCast(y)].type == .ITEM_NONE)
+            {
+                generateItem(x, y, itemType);
+            }
+            return;
+        }
     }
 }
 
@@ -868,6 +1030,47 @@ inline fn isPlayer(snake: *pl.Snake) bool {
         if (snake == spriteSnake[i]) return true;
     }
     return false;
+}
+
+fn dropItem(sprite: *.spr.Sprite) void {
+    const random = hlp.randDouble() * sprite.dropRate * GAME_LUCKY;
+    // #ifdef DBG
+    // // printf("%lf\n", random);
+    // #endif
+    if (random < GAME_DROPOUT_YELLOW_FLASKS) {
+        dropItemNearSprite(sprite, .ITEM_HP_EXTRA_MEDCINE);
+    } else if (random > GAME_DROPOUT_WEAPONS) {
+        dropItemNearSprite(sprite, .ITEM_WEAPON);
+    }
+}
+
+fn invokeWeaponBuff(src: ?*pl.Snake, weapon: *wp.Weapon, dest: *.pl.Snake, damage: c_int) void {
+    _ = damage;
+
+    var rand: f64 = undefined;
+    for (tps.BUFF_BEGIN..tps.BUFF_END) |i| {
+        rand = hlp.randDouble();
+        if (src != null and src.team == GAME_MONSTERS_TEAM) {
+            rand *= GAME_MONSTERS_WEAPON_BUFF_ADJUST;
+        }
+        if (rand < weapon.effects[i].chance) {
+            switch (i) {
+                tps.BUFF_FROZEN => freezeSnake(dest, weapon.effects[i].duration),
+                tps.BUFF_SLOWDOWN => slowDownSnake(dest, weapon.effects[i].duration),
+                tps.BUFF_DEFFENCE => {
+                    if (src) |s| {
+                        shieldSnake(s, weapon.effects[i].duration);
+                    }
+                },
+                tps.BUFF_ATTACK => {
+                    if (src) |s| {
+                        attackUpSnake(s, weapon.effects[i].duration);
+                    }
+                },
+                else => {},
+            }
+        }
+    }
 }
 
 fn moveSprite(sprite: *spr.Sprite, step: c_int) void {
