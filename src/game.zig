@@ -402,8 +402,22 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
                 if (weapon.wp == .WEAPON_SWORD_POINT or
                     weapon.wp == .WEAPON_SWORD_RANGE)
                 {
-                    // TODO: CODE IS MISSING!!!!!!!!!!
-                    std.log.info("<CODE MISSING> Sword attack!, Lightening bolt....lightening bolt...", .{});
+                    const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
+                    tps.copyAnimation(weapon.deathAni.?, ani);
+                    // r.c. - Line commented out in original.
+                    // ani->x = target->x, ani->y = target->y;
+                    ren.bindAnimationToSprite(ani, target, false);
+                    if (ani.angle != -1) {
+                        ani.angle = rad * (180.0 / std.math.pi);
+                    }
+                    ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
+                    // TODO: this line!
+                    //dealDamage(snake, spriteSnake[i], target, weapon->damage);
+                    invokeWeaponBuff(snake, weapon, spriteSnake[i], weapon.damage);
+                    attacked = true;
+                    if (weapon.wp == .WEAPON_SWORD_POINT) {
+                        break :attack_end;
+                    }
                 } else {
                     const bullet = blt.createBullet(
                         snake,
@@ -434,6 +448,7 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
             ani.at = .AT_BOTTOM_CENTER;
             ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
         }
+
         if (weapon.wp == .WEAPON_SWORD_POINT or
             weapon.wp == .WEAPON_SWORD_RANGE)
         {
@@ -715,15 +730,16 @@ fn initEnemies(enemiesCount: c_int) void {
 fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
     if (snake.buffs[tps.BUFF_FROZEN] > 0) return;
 
-    if (snake.buffs[tps.BUFF_DEFFENCE] <= 0) {
+    if (snake.buffs[tps.BUFF_DEFENCE] <= 0) {
         snake.buffs[tps.BUFF_FROZEN] += duration;
     }
 
+    var dur: c_int = duration;
     var effect: ?*tps.Effect = null;
-    if (snake.buffs[tps.BUFF_DEFFENCE] > 0) {
+    if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
         effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
-        tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect);
-        duration = 30;
+        tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
+        dur = 30;
     }
 
     var p = snake.sprites.head;
@@ -734,7 +750,7 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
             &res.textures[res.RES_ICE],
             effect,
             .LOOP_ONCE,
-            duration,
+            dur,
             sprite.x,
             sprite.y,
             c.SDL_FLIP_NONE,
@@ -742,7 +758,7 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
             .AT_BOTTOM_CENTER,
         );
         ani.scaled = false;
-        if (snake.buffs[tps.BUFF_DEFFENCE] > 0) {
+        if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
             continue;
         }
         ren.bindAnimationToSprite(ani, sprite, true);
@@ -754,15 +770,16 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
     if (snake.buffs[tps.BUFF_SLOWDOWN] > 0) return;
 
     // If we have no defense left, apply the slowdown buff.
-    if (snake.buffs[tps.BUFF_DEFFENCE] <= 0) {
+    if (snake.buffs[tps.BUFF_DEFENCE] <= 0) {
         snake.buffs[tps.BUFF_SLOWDOWN] += duration;
     }
 
+    var dur: c_int = duration;
     var effect: ?*tps.Effect = null;
-    if (snake.buffs[tps.BUFF_DEFFENCE] > 0) {
+    if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
         effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
-        tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect);
-        duration = 30;
+        tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
+        dur = 30;
     }
 
     var p = snake.sprites.head;
@@ -782,7 +799,7 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
         );
         ani.lifeSpan = duration;
         ani.scaled = false;
-        if (snake.buffs[tps.BUFF_DEFFENCE] > 0) {
+        if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
             continue;
         }
         ren.bindAnimationToSprite(ani, sprite, true);
@@ -1137,20 +1154,20 @@ fn dropItem(sprite: *.spr.Sprite) void {
     }
 }
 
-fn invokeWeaponBuff(src: ?*pl.Snake, weapon: *wp.Weapon, dest: *.pl.Snake, damage: c_int) void {
+fn invokeWeaponBuff(src: ?*pl.Snake, weapon: *wp.Weapon, dest: *pl.Snake, damage: c_int) void {
     _ = damage;
 
     var rand: f64 = undefined;
     for (tps.BUFF_BEGIN..tps.BUFF_END) |i| {
         rand = hlp.randDouble();
-        if (src != null and src.team == GAME_MONSTERS_TEAM) {
+        if (src != null and src.?.team == GAME_MONSTERS_TEAM) {
             rand *= GAME_MONSTERS_WEAPON_BUFF_ADJUST;
         }
         if (rand < weapon.effects[i].chance) {
             switch (i) {
                 tps.BUFF_FROZEN => freezeSnake(dest, weapon.effects[i].duration),
                 tps.BUFF_SLOWDOWN => slowDownSnake(dest, weapon.effects[i].duration),
-                tps.BUFF_DEFFENCE => {
+                tps.BUFF_DEFENCE => {
                     if (src) |s| {
                         shieldSnake(s, weapon.effects[i].duration);
                     }

@@ -301,7 +301,7 @@ pub var sounds: [AUDIO_SOUND_SIZE]?*c.Mix_Chunk = undefined;
 pub var texts: [TEXTSET_SIZE]tps.Text = undefined;
 var window: *c.SDL_Window = undefined;
 var originTextures: [TILESET_SIZE]?*c.SDL_Texture = undefined;
-var effects: [EFFECTS_SIZE]tps.Effect = undefined;
+pub var effects: [EFFECTS_SIZE]tps.Effect = undefined;
 var soundsCount: usize = 0;
 
 pub fn init() bool {
