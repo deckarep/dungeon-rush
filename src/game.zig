@@ -216,11 +216,6 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     var xx = x;
     var yy = y;
 
-    // BUG: Not seeing hero items show up.
-    // if (true) {
-    //     @panic("left off here, not seeing hero items placed on the map!!!!");
-    // }
-
     const heroId = hlp.randInt(res.SPRITE_KNIGHT, res.SPRITE_LIZARD);
     const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
 
@@ -232,33 +227,25 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     };
 
     const srcAni = res.commonSprites[@intCast(heroId)].ani;
-    // std.log.info("about to copy src ani:", .{});
-    // std.log.info("{?}", .{srcAni});
     tps.copyAnimation(srcAni, ani);
-
-    // std.log.info("dst ani:", .{});
-    // std.log.info("{?}", .{ani});
 
     xx *= res.UNIT;
     yy *= res.UNIT;
 
-    // TODO:Dangerous (r.c. - no idea why? or what this TODO was for, it was in original C code)
+    // TODO: Dangerous (r.c. - no idea why? or what this TODO was for, it was in original C code)
+    // TODO: r.c. - Who can tell me what's the point of this?
     // Original code: ani.origin--;
-    // if (true) {
-    //     @panic("wtf!");
-    // }
 
     // r.c. - Just spit-balling, with this dangerous non-sense...
-    // If I keep this code, I think this would be about the same.
+    // New code:
+    // If I keep this code, I think this would be about this in Zig.
     // const oldPtr = @intFromPtr(ani.origin);
-    // const newPtr = oldPtr - @sizeOf(tps.Texture);
+    // const newPtr = oldPtr - (@sizeOf(tps.Texture) * 1);
     // ani.origin = @ptrFromInt(newPtr);
 
     ani.x = xx + (res.UNIT / 2);
     ani.y = yy + (res.UNIT - 3);
     ani.at = .AT_BOTTOM_CENTER;
-    std.log.info("dst ani:", .{});
-    std.log.info("{?}", .{ani});
     ren.pushAnimationToRender(ren.RENDER_LIST_SPRITE_ID, ani);
 }
 
@@ -949,7 +936,10 @@ fn gameLoop() GameStatus {
         }
 
         if (ren.renderFrames % GAME_MAP_RELOAD_PERIOD == 0) {
-            initItemMap(herosSetting - herosCount, flasksSetting - flasksCount);
+            initItemMap(
+                15, //herosSetting - herosCount,
+                flasksSetting - flasksCount,
+            );
         }
 
         // Frozen behavior.
