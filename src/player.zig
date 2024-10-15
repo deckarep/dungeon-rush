@@ -36,9 +36,16 @@ pub const Snake = struct {
     moveStep: c_int,
     team: c_int,
     num: c_int,
-    buffs: [tps.BUFF_END]c_int,
+    buffs: [tps.BUFF_END]c_int, // r.c. - verified these should stay integers
     score: *tps.Score,
     playerType: PlayerType,
+
+    // TODO: r.c. introduce Zig helper methods like below to check if any defense left.
+    // const Self = @This();
+
+    // pub fn hasDefense(self: *const Self) bool {
+    //     return self.buffs[tps.BUFF_DEFENSE] > 0;
+    // }
 };
 
 pub fn initSnake(snake: *Snake, step: c_int, team: c_int, playerType: PlayerType) void {

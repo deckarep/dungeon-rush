@@ -354,6 +354,8 @@ fn updateMap() void {
     }
 }
 
+/// For each snake, decrement each of their "active" buffs which
+/// is any buff greater than zero.
 fn updateBuffDuration() void {
     for (0..@intCast(spritesCount)) |i| {
         const snake = spriteSnake[i];
@@ -362,6 +364,95 @@ fn updateBuffDuration() void {
                 snake.buffs[j] -= 1;
             }
         }
+    }
+}
+
+fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
+    const weapon = sprite.weapon;
+
+    // If we attacked recently, take a chill pill, don't attack again you jerk.
+    const la: usize = @intCast(sprite.lastAttack);
+    const gap: usize = @intCast(weapon.gap);
+    if ((ren.renderFrames - la) < gap) {
+        return;
+    }
+
+    var attacked = false;
+    attack_end: for (0..@intCast(spritesCount)) |i| {
+        // Not on the same team...
+        if (snake.team != spriteSnake[i].team) {
+            var p = spriteSnake[i].sprites.head;
+            while (p != null) : (p = p.?.nxt) {
+                const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                // Can the shooter's weapon reach the enemy?
+                if (hlp.distance(
+                    .{ .x = sprite.x, .y = sprite.y },
+                    .{ .x = target.x, .y = target.y },
+                ) > @as(f64, @floatFromInt(weapon.shootRange))) {
+                    // If weapon can't reach, move on.
+                    continue;
+                }
+
+                // Get the aim in radians.
+                const rad: f64 = std.math.atan2(
+                    @as(f64, @floatFromInt(target.y - sprite.y)),
+                    @as(f64, @floatFromInt(target.x - sprite.x)),
+                );
+
+                if (weapon.wp == .WEAPON_SWORD_POINT or
+                    weapon.wp == .WEAPON_SWORD_RANGE)
+                {
+                    // TODO: CODE IS MISSING!!!!!!!!!!
+                    std.log.info("<CODE MISSING> Sword attack!, Lightening bolt....lightening bolt...", .{});
+                } else {
+                    const bullet = blt.createBullet(
+                        snake,
+                        weapon,
+                        sprite.x,
+                        sprite.y,
+                        rad,
+                        snake.team,
+                        // A bullet must have a flyAni, in theory at least.
+                        weapon.flyAni.?,
+                    );
+                    tps.pushLinkNode(bullets.?, tps.createLinkNode(bullet));
+                    ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, bullet.ani);
+                    attacked = true;
+                    if (weapon.wp != .WEAPON_GUN_POINT_MULTI) {
+                        break :attack_end;
+                    }
+                }
+            }
+        }
+    }
+
+    if (attacked) {
+        if (weapon.birthAni) |birthAni| {
+            const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+            tps.copyAnimation(birthAni, ani);
+            ren.bindAnimationToSprite(ani, sprite, true);
+            ani.at = .AT_BOTTOM_CENTER;
+            ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
+        }
+        if (weapon.wp == .WEAPON_SWORD_POINT or
+            weapon.wp == .WEAPON_SWORD_RANGE)
+        {
+            aud.playAudio(@intCast(weapon.deathAudio));
+        } else {
+            aud.playAudio(@intCast(weapon.birthAudio));
+        }
+
+        sprite.lastAttack = @intCast(ren.renderFrames);
+    }
+}
+
+fn makeSnakeAttack(snake: *pl.Snake) void {
+    // Snek can't attack when frozen..pssh, exit function.
+    if (snake.buffs[tps.BUFF_FROZEN] > 0) return;
+
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        makeSpriteAttack(@alignCast(@ptrCast(p.?.element)), snake);
     }
 }
 
@@ -659,8 +750,10 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
 }
 
 fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
+    // Already slowed, so just exit function.
     if (snake.buffs[tps.BUFF_SLOWDOWN] > 0) return;
 
+    // If we have no defense left, apply the slowdown buff.
     if (snake.buffs[tps.BUFF_DEFFENCE] <= 0) {
         snake.buffs[tps.BUFF_SLOWDOWN] += duration;
     }
@@ -714,7 +807,7 @@ fn shieldSprite(sprite: *spr.Sprite, duration: c_int) void {
 }
 
 pub fn shieldSnake(snake: *pl.Snake, duration: c_int) void {
-    if (snake.buffs[tps.BUFF_DEFENCE] == 1) return;
+    if (snake.buffs[tps.BUFF_DEFENCE] > 0) return;
     snake.buffs[tps.BUFF_DEFENCE] += duration;
 
     var p = snake.sprites.head;
@@ -1166,7 +1259,7 @@ fn gameLoop() GameStatus {
             // if (i >= playersCount && renderFrames % AI_DECIDE_RATE == 0)
             //     AiInput(spriteSnake[i]);
             moveSnake(spriteSnake[i]);
-            // makeSnakeAttack(spriteSnake[i]);
+            makeSnakeAttack(spriteSnake[i]);
         }
 
         // Move bullets.

@@ -38,7 +38,7 @@ pub fn randDouble() f64 {
 }
 
 pub fn distance(a: tps.Point, b: tps.Point) f64 {
-    const dx = a.x - b.x;
-    const dy = a.y - b.y;
+    const dx: f64 = @floatFromInt(a.x - b.x);
+    const dy: f64 = @floatFromInt(a.y - b.y);
     return @sqrt(dx * dx + dy * dy);
 }
