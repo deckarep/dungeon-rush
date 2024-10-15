@@ -882,10 +882,10 @@ fn moveSprite(sprite: *spr.Sprite, step: c_int) void {
 }
 
 fn moveSnake(snake: *pl.Snake) void {
-    if (snake.buffs[tps.BUFF_FROZEN] == 1) return;
+    if (snake.buffs[tps.BUFF_FROZEN] > 0) return;
 
     var step = snake.moveStep;
-    if (snake.buffs[tps.BUFF_SLOWDOWN] == 1) {
+    if (snake.buffs[tps.BUFF_SLOWDOWN] > 0) {
         step = @max(@divTrunc(step, 2), 1);
     }
 
