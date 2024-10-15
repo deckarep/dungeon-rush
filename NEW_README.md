@@ -11,7 +11,7 @@ This is a near exact **Zig port** of the original DungeonRush `C-based` rogue-li
 * To fully eradicate all original C-based files and C-based build scripts.
 * To port in phases:
   1. Phase 1: port the C code almost as-is to minimize bugs introduced
-      * Still using `c.malloc`/`c.free` in many cases
+      * Still using `c.malloc`/`c.free` in many cases, most cases don't check for null (alloc failure)
       * A few cases are using callbacks using the `callconv(.C)` for `c.qsort`
       * Still using multi-pointers or a few `[*c]` style pointers
   2. Phase 2: Ziggify

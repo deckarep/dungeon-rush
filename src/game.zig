@@ -44,6 +44,9 @@ const MOVE_STEP = 2;
 const GAME_MONSTERS_TEAM = 9;
 const GAME_MAP_RELOAD_PERIOD = 120;
 const GAME_HP_MEDICINE_EXTRA_DELTA = 33;
+const GAME_FROZEN_DAMAGE_K = 0.1;
+const GAME_BUFF_ATTACK_K = 2.5;
+const GAME_BUFF_DEFENSE_K = 2;
 
 // Map
 pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
@@ -79,6 +82,12 @@ var GAME_TRAP_RATE: f64 = undefined;
 var GAME_MONSTERS_HP_ADJUST: f64 = undefined;
 var GAME_MONSTERS_WEAPON_BUFF_ADJUST: f64 = undefined;
 var GAME_MONSTERS_GEN_FACTOR: f64 = undefined;
+
+// Bounder Box
+pub const SPRITE_EFFECT_DELTA = 20;
+pub const BIG_SPRITE_EFFECT_DELTA = 25;
+pub const SPRITE_EFFECT_VERTICAL_DELTA = 6;
+pub const SPRITE_EFFECT_FEET = 12;
 
 pub fn setLevel(level: c_int) void {
     const fLvl: f64 = @floatFromInt(level);
@@ -411,8 +420,7 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
                         ani.angle = rad * (180.0 / std.math.pi);
                     }
                     ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
-                    // TODO: this line!
-                    //dealDamage(snake, spriteSnake[i], target, weapon->damage);
+                    dealDamage(snake, spriteSnake[i], target, weapon.damage);
                     invokeWeaponBuff(snake, weapon, spriteSnake[i], weapon.damage);
                     attacked = true;
                     if (weapon.wp == .WEAPON_SWORD_POINT) {
@@ -1183,6 +1191,154 @@ fn invokeWeaponBuff(src: ?*pl.Snake, weapon: *wp.Weapon, dest: *pl.Snake, damage
     }
 }
 
+/// dealDamage src is optionally null from some callers.
+fn dealDamage(src: ?*pl.Snake, dest: *pl.Snake, target: *spr.Sprite, damage: c_int) void {
+    var calcDamage: f64 = @floatFromInt(damage);
+
+    if (dest.buffs[tps.BUFF_FROZEN] > 0) {
+        calcDamage *= GAME_FROZEN_DAMAGE_K;
+    }
+
+    if (src != null and src.? != spriteSnake[GAME_MONSTERS_TEAM]) {
+        if (src.?.buffs[tps.BUFF_ATTACK] > 0) calcDamage *= GAME_BUFF_ATTACK_K;
+    }
+
+    if (dest != spriteSnake[GAME_MONSTERS_TEAM]) {
+        if (dest.buffs[tps.BUFF_DEFENCE] > 0) calcDamage /= GAME_BUFF_DEFENSE_K;
+    }
+
+    target.hp -= @intFromFloat(calcDamage);
+
+    if (src) |s| {
+        s.score.damage += @intFromFloat(calcDamage);
+        if (target.hp <= 0) s.score.killed += 1;
+    }
+
+    dest.score.stand += damage;
+}
+
+fn makeSnakeCross(snake: *pl.Snake) bool {
+    _ = snake;
+    return false;
+}
+
+/// makeBulletCross is the bullet's collission detection.
+/// Does it hit a player? Or does it hit the map boundaries?
+/// Upon a hit, make it explode and play the relevant sound fx.
+fn makeBulletCross(bullet: *blt.Bullet) bool {
+    const weapon = bullet.parent;
+    var hit = false;
+
+    const bulletScale: f64 = if (bullet.ani.scaled) ren.SCALE_FACTOR else 1.0;
+    const width: c_int = @min(bullet.ani.origin.width, bullet.ani.origin.height) *
+        @as(c_int, @intFromFloat(bulletScale * 0.8));
+
+    const bulletBox: c.SDL_Rect = .{
+        .x = bullet.x - @divTrunc(width, 2),
+        .y = bullet.y - @divTrunc(width, 2),
+        .w = width,
+        .h = width,
+    };
+
+    if (!mp.hasMap[@intCast(@divTrunc(bullet.x, res.UNIT))][@intCast(@divTrunc(bullet.y, res.UNIT))]) {
+        const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+        tps.copyAnimation(weapon.deathAni.?, ani);
+        ani.x = bullet.x;
+        ani.y = bullet.y;
+        ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
+        hit = true;
+    }
+    if (!hit) {
+        for (0..@intCast(spritesCount)) |i| {
+            if (bullet.team != spriteSnake[i].team) {
+                var p = spriteSnake[i].sprites.head;
+                while (p != null) : (p = p.?.nxt) {
+                    const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                    const box = hlp.getSpriteBoundBox(target);
+                    if (hlp.RectRectCross(&box, &bulletBox)) {
+                        const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+                        tps.copyAnimation(weapon.deathAni.?, ani);
+                        ani.x = bullet.x;
+                        ani.y = bullet.y;
+                        ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
+                        hit = true;
+                        if (weapon.wp == .WEAPON_GUN_POINT or
+                            weapon.wp == .WEAPON_GUN_POINT_MULTI)
+                        {
+                            dealDamage(
+                                bullet.owner,
+                                spriteSnake[i],
+                                target,
+                                weapon.damage,
+                            );
+
+                            invokeWeaponBuff(
+                                bullet.owner,
+                                weapon,
+                                spriteSnake[i],
+                                weapon.damage,
+                            );
+                            return hit;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (hit) {
+        aud.playAudio(@intCast(weapon.deathAudio));
+        for (0..@intCast(spritesCount)) |i| {
+            if (bullet.team != spriteSnake[i].team) {
+                var p = spriteSnake[i].sprites.head;
+                while (p != null) : (p = p.?.nxt) {
+                    const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                    if (hlp.distance(
+                        .{ .x = target.x, .y = target.y },
+                        .{ .x = bullet.x, .y = bullet.y },
+                    ) <= @as(f64, @floatFromInt(weapon.effectRange))) {
+                        dealDamage(
+                            bullet.owner,
+                            spriteSnake[i],
+                            target,
+                            weapon.damage,
+                        );
+                        invokeWeaponBuff(
+                            bullet.owner,
+                            weapon,
+                            spriteSnake[i],
+                            weapon.damage,
+                        );
+                    }
+                }
+            }
+        }
+    }
+    return hit;
+}
+
+fn makeCross() void {
+    for (0..@intCast(spritesCount)) |i| {
+        _ = makeSnakeCross(spriteSnake[i]);
+    }
+
+    var p = bullets.?.head;
+    var nxt: ?*adt.LinkNode = null;
+    while (p != null) : (p = nxt) {
+        nxt = p.?.nxt;
+        const bullet: *blt.Bullet = @ptrCast(@alignCast(p.?.element));
+        // If bullet crossed paths with something and a hit was registered
+        // then remove the bullet.
+        if (makeBulletCross(bullet)) {
+            tps.removeAnimationFromLinkList(
+                &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
+                bullet.ani,
+            );
+            tps.removeLinkNode(bullets.?, p.?);
+        }
+    }
+}
+
 fn moveSprite(sprite: *spr.Sprite, step: c_int) void {
     const dir = sprite.direction;
 
@@ -1305,7 +1461,7 @@ fn gameLoop() GameStatus {
                 }
             }
         }
-        // makeCross();
+        makeCross();
         ren.render();
         updateBuffDuration();
 

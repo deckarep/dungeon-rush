@@ -412,10 +412,10 @@ pub fn destroyAnimationsByLinkList(list: *adt.LinkList) void {
 }
 
 pub fn removeAnimationFromLinkList(self: *adt.LinkList, ani: *Animation) void {
-    var p: *adt.LinkNode = self.head;
-    while (p != null) : (p = p.nxt) {
-        if (p.element == ani) {
-            removeLinkNode(self, p);
+    var p = self.head;
+    while (p != null) : (p = p.?.nxt) {
+        if (p.?.element == @as(?*anyopaque, ani)) {
+            removeLinkNode(self, p.?);
             destroyAnimation(ani);
             break;
         }
