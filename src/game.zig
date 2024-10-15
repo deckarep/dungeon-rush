@@ -433,30 +433,6 @@ fn wasdToDirection(keyValue: c_int) ?tps.Direction {
     }
 }
 
-pub fn destroySnake(snake: *pl.Snake) void {
-    if (bullets) |bu| {
-        var p = bu.head;
-        while (p != null) : (p = p.?.nxt) {
-            const bullet: *blt.Bullet = @alignCast(@ptrCast(p.?.element.?));
-            if (bullet.owner == snake) {
-                bullet.owner = null;
-            }
-        }
-    }
-
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element.?));
-        c.free(sprite);
-        p.?.element = null;
-    }
-    tps.destroyLinkList(snake.sprites);
-    //snake.sprites = null; // currently it's non-nullable.
-    tps.destroyScore(snake.score);
-    //snake.score = null; // currently it's non-nullable.
-    c.free(snake);
-}
-
 fn generateEnemy(
     x: c_int,
     y: c_int,
@@ -644,6 +620,18 @@ fn initEnemies(enemiesCount: c_int) void {
 
 // Put buff animation on snake
 
+fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
+    _ = snake;
+    _ = duration;
+    // TODO!
+}
+
+fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
+    _ = snake;
+    _ = duration;
+    // TODO!
+}
+
 fn shieldSprite(sprite: *spr.Sprite, duration: c_int) void {
     const ani = ren.createAndPushAnimation(
         &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
@@ -669,6 +657,34 @@ pub fn shieldSnake(snake: *pl.Snake, duration: c_int) void {
     while (p != null) : (p = p.?.nxt) {
         const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
         shieldSprite(sprite, duration);
+    }
+}
+
+fn attackUpSprite(sprite: *spr.Sprite, duration: c_int) void {
+    const ani = ren.createAndPushAnimation(
+        &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
+        &res.textures[res.RES_ATTACK_UP],
+        null,
+        .LOOP_LIFESPAN,
+        ren.SPRITE_ANIMATION_DURATION,
+        sprite.x,
+        sprite.y,
+        c.SDL_FLIP_NONE,
+        0,
+        .AT_BOTTOM_CENTER,
+    );
+    ren.bindAnimationToSprite(ani, sprite, true);
+    ani.lifeSpan = duration;
+}
+
+fn attackUpSnake(snake: *pl.Snake, duration: c_int) void {
+    if (snake.buffs[tps.BUFF_ATTACK] > 0) return;
+
+    snake.buffs[tps.BUFF_ATTACK] += duration;
+
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        attackUpSprite(@alignCast(@ptrCast(p.?.element)), duration);
     }
 }
 
@@ -822,6 +838,30 @@ fn destroyGame(currentStatus: GameStatus) void {
     ren.clearRenderer();
 }
 
+pub fn destroySnake(snake: *pl.Snake) void {
+    if (bullets) |bu| {
+        var p = bu.head;
+        while (p != null) : (p = p.?.nxt) {
+            const bullet: *blt.Bullet = @alignCast(@ptrCast(p.?.element.?));
+            if (bullet.owner == snake) {
+                bullet.owner = null;
+            }
+        }
+    }
+
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element.?));
+        c.free(sprite);
+        p.?.element = null;
+    }
+    tps.destroyLinkList(snake.sprites);
+    //snake.sprites = null; // currently it's non-nullable.
+    tps.destroyScore(snake.score);
+    //snake.score = null; // currently it's non-nullable.
+    c.free(snake);
+}
+
 ///  Helper function to determine whehter a snake is a player
 inline fn isPlayer(snake: *pl.Snake) bool {
     for (0..@intCast(playersCount)) |i| {
@@ -860,8 +900,8 @@ fn moveSnake(snake: *pl.Snake) void {
             while (b.size > 0 and sprite.x == firstSlot.x and sprite.y == firstSlot.y) {
                 tps.changeSpriteDirection(p.?, firstSlot.direction);
                 b.size -= 1;
-                for (0..@intCast(b.size)) |j| {
-                    b.buffer[j] = b.buffer[j + 1];
+                for (0..@intCast(b.size)) |i| {
+                    b.buffer[i] = b.buffer[i + 1];
                 }
                 firstSlot = b.buffer[0];
             }
@@ -919,7 +959,6 @@ fn gameLoop() GameStatus {
         for (0..@intCast(spritesCount)) |i| {
             if (spriteSnake[i].sprites.head == null) {
                 continue; // some snakes killed by before but not clean up yet
-
             }
             // if (i >= playersCount && renderFrames % AI_DECIDE_RATE == 0)
             //     AiInput(spriteSnake[i]);
@@ -937,7 +976,7 @@ fn gameLoop() GameStatus {
 
         if (ren.renderFrames % GAME_MAP_RELOAD_PERIOD == 0) {
             initItemMap(
-                15, //herosSetting - herosCount,
+                herosSetting - herosCount,
                 flasksSetting - flasksCount,
             );
         }
@@ -945,7 +984,7 @@ fn gameLoop() GameStatus {
         // Frozen behavior.
         for (0..@intCast(spritesCount)) |i| {
             ren.updateAnimationOfSnake(spriteSnake[i]);
-            if (spriteSnake[i].buffs[tps.BUFF_FROZEN] == 1) {
+            if (spriteSnake[i].buffs[tps.BUFF_FROZEN] > 0) {
                 var p = spriteSnake[i].sprites.head;
                 while (p != null) : (p = p.?.nxt) {
                     const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
@@ -953,9 +992,46 @@ fn gameLoop() GameStatus {
                 }
             }
         }
-
+        // makeCross();
         ren.render();
         updateBuffDuration();
+
+        {
+            var i: usize = @intCast(playersCount);
+            while (i < spritesCount) : (i += 1) {
+                if (spriteSnake[i].num <= 0) {
+                    destroySnake(spriteSnake[i]);
+                    //spriteSnake[i] = null; // Not nullable in Zig.
+                    var j = i;
+                    while (j + 1 < spritesCount) : (j += 1) {
+                        spriteSnake[j] = spriteSnake[j + 1];
+                    }
+                    //spriteSnake[@intCast(spritesCount)] = null; // Not nullable in Zig.
+                    spritesCount -= 1;
+                }
+            }
+        }
+
+        if (willTerm) {
+            termCount -= 1;
+            if (termCount <= 0) {
+                break;
+            }
+        } else {
+            var alivePlayer: c_int = -1;
+            for (0..@intCast(playersCount)) |i| {
+                if (spriteSnake[i].sprites.head == null) {
+                    setTerm(.GAME_OVER);
+                    //sendGameOverPacket(alivePlayer);
+                    break;
+                } else {
+                    alivePlayer = @intCast(i);
+                }
+            }
+            if (isWin()) {
+                setTerm(.STAGE_CLEAR);
+            }
+        }
     }
 
     return status;
