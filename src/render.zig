@@ -395,33 +395,32 @@ fn compareAnimationByY(x: ?*const anyopaque, y: ?*const anyopaque) callconv(.C) 
 }
 
 fn renderAnimationLinkListWithSort(list: *adt.LinkList) void {
-    // NOTE: While this code is rendering the sprites, i'm not yet sure if it's
-    // doing the correct z-depth sorting logic.
-    // TODO: verify sort works.
+    // 1. Ported C static array to Zig's static array.
+    // const S = struct {
+    //     var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;
+    // };
 
-    // Ported C static array to Zig's static array.
-    const S = struct {
-        var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;
-    };
+    // 2. After thinking it through, no need for buffer to be static.
+    var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;
 
-    var count: c_int = 0;
+    var count: usize = 0;
     var p = list.head;
     while (p != null) : (p = p.?.nxt) {
-        S.buffer[@intCast(count)] = @alignCast(@ptrCast(p.?.element));
+        buffer[count] = @alignCast(@ptrCast(p.?.element));
         count += 1;
     }
 
-    c.qsort(@ptrCast(&S.buffer), @intCast(count), @sizeOf(*tps.Animation), compareAnimationByY);
+    // TODO: Swap c.qsort in favor of Zig's sorting mechanics.
+    c.qsort(@ptrCast(&buffer), @intCast(count), @sizeOf(*tps.Animation), compareAnimationByY);
 
     // This iteration verified y are in descending order.
-    // for (0..@intCast(count)) |i| {
+    // for (0..count) |i| {
     //     std.log.info("y=>{d}", .{S.buffer[i].y});
     // }
-    // std.process.exit(0);
 
     while (count > 0) {
         count -= 1;
-        renderAnimation(S.buffer[@intCast(count)]);
+        renderAnimation(buffer[count]);
     }
 }
 

@@ -6,6 +6,7 @@ storage.dat
 archive
 dungeon_rush
 dungeonrush
+c-dungeonrush
 *.o
 *.gch
 build
