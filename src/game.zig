@@ -932,7 +932,7 @@ fn handleLocalKeypress() bool {
                 const player = spriteSnake[@intCast(id)];
                 // BUG: for player 0, why isn't .LOCAL condition passing????
                 if (player.playerType == .LOCAL) {
-                    if (player.buffs[tps.BUFF_FROZEN] != 0 and player.sprites.head != null) {
+                    if (player.buffs[tps.BUFF_FROZEN] == 0 and player.sprites.head != null) {
                         const direction = if (id == 0) arrowsToDirection(keyValue) else wasdToDirection(keyValue);
                         if (direction) |dir| {
                             //sendPlayerMovePacket(id, direction); // TODO for networking.
