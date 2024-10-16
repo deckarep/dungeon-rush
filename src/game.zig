@@ -52,13 +52,13 @@ const GAME_BUFF_DEFENSE_K = 2;
 pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
 var itemMap: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Item = undefined;
 var hasEnemy: [mp.MAP_SIZE][mp.MAP_SIZE]bool = undefined;
-var spriteSnake: [SPRITES_MAX_NUM]*pl.Snake = undefined;
+pub var spriteSnake: [SPRITES_MAX_NUM]*pl.Snake = undefined;
 
 var bullets: ?*adt.LinkList = null;
 
 pub var gameLevel: c_int = undefined;
 var stage: c_int = undefined;
-var spritesCount: c_int = undefined;
+pub var spritesCount: c_int = undefined;
 var playersCount: c_int = undefined;
 var flasksCount: c_int = undefined;
 var herosCount: c_int = undefined;

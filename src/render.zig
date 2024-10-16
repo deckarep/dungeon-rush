@@ -28,6 +28,7 @@ const tps = @import("types.zig");
 const adt = @import("adt.zig");
 const spr = @import("sprite.zig");
 const pl = @import("player.zig");
+const gm = @import("game.zig");
 
 pub const ANIMATION_LINK_LIST_NUM = 16;
 pub const RENDER_LIST_MAP_ID = 0;
@@ -111,6 +112,61 @@ pub fn clearRenderer() void {
         tps.destroyAnimationsByLinkList(&animationsList[i]);
     }
     _ = c.SDL_RenderClear(renderer);
+}
+
+fn renderSnakeHp(snake: *pl.Snake) void {
+    var p = snake.sprites.head;
+    while (p != null) : (p = p.?.nxt) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+
+        // Skip showing HP bar when health is at 100%
+        if (sprite.hp == sprite.totalHp) {
+            continue;
+        }
+
+        var percent: f64 = @as(f64, @floatFromInt(sprite.hp)) / @as(f64, @floatFromInt(sprite.totalHp));
+        var i: usize = 0;
+        while (percent > 1e-8) {
+            defer {
+                i += 1;
+                percent -= 1;
+            }
+
+            var r: u8 = 0;
+            var g: u8 = 0;
+            var b: u8 = 0;
+
+            if (i == 0) {
+                if (percent < 1) {
+                    r = @intFromFloat(@min((1 - percent) * 2 * 255.0, 255.0));
+                    g = @intFromFloat(@max(0, 255 - (@max(0.5 - percent, 0)) * 2.0 * 255.0));
+                } else {
+                    g = 255;
+                }
+            } else {
+                r = 0;
+                g = 0;
+                b = 255;
+            }
+
+            _ = c.SDL_SetRenderDrawColor(renderer, r, g, b, 255);
+            const width: c_int = RENDER_HP_BAR_WIDTH;
+            const spriteHeight: c_int = sprite.ani.origin.height * SCALE_FACTOR;
+            const bar: c.SDL_Rect = .{
+                .x = sprite.x - res.UNIT / 2 + (res.UNIT - width) / 2,
+                .y = sprite.y - spriteHeight - RENDER_HP_BAR_HEIGHT * (@as(c_int, @intCast(i)) + 1),
+                .w = @intFromFloat(@as(f64, @floatFromInt(width)) * @min(1.0, percent)),
+                .h = RENDER_HP_BAR_HEIGHT,
+            };
+            _ = c.SDL_RenderDrawRect(renderer, &bar);
+        }
+    }
+}
+
+fn renderHp() void {
+    for (0..@intCast(gm.spritesCount)) |i| {
+        renderSnakeHp(gm.spriteSnake[i]);
+    }
 }
 
 pub fn renderCenteredText(text: *const tps.Text, x: c_int, y: c_int, scale: f64) c.SDL_Point {
@@ -437,7 +493,7 @@ pub fn render() void {
         }
     }
     // TODO: these funcs below.
-    //renderHp();
+    renderHp();
     //renderCountDown();
     //renderInfo();
     //renderId();
