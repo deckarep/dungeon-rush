@@ -242,16 +242,28 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     xx *= res.UNIT;
     yy *= res.UNIT;
 
-    // TODO: Dangerous (r.c. - no idea why? or what this TODO was for, it was in original C code)
-    // TODO: r.c. - Who can tell me what's the point of this?
-    // Original code: ani.origin--;
+    // NOTE: Dangerous (in original C-based code)
+    // ani.origin--;
 
-    // r.c. - Just spit-balling, with this dangerous non-sense...
-    // New code:
-    // If I keep this code, I think this would be about this in Zig.
-    // const oldPtr = @intFromPtr(ani.origin);
-    // const newPtr = oldPtr - (@sizeOf(tps.Texture) * 1);
-    // ani.origin = @ptrFromInt(newPtr);
+    // r.c. - this bothered me so much I had to ask him about it.
+    // https://github.com/rapiz1/DungeonRush/issues/44
+
+    // From @rapiz1:
+    // "This is likely because textures are guaranteed to be stored in a particular order.
+    // You can try to trace how textures for heroes are loaded. I guess that the decrement
+    // here is to get a different orientation of the same hero character."
+
+    // Zig replacement code (still dangerous btw):
+    // Basically this code just moves the texture assignment to the previous created one
+    // in the orignal res.textures array, I need to study the textures themselves to see
+    // why @rapiz1 thought this was a good idea.
+
+    // r.c. - this is how comments should be done around code that seems magical.
+    // Context matters!
+    const curPtr = @intFromPtr(ani.origin);
+    // Effectively moves the pointer one Texture size less.
+    const newPtr = curPtr - (@sizeOf(tps.Texture) * 1);
+    ani.origin = @ptrFromInt(newPtr);
 
     ani.x = xx + (res.UNIT / 2);
     ani.y = yy + (res.UNIT - 3);
