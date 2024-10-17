@@ -54,7 +54,7 @@ pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
 var itemMap: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Item = undefined;
 var hasEnemy: [mp.MAP_SIZE][mp.MAP_SIZE]bool = undefined;
 const spikeDamage = 1;
-pub var spriteSnake: [SPRITES_MAX_NUM]*pl.Snake = undefined;
+pub var spriteSnake: [SPRITES_MAX_NUM]?*pl.Snake = undefined;
 
 var bullets: ?*adt.LinkList = null;
 
@@ -149,7 +149,7 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*
         setLevel(gameLevel);
         currentStatus = gameLoop();
         for (0..@intCast(localPlayers)) |i| {
-            tps.addScore(scores[i], spriteSnake[i].score);
+            tps.addScore(scores[i], spriteSnake[i].?.score);
         }
         destroyGame(currentStatus);
         stage += 1;
@@ -219,7 +219,7 @@ pub fn appendSpriteToSnake(
 pub fn initPlayer(playerType: pl.PlayerType) void {
     spritesCount += 1;
     spriteSnake[@intCast(playersCount)] = pl.createSnake(MOVE_STEP, playersCount, playerType);
-    const p = spriteSnake[@intCast(playersCount)];
+    const p = spriteSnake[@intCast(playersCount)].?;
     appendSpriteToSnake(p, res.SPRITE_KNIGHT, res.SCREEN_WIDTH / 2, res.SCREEN_HEIGHT / 2 + playersCount * 2 * res.UNIT, .RIGHT);
     playersCount += 1;
 }
@@ -381,7 +381,7 @@ fn updateMap() void {
 /// is any buff greater than zero.
 fn updateBuffDuration() void {
     for (0..@intCast(spritesCount)) |i| {
-        const snake = spriteSnake[i];
+        const snake = spriteSnake[i].?;
         for (tps.BUFF_BEGIN..tps.BUFF_END) |j| {
             if (snake.buffs[j] > 0) {
                 snake.buffs[j] -= 1;
@@ -403,8 +403,8 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
     var attacked = false;
     attack_end: for (0..@intCast(spritesCount)) |i| {
         // Not on the same team...
-        if (snake.team != spriteSnake[i].team) {
-            var p = spriteSnake[i].sprites.head;
+        if (snake.team != spriteSnake[i].?.team) {
+            var p = spriteSnake[i].?.sprites.head;
             while (p != null) : (p = p.?.nxt) {
                 const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
                 // Can the shooter's weapon reach the enemy?
@@ -434,8 +434,8 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
                         ani.angle = rad * (180.0 / std.math.pi);
                     }
                     ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
-                    dealDamage(snake, spriteSnake[i], target, weapon.damage);
-                    invokeWeaponBuff(snake, weapon, spriteSnake[i], weapon.damage);
+                    dealDamage(snake, spriteSnake[i].?, target, weapon.damage);
+                    invokeWeaponBuff(snake, weapon, spriteSnake[i].?, weapon.damage);
                     attacked = true;
                     if (weapon.wp == .WEAPON_SWORD_POINT) {
                         break :attack_end;
@@ -495,7 +495,7 @@ fn makeSnakeAttack(snake: *pl.Snake) void {
 
 fn isWin() bool {
     if (playersCount != 1) return false;
-    return spriteSnake[0].num >= GAME_WIN_NUM;
+    return spriteSnake[0].?.num >= GAME_WIN_NUM;
 }
 
 const GameStatus = enum {
@@ -572,7 +572,7 @@ fn generateEnemy(
     step: c_int,
 ) c_int {
     spriteSnake[@intCast(spritesCount)] = pl.createSnake(step, GAME_MONSTERS_TEAM, .COMPUTER);
-    const snake = spriteSnake[@intCast(spritesCount)];
+    const snake = spriteSnake[@intCast(spritesCount)].?;
     spritesCount += 1;
     hasEnemy[@intCast(x)][@intCast(y)] = true;
     const vertical: bool = hlp.randInt(0, 1) == 1;
@@ -1082,7 +1082,7 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
             playerType = if (i < remotePlayers) .REMOTE else .LOCAL;
         }
         initPlayer(playerType);
-        shieldSnake(spriteSnake[i], 300);
+        shieldSnake(spriteSnake[i].?, 300);
     }
     ren.initInfo();
     // create map
@@ -1101,8 +1101,8 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
 fn destroyGame(currentStatus: GameStatus) void {
     while (spritesCount > 0) {
         spritesCount -= 1;
-        destroySnake(spriteSnake[@intCast(spritesCount)]);
-        // spriteSnake[@intCast(spritesCount)] = null; r.c. - current non-nullable is used.
+        destroySnake(spriteSnake[@intCast(spritesCount)].?);
+        spriteSnake[@intCast(spritesCount)] = null;
     }
 
     for (0..ren.ANIMATION_LINK_LIST_NUM) |i| {
@@ -1430,8 +1430,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
     }
     if (!hit) {
         for (0..@intCast(spritesCount)) |i| {
-            if (bullet.team != spriteSnake[i].team) {
-                var p = spriteSnake[i].sprites.head;
+            if (bullet.team != spriteSnake[i].?.team) {
+                var p = spriteSnake[i].?.sprites.head;
                 while (p != null) : (p = p.?.nxt) {
                     const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
                     const box = hlp.getSpriteBoundBox(target);
@@ -1447,7 +1447,7 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
                         {
                             dealDamage(
                                 bullet.owner,
-                                spriteSnake[i],
+                                spriteSnake[i].?,
                                 target,
                                 weapon.damage,
                             );
@@ -1455,7 +1455,7 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
                             invokeWeaponBuff(
                                 bullet.owner,
                                 weapon,
-                                spriteSnake[i],
+                                spriteSnake[i].?,
                                 weapon.damage,
                             );
                             return hit;
@@ -1469,8 +1469,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
     if (hit) {
         aud.playAudio(@intCast(weapon.deathAudio));
         for (0..@intCast(spritesCount)) |i| {
-            if (bullet.team != spriteSnake[i].team) {
-                var p = spriteSnake[i].sprites.head;
+            if (bullet.team != spriteSnake[i].?.team) {
+                var p = spriteSnake[i].?.sprites.head;
                 while (p != null) : (p = p.?.nxt) {
                     const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
                     if (hlp.distance(
@@ -1479,14 +1479,14 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
                     ) <= @as(f64, @floatFromInt(weapon.effectRange))) {
                         dealDamage(
                             bullet.owner,
-                            spriteSnake[i],
+                            spriteSnake[i].?,
                             target,
                             weapon.damage,
                         );
                         invokeWeaponBuff(
                             bullet.owner,
                             weapon,
-                            spriteSnake[i],
+                            spriteSnake[i].?,
                             weapon.damage,
                         );
                     }
@@ -1499,7 +1499,7 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
 
 fn makeCross() void {
     for (0..@intCast(spritesCount)) |i| {
-        _ = makeSnakeCross(spriteSnake[i]);
+        _ = makeSnakeCross(spriteSnake[i].?);
     }
 
     var p = bullets.?.head;
@@ -1578,7 +1578,7 @@ fn handleLocalKeypress() bool {
 
             var id: c_int = 0;
             while (id <= 1 and id < playersCount) : (id += 1) {
-                const player = spriteSnake[@intCast(id)];
+                const player = spriteSnake[@intCast(id)].?;
                 // BUG: for player 0, why isn't .LOCAL condition passing????
                 if (player.playerType == .LOCAL) {
                     if (player.buffs[tps.BUFF_FROZEN] == 0 and player.sprites.head != null) {
@@ -1606,13 +1606,13 @@ fn gameLoop() GameStatus {
         updateMap();
 
         for (0..@intCast(spritesCount)) |i| {
-            if (spriteSnake[i].sprites.head == null) {
+            if (spriteSnake[i].?.sprites.head == null) {
                 continue; // some snakes killed by before but not clean up yet
             }
             // if (i >= playersCount && renderFrames % AI_DECIDE_RATE == 0)
             //     AiInput(spriteSnake[i]);
-            moveSnake(spriteSnake[i]);
-            makeSnakeAttack(spriteSnake[i]);
+            moveSnake(spriteSnake[i].?);
+            makeSnakeAttack(spriteSnake[i].?);
         }
 
         // Move bullets.
@@ -1632,9 +1632,9 @@ fn gameLoop() GameStatus {
 
         // Frozen behavior.
         for (0..@intCast(spritesCount)) |i| {
-            ren.updateAnimationOfSnake(spriteSnake[i]);
-            if (spriteSnake[i].buffs[tps.BUFF_FROZEN] > 0) {
-                var p = spriteSnake[i].sprites.head;
+            ren.updateAnimationOfSnake(spriteSnake[i].?);
+            if (spriteSnake[i].?.buffs[tps.BUFF_FROZEN] > 0) {
+                var p = spriteSnake[i].?.sprites.head;
                 while (p != null) : (p = p.?.nxt) {
                     const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
                     sprite.ani.currentFrame -= 1;
@@ -1648,14 +1648,14 @@ fn gameLoop() GameStatus {
         {
             var i: usize = @intCast(playersCount);
             while (i < spritesCount) : (i += 1) {
-                if (spriteSnake[i].num <= 0) {
-                    destroySnake(spriteSnake[i]);
-                    //spriteSnake[i] = null; // Not nullable in Zig.
+                if (spriteSnake[i].?.num <= 0) {
+                    destroySnake(spriteSnake[i].?);
+                    spriteSnake[i] = null; // Not nullable in Zig.
                     var j = i;
                     while (j + 1 < spritesCount) : (j += 1) {
                         spriteSnake[j] = spriteSnake[j + 1];
                     }
-                    //spriteSnake[@intCast(spritesCount)] = null; // Not nullable in Zig.
+                    spriteSnake[@intCast(spritesCount)] = null; // Not nullable in Zig.
                     spritesCount -= 1;
                 }
             }
@@ -1669,7 +1669,7 @@ fn gameLoop() GameStatus {
         } else {
             var alivePlayer: c_int = -1;
             for (0..@intCast(playersCount)) |i| {
-                if (spriteSnake[i].sprites.head == null) {
+                if (spriteSnake[i].?.sprites.head == null) {
                     setTerm(.GAME_OVER);
                     //sendGameOverPacket(alivePlayer);
                     break;

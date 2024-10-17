@@ -165,7 +165,7 @@ fn renderSnakeHp(snake: *pl.Snake) void {
 
 fn renderHp() void {
     for (0..@intCast(gm.spritesCount)) |i| {
-        renderSnakeHp(gm.spriteSnake[i]);
+        renderSnakeHp(gm.spriteSnake[i].?);
     }
 }
 
