@@ -50,6 +50,7 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
   * src/ - C-based version (original by @rapiz1)
 
 ## Installing and Running
+  * Built and tested against [Zig 0.13.0](https://ziglang.org/documentation/0.13.0/) release
   * Ensure SDL2 is installed for your OS/Platform
   * From the root folder: `zig build run`
 
