@@ -39,6 +39,8 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
       * Use some Zig based collections like the `generic` LinkList over the original C ADT style.
       * Bonus: Introduce unit-tests
       * Get building for other OSes (w/ community contributions)
+  4. Phase 4: ???
+      * I'd love to port this to Raylib.
 
 ## A twist on classic Snake
 * DungeonRush is a pretty fun project/game.
@@ -46,11 +48,14 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
   * It uses cellular automata to generate random dungeon levels
   * It has weapons, buffs, enemies, bosses and loot drops
   * It features classic pixel art and animations
-  * Don't forget 8-bit style music and sound-fx
+  * Don't forget the 8-bit style music and sound-fx
+
+## Why Zig?
+Cause it's a game-changing, bad-ass language that unlocks super-powers and clicks in my head and this was a great learning experience.
 
 ## Source
-  * zrc/ - Ziglang port (by @deckarep)
-  * src/ - C-based version (original by @rapiz1)
+  * `zrc/` - Ziglang port (by @deckarep)
+  * `src/` - C-based version (original by @rapiz1)
 
 ## Installing and Running
   * Built and tested against [Zig 0.13.0](https://ziglang.org/documentation/0.13.0/) release
@@ -62,10 +67,11 @@ Want to hack on this project with me? I will welcome all contributions that impr
 
 However, code will be rejected that needlessly complicates the game or does not run identical to the original C project.
 
-If people want to change the overall look and feel or game logic, please fork DungeonRush and change it however you like!
+If people want to change the overall look and feel or game logic, please fork DungeonRush and change it however you like! It is open-source after all!
 
-## Callouts
+## Callouts and Caveats
 * Zig doesn't have `do/while` so they've all been replaced with `while` with a break on a `negated` condition.
 * Before anyone complains about the port looking like ugly Zig code written like C, this is why I'm taking a multi-phase approach. If you've ever done migrations, changing too many things at once introduces bugs, especially when tests don't exist.
 * All original development was done on Apple MacOS Silcon, contributions are welcome for other OSes.
 * The game has some multi-player networking code, I don't care about it at the moment so it's not done.
+* It's very possible this manual port has introduced a bug or two, the game needs to be well tested.
