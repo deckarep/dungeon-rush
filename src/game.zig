@@ -44,6 +44,7 @@ const MOVE_STEP = 2;
 const GAME_MONSTERS_TEAM = 9;
 const GAME_MAP_RELOAD_PERIOD = 120;
 const GAME_HP_MEDICINE_EXTRA_DELTA = 33;
+const GAME_HP_MEDICINE_DELTA = 55;
 const GAME_FROZEN_DAMAGE_K = 0.1;
 const GAME_BUFF_ATTACK_K = 2.5;
 const GAME_BUFF_DEFENSE_K = 2;
@@ -52,6 +53,7 @@ const GAME_BUFF_DEFENSE_K = 2;
 pub var map: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Block = undefined;
 var itemMap: [mp.MAP_SIZE][mp.MAP_SIZE]tps.Item = undefined;
 var hasEnemy: [mp.MAP_SIZE][mp.MAP_SIZE]bool = undefined;
+const spikeDamage = 1;
 pub var spriteSnake: [SPRITES_MAX_NUM]*pl.Snake = undefined;
 
 var bullets: ?*adt.LinkList = null;
@@ -890,7 +892,8 @@ fn takeHpMedcine(snake: *pl.Snake, delta: c_int, extra: bool) void {
             continue;
         }
 
-        var addHp: c_int = @intFromFloat(@as(f64, @floatFromInt(delta)) * @as(f64, @floatFromInt(sprite.totalHp)) / 100.0);
+        var addHp: c_int = @intFromFloat(@as(f64, @floatFromInt(delta)) *
+            @as(f64, @floatFromInt(sprite.totalHp)) / 100.0);
 
         if (!extra) {
             addHp = @max(0, @min(sprite.totalHp - sprite.hp, addHp));
@@ -915,14 +918,14 @@ fn takeHpMedcine(snake: *pl.Snake, delta: c_int, extra: bool) void {
 }
 
 fn takeWeapon(snake: *pl.Snake, weaponItem: *tps.Item) bool {
-    const weapon = &wp.weapons[weaponItem.id];
+    const weapon = &wp.weapons[@intCast(weaponItem.id)];
     var taken = false;
 
-    var p = snake.sprite.head;
+    var p = snake.sprites.head;
     while (p != null) : (p = p.?.nxt) {
         const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
-        if (sprite.ani.origin == res.commonSprites[weaponItem.belong].ani.origin and
-            sprite.weapon == res.commonSprites[weaponItem.belong].weapon)
+        if (sprite.ani.origin == res.commonSprites[@intCast(weaponItem.belong)].ani.origin and
+            sprite.weapon == res.commonSprites[@intCast(weaponItem.belong)].weapon)
         {
             sprite.weapon = weapon;
             var ani = ren.createAndPushAnimation(
@@ -939,7 +942,7 @@ fn takeWeapon(snake: *pl.Snake, weaponItem: *tps.Item) bool {
             );
             ren.bindAnimationToSprite(ani, sprite, true);
 
-            sprite.hp += GAME_HP_MEDICINE_EXTRA_DELTA / 100.0 * sprite.totalHp * 5;
+            sprite.hp += @intFromFloat((@as(f64, GAME_HP_MEDICINE_EXTRA_DELTA) / 100.0) * @as(f64, @floatFromInt(sprite.totalHp)) * 5.0);
 
             ani = ren.createAndPushAnimation(
                 &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
@@ -966,8 +969,8 @@ fn dropItemNearSprite(sprite: *spr.Sprite, itemType: tps.ItemType) void {
     while (dx <= 1) : (dx += 1) {
         var dy: c_int = -1;
         while (dy <= 1) : (dy += 1) {
-            const x = (sprite.x / res.UNIT) + dx;
-            const y = (sprite.y / res.UNIT) + dy;
+            const x = @divTrunc(sprite.x, res.UNIT) + dx;
+            const y = @divTrunc(sprite.y, res.UNIT) + dy;
 
             if (hlp.inr(x, 0, res.n - 1) and
                 hlp.inr(y, 0, res.m - 1) and
@@ -1147,6 +1150,7 @@ pub fn destroySnake(snake: *pl.Snake) void {
         c.free(sprite);
         p.?.element = null;
     }
+
     tps.destroyLinkList(snake.sprites);
     //snake.sprites = null; // currently it's non-nullable.
     tps.destroyScore(snake.score);
@@ -1162,13 +1166,13 @@ inline fn isPlayer(snake: *pl.Snake) bool {
     return false;
 }
 
-fn dropItem(sprite: *.spr.Sprite) void {
+fn dropItem(sprite: *spr.Sprite) void {
     const random = hlp.randDouble() * sprite.dropRate * GAME_LUCKY;
     // #ifdef DBG
     // // printf("%lf\n", random);
     // #endif
     if (random < GAME_DROPOUT_YELLOW_FLASKS) {
-        dropItemNearSprite(sprite, .ITEM_HP_EXTRA_MEDCINE);
+        dropItemNearSprite(sprite, .ITEM_HP_EXTRA_MEDICINE);
     } else if (random > GAME_DROPOUT_WEAPONS) {
         dropItemNearSprite(sprite, .ITEM_WEAPON);
     }
@@ -1230,8 +1234,172 @@ fn dealDamage(src: ?*pl.Snake, dest: *pl.Snake, target: *spr.Sprite, damage: c_i
 }
 
 fn makeSnakeCross(snake: *pl.Snake) bool {
-    _ = snake;
-    return false;
+    if (snake.sprites.head == null) return false;
+
+    // Trap and Item ( everything related to block ) verdict
+    for (0..(res.SCREEN_WIDTH / res.UNIT)) |i| {
+        for (0..(res.SCREEN_HEIGHT / res.UNIT)) |j| {
+            if (mp.hasMap[i][j]) {
+                const block: c.SDL_Rect = .{
+                    .x = @as(c_int, @intCast(i)) * res.UNIT,
+                    .y = @as(c_int, @intCast(j)) * res.UNIT,
+                    .w = res.UNIT,
+                    .h = res.UNIT,
+                };
+                if (map[i][j].bp == .BLOCK_TRAP and map[i][j].enable) {
+                    var p = snake.sprites.head;
+                    while (p != null) : (p = p.?.nxt) {
+                        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                        const spriteRect = hlp.getSpriteFeetBox(sprite);
+                        if (hlp.RectRectCross(&spriteRect, &block)) {
+                            dealDamage(null, snake, sprite, spikeDamage);
+                        }
+                    }
+                }
+                if (isPlayer(snake)) {
+                    const headBox = hlp.getSpriteFeetBox(@alignCast(@ptrCast(snake.sprites.head.?.element)));
+                    if (itemMap[i][j].type != .ITEM_NONE) {
+                        if (hlp.RectRectCross(&headBox, &block)) {
+                            var taken = true;
+                            const ani = itemMap[i][j].ani;
+                            if (itemMap[i][j].type == .ITEM_HERO) {
+                                aud.playAudio(res.AUDIO_COIN);
+                                appendSpriteToSnake(snake, itemMap[i][j].id, 0, 0, .RIGHT);
+                                herosCount -= 1;
+                                tps.removeAnimationFromLinkList(&ren.animationsList[ren.RENDER_LIST_SPRITE_ID], ani);
+                            } else if (itemMap[i][j].type == .ITEM_HP_MEDICINE or
+                                itemMap[i][j].type == .ITEM_HP_EXTRA_MEDICINE)
+                            {
+                                aud.playAudio(res.AUDIO_MED);
+                                takeHpMedcine(snake, GAME_HP_MEDICINE_DELTA, itemMap[i][j].type == .ITEM_HP_EXTRA_MEDICINE);
+                                flasksCount -= @intFromBool(itemMap[i][j].type == .ITEM_HP_MEDICINE);
+
+                                tps.removeAnimationFromLinkList(&ren.animationsList[ren.RENDER_LIST_MAP_ITEMS_ID], ani);
+                            } else if (itemMap[i][j].type == .ITEM_WEAPON) {
+                                taken = takeWeapon(snake, &itemMap[i][j]);
+                                if (taken) {
+                                    aud.playAudio(res.AUDIO_MED);
+                                    tps.removeAnimationFromLinkList(&ren.animationsList[ren.RENDER_LIST_MAP_ITEMS_ID], ani);
+                                }
+                            }
+                            if (taken) itemMap[i][j].type = .ITEM_NONE;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    {
+        // Created inner scope to limit p lifetime.
+        // Death verdict, create death ani
+        var p = snake.sprites.head;
+        while (p != null) : (p = p.?.nxt) {
+            const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+            if (sprite.hp <= 0) {
+                aud.playAudio(res.AUDIO_HUMAN_DEATH);
+
+                // WARNING: Dangerous here too, this is legit pointer arithmetic
+                // as it's fully dependant on the textures array layout.
+                var deathPtr: usize = @intFromPtr(sprite.ani.origin);
+
+                if (isPlayer(snake)) deathPtr += (@sizeOf(tps.Texture) * 1);
+
+                dropItem(sprite);
+
+                _ = ren.createAndPushAnimation(
+                    &ren.animationsList[ren.RENDER_LIST_DEATH_ID],
+                    &res.textures[res.RES_SKULL],
+                    null,
+                    .LOOP_INFI,
+                    1,
+                    sprite.x + hlp.randInt(-mp.MAP_SKULL_SPILL_RANGE, mp.MAP_SKULL_SPILL_RANGE),
+                    sprite.y + hlp.randInt(-mp.MAP_SKULL_SPILL_RANGE, mp.MAP_SKULL_SPILL_RANGE),
+                    if (sprite.face == .LEFT) c.SDL_FLIP_NONE else c.SDL_FLIP_HORIZONTAL,
+                    0,
+                    .AT_BOTTOM_CENTER,
+                );
+
+                _ = ren.createAndPushAnimation(
+                    &ren.animationsList[ren.RENDER_LIST_DEATH_ID],
+                    @ptrFromInt(deathPtr),
+                    &res.effects[res.EFFECT_DEATH],
+                    .LOOP_ONCE,
+                    ren.SPRITE_ANIMATION_DURATION,
+                    sprite.x,
+                    sprite.y,
+                    if (sprite.face == .RIGHT) c.SDL_FLIP_NONE else c.SDL_FLIP_HORIZONTAL,
+                    0,
+                    .AT_BOTTOM_CENTER,
+                );
+
+                // TOO BLOODY - commented out in the original C project.
+                _ = ren.createAndPushAnimation(
+                    &ren.animationsList[ren.RENDER_LIST_MAP_SPECIAL_ID],
+                    &res.textures[@intCast(hlp.randInt(res.RES_BLOOD1, res.RES_BLOOD4))],
+                    null,
+                    .LOOP_INFI,
+                    ren.SPRITE_ANIMATION_DURATION,
+                    sprite.x +
+                        hlp.randInt(-mp.MAP_BLOOD_SPILL_RANGE, mp.MAP_BLOOD_SPILL_RANGE),
+                    sprite.y +
+                        hlp.randInt(-mp.MAP_BLOOD_SPILL_RANGE, mp.MAP_BLOOD_SPILL_RANGE),
+                    if (sprite.face == .RIGHT)
+                        c.SDL_FLIP_NONE
+                    else
+                        c.SDL_FLIP_HORIZONTAL,
+                    0,
+                    .AT_BOTTOM_CENTER,
+                );
+
+                ren.clearBindInAnimationsList(sprite, ren.RENDER_LIST_EFFECT_ID);
+                ren.clearBindInAnimationsList(sprite, ren.RENDER_LIST_SPRITE_ID);
+                tps.removeAnimationFromLinkList(&ren.animationsList[ren.RENDER_LIST_SPRITE_ID], sprite.ani);
+                //sprite.ani = null;
+                snake.num -= 1;
+            }
+        }
+    }
+
+    // Update position
+    {
+        // r.c. - Introduced scope to limit p lifetime.
+        var p = snake.sprites.head;
+        var nxt: ?*adt.LinkNode = undefined;
+        while (p != null) : (p = nxt) {
+            var sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+            nxt = p.?.nxt;
+            if (sprite.hp <= 0) {
+                var q = snake.sprites.tail;
+                while (q != p) : (q = q.?.pre) {
+                    const prevSprite: *spr.Sprite = @alignCast(@ptrCast(q.?.pre.?.element));
+                    sprite = @alignCast(@ptrCast(q.?.element));
+                    sprite.direction = prevSprite.direction;
+                    sprite.face = prevSprite.face;
+                    sprite.posBuffer = prevSprite.posBuffer;
+                    sprite.x = prevSprite.x;
+                    sprite.y = prevSprite.y;
+                }
+                tps.removeLinkNode(snake.sprites, p.?);
+                c.free(sprite);
+            }
+        }
+    }
+
+    if (snake.sprites.head == null) {
+        return false;
+    }
+    const snakeHead = snake.sprites.head.?.element;
+    _ = snakeHead;
+    const die = false; //TODO: crushVerdict(snakeHead, !isPlayer(snake), false);
+    if (die) {
+        var p = snake.sprites.head;
+        while (p != null) : (p = p.nxt) {
+            const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+            sprite.hp = 0;
+        }
+    }
+
+    return die;
 }
 
 /// makeBulletCross is the bullet's collission detection.

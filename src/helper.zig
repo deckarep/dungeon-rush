@@ -127,6 +127,14 @@ pub fn getSpriteBoundBox(sprite: *spr.Sprite) c.SDL_Rect {
     return dst;
 }
 
+pub fn getSpriteFeetBox(sprite: *spr.Sprite) c.SDL_Rect {
+    const ani = sprite.ani;
+    var dst = getSpriteBoundBox(sprite);
+    dst.y = ani.y - gm.SPRITE_EFFECT_FEET;
+    dst.h = gm.SPRITE_EFFECT_FEET;
+    return dst;
+}
+
 pub fn getMapRect(x: c_int, y: c_int) c.SDL_Rect {
     return c.SDL_Rect{
         .x = x * res.UNIT,

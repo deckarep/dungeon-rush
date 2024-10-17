@@ -255,15 +255,15 @@ pub fn updateAnimationOfBlock(self: *tps.Block) void {
 }
 
 pub fn clearBindInAnimationsList(sprite: *spr.Sprite, id: c_int) void {
-    const p = animationsList[id].head;
-    const nxt: ?*adt.LinkNode = null;
+    var p = animationsList[@intCast(id)].head;
+    var nxt: ?*adt.LinkNode = null;
     while (p != null) : (p = nxt) {
-        nxt = p.nxt;
-        const ani: *tps.Animation = @alignCast(@ptrCast(p.element));
-        if (ani.bind == sprite) {
+        nxt = p.?.nxt;
+        const ani: *tps.Animation = @alignCast(@ptrCast(p.?.element));
+        if (ani.bind != null and ani.bind.? == @as(*anyopaque, sprite)) {
             ani.bind = null;
             if (ani.dieWithBind) {
-                tps.removeLinkNode(&animationsList[id], p);
+                tps.removeLinkNode(&animationsList[@intCast(id)], p.?);
                 tps.destroyAnimation(ani);
             }
         }
