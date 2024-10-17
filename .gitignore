@@ -1,3 +1,5 @@
+.DS_Store
+
 .vscode
 dist
 snake
@@ -6,6 +8,10 @@ storage.dat
 archive
 dungeon_rush
 dungeonrush
+c-dungeonrush
 *.o
 *.gch
 build
+
+.zig-cache
+*.zig.raw
