@@ -11,6 +11,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    // Any contributors want to help get this building on other platforms and clean this up?
     const macos_arm64_homebrew_path = "/opt/homebrew/opt/";
     exe.addIncludePath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2/include/SDL2" });
     exe.addLibraryPath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2/lib" });
@@ -33,38 +34,6 @@ pub fn build(b: *std.Build) void {
     exe.linkSystemLibrary("SDL2_net");
 
     exe.linkSystemLibrary("c");
-
-    // const cflags = &[_][]const u8{
-    //     "-std=c99",
-    //     //"-pedantic", <-- rc: once all C code is removed and migrated to Zig, this shouldn't break.
-    //     "-Werror",
-    //     "-Wall",
-    //     "-Wextra",
-    // };
-
-    // exe.addCSourceFiles(.{
-    //     .files = &.{
-    //         "src/ui.c",
-    //         "src/ai.c",
-    //         "src/audio.c",
-    //         "src/bullet.c",
-    //         "src/game.c",
-    //         "src/helper.c",
-    //         "src/map.c",
-    //         "src/net.c",
-    //         "src/player.c",
-    //         "src/render.c",
-    //         "src/res.c",
-    //         "src/sprite.c",
-    //         "src/storage.c",
-    //         "src/types.c",
-    //         "src/weapon.c",
-    //     },
-    //     .flags = cflags,
-    // });
-
-    // Needed for Zig files to find C header files.
-    //exe.addIncludePath(b.path("src"));
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
