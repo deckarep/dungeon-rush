@@ -4,6 +4,9 @@
 
 This is a near exact **Zig port** of the [original DungeonRush `C-based`](https://github.com/rapiz1/DungeonRush) rogue-like game running on SDL2 originally developed by @rapiz1.
 
+## Status
+* ⚠️ Actively in development, but not yet complete!
+
 ## Port Goals
 * To re-create a moderately complex game, fully in Zig and to get better at the language.
 * To make this port faithful to the original, while being more idiomatic.
