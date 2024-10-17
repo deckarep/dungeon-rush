@@ -5,7 +5,7 @@
 This is a near exact **Zig port** of the [original DungeonRush `C-based`](https://github.com/rapiz1/DungeonRush) rogue-like game running on SDL2 originally developed by @rapiz1.
 
 ## Port Goals
-* To re-create a moderately complex game, fully in Zig to get better at the language.
+* To re-create a moderately complex game, fully in Zig and to get better at the language.
 * To make this port faithful to the original, while being more idiomatic.
 * To identify and fix any *possible* undefined behaviors or bugs that the Zig compiler catches or
   that myself or other contributors catch.
@@ -43,6 +43,15 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
   * It uses cellular automata to generate random dungeon levels
   * It has weapons, buffs, enemies, bosses and loot drops
   * It features classic pixel art and animations
+  * Don't forget 8-bit style music and sound-fx
+
+## Source
+  * zrc/ - Ziglang port (by @deckarep)
+  * src/ - C-based version (original by @rapiz1)
+
+## Installing and Running
+  * Ensure SDL2 is installed for your OS/Platform
+  * From the root folder: `zig build run`
 
 ## Contributions
 Want to hack on this project with me? I will welcome all contributions that improve the code while keeping it faithful to the original DungeonRush project. I'd like the game to look and run identical. I'd like help with the phases outlined above. There's plenty of low-hanging fruit that is relevant to beginners and experienced a-like.
