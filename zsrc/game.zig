@@ -61,7 +61,7 @@ var bullets: ?*adt.LinkList = null;
 pub var gameLevel: c_int = undefined;
 var stage: c_int = undefined;
 pub var spritesCount: c_int = undefined;
-var playersCount: c_int = undefined;
+pub var playersCount: c_int = undefined;
 var flasksCount: c_int = undefined;
 var herosCount: c_int = undefined;
 var flasksSetting: c_int = undefined;
@@ -1170,7 +1170,7 @@ inline fn isPlayer(snake: *pl.Snake) bool {
 
 //  Verdict if a sprite crushes on other objects
 
-fn crushVerdict(sprite: *spr.Sprite, loose: bool, useAnimationBox: bool) bool {
+pub fn crushVerdict(sprite: *spr.Sprite, loose: bool, useAnimationBox: bool) bool {
     const x = sprite.x;
     const y = sprite.y;
 
@@ -1419,7 +1419,7 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
         }
     }
 
-    // Update position in Linked List.
+    // Remove sprites where hp is 0 and shift over positions in Linked List.
     {
         // r.c. - Introduced scope to limit p lifetime.
         var p = snake.sprites.head;
@@ -1443,7 +1443,7 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                     currSprite.y = prevSprite.y;
                 }
                 tps.removeLinkNode(snake.sprites, p.?);
-                //std.log.info("makeSnakeCross: snake: {*}, sprite: {*}", .{ snake, sprite });
+                // NOTE: Double free was occuring here.
                 c.free(possibleSpriteToDelete);
             }
         }
@@ -1582,7 +1582,7 @@ fn makeCross() void {
     }
 }
 
-fn moveSprite(sprite: *spr.Sprite, step: c_int) void {
+pub fn moveSprite(sprite: *spr.Sprite, step: c_int) void {
     const dir = sprite.direction;
 
     switch (dir) {
@@ -1672,8 +1672,8 @@ fn gameLoop() GameStatus {
             if (spriteSnake[i].?.sprites.head == null) {
                 continue; // some snakes killed by before but not clean up yet
             }
-            // if (i >= playersCount && renderFrames % AI_DECIDE_RATE == 0)
-            //     AiInput(spriteSnake[i]);
+            if (i >= playersCount and ren.renderFrames % ai.AI_DECIDE_RATE == 0)
+                ai.AiInput(spriteSnake[i].?);
             moveSnake(spriteSnake[i].?);
             makeSnakeAttack(spriteSnake[i].?);
         }

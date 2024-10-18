@@ -6,6 +6,8 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
 
 ## Status
 * ⚠️ Actively in development, but not yet complete!
+* Hunting down a few bugs at the moment
+* A couple render functions not complete.
 
 ## Port Goals
 * To re-create a moderately complex game, fully in Zig and to get better at the language.
