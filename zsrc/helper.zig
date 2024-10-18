@@ -84,7 +84,7 @@ pub fn getSpriteAnimationBox(sprite: *spr.Sprite) c.SDL_Rect {
     const ani = sprite.ani;
 
     const dst: c.SDL_Rect = .{
-        .x = ani.x - ani.origin.width * ren.SCALE_FACTOR / 2,
+        .x = ani.x - ani.origin.width * @divTrunc(ren.SCALE_FACTOR, 2),
         .y = ani.y - ani.origin.height * ren.SCALE_FACTOR,
         .w = ani.origin.width * ren.SCALE_FACTOR,
         .h = ani.origin.height * ren.SCALE_FACTOR,
@@ -139,8 +139,8 @@ pub fn getMapRect(x: c_int, y: c_int) c.SDL_Rect {
     return c.SDL_Rect{
         .x = x * res.UNIT,
         .y = y * res.UNIT,
-        .width = res.UNIT,
-        .height = res.UNIT,
+        .w = res.UNIT,
+        .h = res.UNIT,
     };
 }
 

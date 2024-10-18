@@ -194,6 +194,7 @@ pub fn appendSpriteToSnake(
         }
     }
     const sprite = spr.createSprite(&res.commonSprites[@intCast(sprite_id)], newX, newY);
+    std.log.info("appendSpriteToSnake snake:{*}, sprite:{*}", .{ snake, sprite });
     sprite.direction = direction;
     if (direction == .LEFT) {
         sprite.face = .LEFT;
@@ -1155,6 +1156,7 @@ pub fn destroySnake(snake: *pl.Snake) void {
     //snake.sprites = null; // currently it's non-nullable.
     tps.destroyScore(snake.score);
     //snake.score = null; // currently it's non-nullable.
+    std.log.info("destroySnake: Freeing snake at address: {*}", .{snake});
     c.free(snake);
 }
 
@@ -1162,6 +1164,63 @@ pub fn destroySnake(snake: *pl.Snake) void {
 inline fn isPlayer(snake: *pl.Snake) bool {
     for (0..@intCast(playersCount)) |i| {
         if (snake == spriteSnake[i]) return true;
+    }
+    return false;
+}
+
+//  Verdict if a sprite crushes on other objects
+
+fn crushVerdict(sprite: *spr.Sprite, loose: bool, useAnimationBox: bool) bool {
+    const x = sprite.x;
+    const y = sprite.y;
+
+    const box: c.SDL_Rect = if (useAnimationBox) hlp.getSpriteAnimationBox(sprite) else hlp.getSpriteFeetBox(sprite);
+    var block = box;
+
+    // If the sprite is out of the map, then consider it as crushed
+    if (hlp.inr(@divTrunc(x, res.UNIT), 0, res.n - 1) and
+        hlp.inr(@divTrunc(y, res.UNIT), 0, res.m - 1))
+    {
+        //nothing to do
+    } else {
+        return true;
+    }
+
+    // Loop over the cells nearby the sprite to know better if it falls out of map
+    var dx: c_int = -1;
+    while (dx <= 1) : (dx += 1) {
+        var dy: c_int = -1;
+        while (dy <= 1) : (dy += 1) {
+            const xx: c_int = @divTrunc(x, res.UNIT) + dx;
+            const yy: c_int = @divTrunc(y, res.UNIT) + dy;
+            if (hlp.inr(xx, 0, res.n - 1) and hlp.inr(yy, 0, res.m - 1)) {
+                block = hlp.getMapRect(@intCast(xx), @intCast(yy));
+                if (hlp.RectRectCross(&box, &block) and !mp.hasMap[@intCast(xx)][@intCast(yy)]) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    // If it has crushed on other sprites
+    for (0..@intCast(spritesCount)) |i| {
+        var self = false;
+        var p = spriteSnake[i].?.sprites.head;
+        while (p != null) : (p = p.?.nxt) {
+            const other: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+            if (other != sprite) {
+                const otherBox = if (useAnimationBox) hlp.getSpriteAnimationBox(other) else hlp.getSpriteFeetBox(other);
+                if (hlp.RectRectCross(&box, &otherBox)) {
+                    if ((self and loose) or (p.?.pre != null and p.?.pre.?.element == @as(?*anyopaque, @ptrCast(sprite)))) {
+                        // Do nothing.
+                    } else {
+                        return true;
+                    }
+                }
+            } else {
+                self = true;
+            }
+        }
     }
     return false;
 }
@@ -1360,27 +1419,32 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
         }
     }
 
-    // Update position
+    // Update position in Linked List.
     {
         // r.c. - Introduced scope to limit p lifetime.
         var p = snake.sprites.head;
         var nxt: ?*adt.LinkNode = undefined;
         while (p != null) : (p = nxt) {
-            var sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+            // r.c. - NOTE: Code is slightly different from original as a double-free was occuring.
+            // This code ensures that the a fresh const possibleSpriteToDelete identifier
+            // is used so that it doesn't get overwritten in the inner loop.
+            // We need to ensure we only delete one sprite when the hp <= 0.
+            const possibleSpriteToDelete: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
             nxt = p.?.nxt;
-            if (sprite.hp <= 0) {
+            if (possibleSpriteToDelete.hp <= 0) {
                 var q = snake.sprites.tail;
                 while (q != p) : (q = q.?.pre) {
                     const prevSprite: *spr.Sprite = @alignCast(@ptrCast(q.?.pre.?.element));
-                    sprite = @alignCast(@ptrCast(q.?.element));
-                    sprite.direction = prevSprite.direction;
-                    sprite.face = prevSprite.face;
-                    sprite.posBuffer = prevSprite.posBuffer;
-                    sprite.x = prevSprite.x;
-                    sprite.y = prevSprite.y;
+                    const currSprite: *spr.Sprite = @alignCast(@ptrCast(q.?.element));
+                    currSprite.direction = prevSprite.direction;
+                    currSprite.face = prevSprite.face;
+                    currSprite.posBuffer = prevSprite.posBuffer;
+                    currSprite.x = prevSprite.x;
+                    currSprite.y = prevSprite.y;
                 }
                 tps.removeLinkNode(snake.sprites, p.?);
-                c.free(sprite);
+                //std.log.info("makeSnakeCross: snake: {*}, sprite: {*}", .{ snake, sprite });
+                c.free(possibleSpriteToDelete);
             }
         }
     }
@@ -1388,12 +1452,11 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
     if (snake.sprites.head == null) {
         return false;
     }
-    const snakeHead = snake.sprites.head.?.element;
-    _ = snakeHead;
-    const die = false; //TODO: crushVerdict(snakeHead, !isPlayer(snake), false);
+    const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.head.?.element));
+    const die = crushVerdict(snakeHead, !isPlayer(snake), false);
     if (die) {
         var p = snake.sprites.head;
-        while (p != null) : (p = p.nxt) {
+        while (p != null) : (p = p.?.nxt) {
             const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
             sprite.hp = 0;
         }
@@ -1648,14 +1711,16 @@ fn gameLoop() GameStatus {
         {
             var i: usize = @intCast(playersCount);
             while (i < spritesCount) : (i += 1) {
-                if (spriteSnake[i].?.num <= 0) {
+                if (spriteSnake[i].?.num == 0) {
                     destroySnake(spriteSnake[i].?);
-                    spriteSnake[i] = null; // Not nullable in Zig.
+                    spriteSnake[i] = null;
                     var j = i;
-                    while (j + 1 < spritesCount) : (j += 1) {
+                    // All snakes after this one being removed, shift them left by one spot.
+                    // This is supposed to eliminate 'null' holes in the spriteSnake array.
+                    while ((j + 1) < spritesCount) : (j += 1) {
                         spriteSnake[j] = spriteSnake[j + 1];
                     }
-                    spriteSnake[@intCast(spritesCount)] = null; // Not nullable in Zig.
+                    spriteSnake[@intCast(spritesCount)] = null;
                     spritesCount -= 1;
                 }
             }

@@ -381,11 +381,13 @@ pub fn removeLinkNode(list: *adt.LinkList, node: *adt.LinkNode) void {
     } else {
         list.head = node.nxt;
     }
+
     if (node.nxt) |nxt| {
         nxt.pre = node.pre;
     } else {
         list.tail = node.pre;
     }
+
     c.free(node);
 }
 
