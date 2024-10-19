@@ -61,6 +61,9 @@ pub var renderFrames: usize = 0;
 
 pub var animationsList: [ANIMATION_LINK_LIST_NUM]adt.LinkList = undefined;
 var countDownBar: *tps.Animation = undefined;
+var stageText: ?*tps.Text = null;
+var taskText: ?*tps.Text = null;
+var scoresText: [gm.MAX_PLAYERS_NUM]?*tps.Text = undefined;
 
 pub fn blacken(duration: usize) void {
     _ = c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND);
@@ -115,7 +118,25 @@ pub fn initCountDownBar() void {
 }
 
 pub fn initInfo() void {
-    // TODO: shows stage and text and what not.
+    var buf: [1 << 8]u8 = undefined;
+    // _ = c.sprintf(&buf, "Stage:%3d", gm.stage);
+    const strResult = std.fmt.bufPrintZ(&buf, "Stage: {d}", .{gm.stage}) catch unreachable;
+
+    if (stageText != null) {
+        tps.setText(stageText.?, strResult.ptr);
+    } else {
+        stageText = tps.createText(strResult.ptr, tps.WHITE);
+    }
+
+    for (0..@intCast(gm.playersCount)) |i| {
+        if (scoresText[i] == null) {
+            scoresText[i] = tps.createText("placeholder", tps.WHITE);
+        }
+    }
+
+    if (taskText == null) {
+        taskText = tps.createText("placeholder", tps.WHITE);
+    }
 }
 
 pub fn initRenderer() void {
@@ -125,16 +146,17 @@ pub fn initRenderer() void {
     }
 }
 
-// pub fn clearInfo() void {
-//   destroyText(stageText);
-//   stageText = NULL;
-//   destroyText(taskText);
-//   taskText = NULL;
-//   for (int i = 0; i < playersCount; i++) {
-//     destroyText(scoresText[i]);
-//     scoresText[i] = NULL;
-//   }
-// }
+pub fn clearInfo() void {
+    tps.destroyText(stageText);
+    stageText = null;
+    tps.destroyText(taskText);
+    taskText = null;
+
+    for (0..@intCast(gm.playersCount)) |i| {
+        tps.destroyText(scoresText[i]);
+        scoresText[i] = null;
+    }
+}
 
 pub fn clearRenderer() void {
     for (0..ANIMATION_LINK_LIST_NUM) |i| {
@@ -231,6 +253,16 @@ fn renderCountDown() void {
     const width = percent * UI_COUNTDOWN_BAR_WIDTH;
     countDownBar.origin.width = @intFromFloat(width);
     countDownBar.origin.crops[0].w = countDownBar.origin.width;
+}
+
+fn renderText(text: *const tps.Text, x: c_int, y: c_int, scale: f64) void {
+    const dst: c.SDL_Rect = .{
+        .x = x,
+        .y = y,
+        .w = @intFromFloat((@as(f64, @floatFromInt(text.width)) * scale + 0.5)),
+        .h = @intFromFloat((@as(f64, @floatFromInt(text.height)) * scale + 0.5)),
+    };
+    _ = c.SDL_RenderCopy(renderer, text.origin, null, &dst);
 }
 
 pub fn renderCenteredText(text: *const tps.Text, x: c_int, y: c_int, scale: f64) c.SDL_Point {
@@ -544,6 +576,53 @@ fn renderAnimationLinkListWithSort(list: *adt.LinkList) void {
     }
 }
 
+fn renderInfo() void {
+    var startY: c_int = 0;
+    const startX: c_int = 10;
+    const lineGap = res.FONT_SIZE;
+    renderText(stageText.?, startX, startY, 1);
+    startY += lineGap;
+    for (0..@intCast(gm.playersCount)) |i| {
+        var buf: [1 << 8]u8 = undefined;
+        tps.calcScore(gm.spriteSnake[i].?.score);
+
+        //c.sprintf(&buf, "Player%d:%5d", i + 1, (gm.spriteSnake[i].?.score.rank + 0.5));
+        // TODO: try needs to be here.
+        const strResult = std.fmt.bufPrintZ(
+            &buf,
+            "Player{d}: {d:05}",
+            .{ i + 1, @as(c_int, @intFromFloat(gm.spriteSnake[i].?.score.rank + 0.5)) },
+        ) catch unreachable;
+
+        tps.setText(scoresText[i].?, strResult.ptr);
+        renderText(scoresText[i].?, startX, startY, 1);
+        startY += lineGap;
+    }
+
+    if (gm.playersCount == 1) {
+        var buf: [1 << 8]u8 = undefined;
+
+        // c.sprintf(&buf, "Find %d more heros!", if (gm.GAME_WIN_NUM > gm.spriteSnake[0].?.num)
+        //     gm.GAME_WIN_NUM - gm.spriteSnake[0].?.num
+        // else
+        //     0);
+        // TODO: try needs to be here.
+        const strResult = std.fmt.bufPrintZ(
+            &buf,
+            "Find {d} more heroes!",
+            .{if (gm.GAME_WIN_NUM > gm.spriteSnake[0].?.num)
+                gm.GAME_WIN_NUM - gm.spriteSnake[0].?.num
+            else
+                0},
+        ) catch unreachable;
+
+        tps.setText(taskText.?, strResult.ptr);
+        renderText(taskText.?, startX, startY, 1);
+
+        startY += lineGap;
+    }
+}
+
 pub fn render() void {
     _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
     _ = c.SDL_RenderClear(renderer);
@@ -559,7 +638,7 @@ pub fn render() void {
     // TODO: these funcs below.
     renderHp();
     renderCountDown();
-    //renderInfo();
+    renderInfo();
     renderId();
     // Update Screen
     c.SDL_RenderPresent(renderer);

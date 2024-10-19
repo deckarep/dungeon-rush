@@ -295,11 +295,11 @@ pub fn createText(str: [*:0]const u8, color: c.SDL_Color) *Text {
 }
 
 pub fn setText(self: *Text, str: [*c]const u8) void {
-    if (!c.strcmp(str, self.text)) {
+    if (c.strcmp(str, self.text) == 0) {
         return;
     }
     c.SDL_DestroyTexture(self.origin);
-    initText(self, str, self.color);
+    _ = initText(self, str, self.color);
 }
 
 pub fn destroyText(self: *Text) void {
@@ -475,13 +475,12 @@ pub fn destroyScore(self: *Score) void {
     c.free(self);
 }
 
-fn calcScore(self: *Score) void {
+pub fn calcScore(self: *Score) void {
     if (self.got == 0) {
         self.rank = 0;
         return;
     }
 
-    //extern int gameLevel;
     const gl: f64 = @floatFromInt(gm.gameLevel);
     const dmg: f64 = @floatFromInt(self.damage);
     const got: f64 = @floatFromInt(self.got);

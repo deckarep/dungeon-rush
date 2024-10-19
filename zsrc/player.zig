@@ -35,6 +35,7 @@ pub const Snake = struct {
     sprites: *adt.LinkList,
     moveStep: c_int,
     team: c_int,
+    // num is how many sprites (heroes or baddies) form the snake.
     num: c_int,
     buffs: [tps.BUFF_END]c_int, // r.c. - verified these should stay integers
     score: *tps.Score,

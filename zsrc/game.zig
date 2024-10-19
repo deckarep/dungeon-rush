@@ -43,6 +43,7 @@ const SPRITES_MAX_NUM = 1024;
 const MOVE_STEP = 2;
 const GAME_MONSTERS_TEAM = 9;
 pub const GAME_MAP_RELOAD_PERIOD = 120;
+pub const MAX_PLAYERS_NUM = 2;
 const GAME_HP_MEDICINE_EXTRA_DELTA = 33;
 const GAME_HP_MEDICINE_DELTA = 55;
 const GAME_FROZEN_DAMAGE_K = 0.1;
@@ -59,7 +60,7 @@ pub var spriteSnake: [SPRITES_MAX_NUM]?*pl.Snake = undefined;
 var bullets: ?*adt.LinkList = null;
 
 pub var gameLevel: c_int = undefined;
-var stage: c_int = undefined;
+pub var stage: c_int = undefined;
 pub var spritesCount: c_int = undefined;
 pub var playersCount: c_int = undefined;
 var flasksCount: c_int = undefined;
@@ -71,7 +72,7 @@ var spritesSetting: c_int = undefined;
 var bossSetting: c_int = undefined;
 
 // Win
-var GAME_WIN_NUM: c_int = undefined;
+pub var GAME_WIN_NUM: c_int = undefined;
 var termCount: c_int = undefined;
 var status: GameStatus = undefined;
 var willTerm: bool = undefined;
