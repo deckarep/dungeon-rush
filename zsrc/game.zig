@@ -212,7 +212,7 @@ pub fn appendSpriteToSnake(
     ren.pushAnimationToRender(ren.RENDER_LIST_SPRITE_ID, sprite.ani);
 
     // TODO: I think the buffs array should be booleans (possibly, confirm later)
-    if (snake.buffs[tps.BUFF_DEFENCE] == 1) {
+    if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
         shieldSprite(sprite, snake.buffs[tps.BUFF_DEFENCE]);
     }
 }
@@ -229,6 +229,7 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     var xx = x;
     var yy = y;
 
+    // TODO: Figure out if randInt should be inclusive on lower and upper bound?
     const heroId = hlp.randInt(res.SPRITE_KNIGHT, res.SPRITE_LIZARD);
     const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
 
@@ -1359,9 +1360,18 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
 
                 // WARNING: Dangerous here too, this is legit pointer arithmetic
                 // as it's fully dependant on the textures array layout.
+
+                // r.c. - based on textures array, a player should be on the run animation
+                // the immediate texture higher in the array is the "hit" texture for that player.
+                // So it goes from: {character-type}_run_anim -> {character-type}_hit_anim
+                // NOTE: Only some characters have the _hit_anim
                 var deathPtr: usize = @intFromPtr(sprite.ani.origin);
+                std.log.debug("Death dbg: {s}, b4 ptr: {*}", .{ std.mem.sliceTo(&sprite.ani.origin.dbgName, 0), sprite.ani.origin });
 
                 if (isPlayer(snake)) deathPtr += (@sizeOf(tps.Texture) * 1);
+
+                const possiblyNewTexture = @as(*tps.Texture, @ptrFromInt(deathPtr));
+                std.log.debug("Death dbg: {s}, aft ptr: {*}", .{ std.mem.sliceTo(&possiblyNewTexture.dbgName, 0), possiblyNewTexture });
 
                 dropItem(sprite);
 

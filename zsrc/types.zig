@@ -79,6 +79,7 @@ pub const Texture = struct {
     width: c_int,
     height: c_int,
     frames: c_int,
+    dbgName: [256]u8 = undefined,
     crops: [*]c.SDL_Rect,
 };
 
@@ -196,8 +197,20 @@ pub fn destroyTexture(self: *Texture) void {
     c.free(self);
 }
 
-pub fn initAnimation(self: *Animation, origin: *Texture, effect: ?*const Effect, lp: LoopType, duration: c_int, x: c_int, y: c_int, flip: c.SDL_RendererFlip, angle: f64, at: At) void {
+pub fn initAnimation(
+    self: *Animation,
+    origin: *Texture,
+    effect: ?*const Effect,
+    lp: LoopType,
+    duration: c_int,
+    x: c_int,
+    y: c_int,
+    flip: c.SDL_RendererFlip,
+    angle: f64,
+    at: At,
+) void {
     self.origin = origin;
+
     // will deep copy effect
     if (effect) |ef| {
         self.effect = @as(*Effect, @ptrCast(@alignCast(c.malloc(@sizeOf(Effect)))));

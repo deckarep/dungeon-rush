@@ -36,8 +36,8 @@ pub inline fn inr(val: c_int, lower: c_int, upper: c_int) bool {
 }
 
 pub fn randInt(l: c_int, r: c_int) c_int {
-    const rdm: c_int = @intCast(rng.prngRand());
-    return @mod(rdm, (r - l + 1) + l);
+    const rdm: c_int = @intCast(rng.prngRand()); // Assume rng.prngRand() gives you a valid random number.
+    return @mod(rdm, (r - l + 1)) + l; // Generate a number between l and r
 }
 
 pub fn randDouble() f64 {
@@ -148,4 +148,15 @@ pub fn distance(a: tps.Point, b: tps.Point) f64 {
     const dx: f64 = @floatFromInt(a.x - b.x);
     const dy: f64 = @floatFromInt(a.y - b.y);
     return @sqrt(dx * dx + dy * dy);
+}
+
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "randInt" {
+    for (0..100) |_| {
+        const r = randInt(5, 15);
+        std.debug.print("r => {d}\n", .{r});
+        //try expect(5 <= r and r <= 15);
+    }
 }

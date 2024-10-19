@@ -403,10 +403,19 @@ fn loadTileset(path: [*]const u8, origin: ?*c.SDL_Texture) bool {
             p.crops[i].h = h;
             p.crops[i].w = w;
         }
-        // #ifdef DBG
-        //     printf("Resources #%d: %s %d %d %d %d %d loaded\n", texturesCount - 1,
-        //            resName, x, y, w, h, f);
-        // #endif
+
+        p.dbgName = resName;
+
+        std.log.debug("Texture Res: {d}). {s} ptr:{*}, x:{d}, y:{d}, w:{d}, h:{d}, f:{d}", .{
+            texturesCount - 1,
+            std.mem.sliceTo(&p.dbgName, 0),
+            p,
+            x,
+            y,
+            w,
+            h,
+            f,
+        });
     }
     return true;
 }
@@ -565,10 +574,13 @@ fn initCommonSprite(sprite: *spr.Sprite, weapon: *wp.Weapon, res_id: c_int, hp: 
 }
 
 fn initCommonSprites() void {
+    // Heroes
     initCommonSprite(&commonSprites[SPRITE_KNIGHT], &wp.weapons[wp.WEAPON_SWORD], RES_KNIGHT_M, 150);
     initCommonSprite(&commonSprites[SPRITE_ELF], &wp.weapons[wp.WEAPON_ARROW], RES_ELF_M, 100);
     initCommonSprite(&commonSprites[SPRITE_WIZZARD], &wp.weapons[wp.WEAPON_FIREBALL], RES_WIZZARD_M, 95);
     initCommonSprite(&commonSprites[SPRITE_LIZARD], &wp.weapons[wp.WEAPON_MONSTER_CLAW], RES_LIZARD_M, 120);
+
+    // Baddies
     initCommonSprite(&commonSprites[SPRITE_TINY_ZOMBIE], &wp.weapons[wp.WEAPON_MONSTER_CLAW2], RES_TINY_ZOMBIE, 50);
     initCommonSprite(&commonSprites[SPRITE_GOBLIN], &wp.weapons[wp.WEAPON_MONSTER_CLAW2], RES_GOBLIN, 100);
     initCommonSprite(&commonSprites[SPRITE_IMP], &wp.weapons[wp.WEAPON_MONSTER_CLAW2], RES_IMP, 100);

@@ -170,7 +170,7 @@ pub fn AiInput(snake: *pl.Snake) void {
     if (hlp.randDouble() < AI_PATH_RANDOM) change = true;
 
     if (change) {
-        // NOTE: This doesn't need to be a static array as it is in the C version.
+        // NOTE: r.c. - This doesn't need to be a static array as it is in the C version.
         var choices: [4]Choice = undefined;
         var count: usize = 0;
 
