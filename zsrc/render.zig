@@ -59,6 +59,7 @@ pub var renderer: *c.SDL_Renderer = undefined;
 pub var renderFrames: usize = 0;
 
 pub var animationsList: [ANIMATION_LINK_LIST_NUM]adt.LinkList = undefined;
+var countDownBar: *tps.Animation = undefined;
 
 pub fn blacken(duration: usize) void {
     _ = c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND);
@@ -83,6 +84,33 @@ pub fn blackout() void {
 
 pub fn dim() void {
     blacken(RENDER_DIM_DURATION);
+}
+
+pub fn initCountDownBar() void {
+    _ = createAndPushAnimation(
+        &animationsList[RENDER_LIST_UI_ID],
+        &res.textures[res.RES_SLIDER],
+        null,
+        .LOOP_INFI,
+        1,
+        res.SCREEN_WIDTH / 2 - 128,
+        10,
+        c.SDL_FLIP_NONE,
+        0,
+        .AT_TOP_LEFT,
+    );
+    countDownBar = createAndPushAnimation(
+        &animationsList[RENDER_LIST_UI_ID],
+        &res.textures[res.RES_BAR_BLUE],
+        null,
+        .LOOP_INFI,
+        1,
+        res.SCREEN_WIDTH / 2 - 128,
+        10,
+        c.SDL_FLIP_NONE,
+        0,
+        .AT_TOP_LEFT,
+    );
 }
 
 pub fn initInfo() void {
@@ -167,6 +195,13 @@ fn renderHp() void {
     for (0..@intCast(gm.spritesCount)) |i| {
         renderSnakeHp(gm.spriteSnake[i].?);
     }
+}
+
+fn renderCountDown() void {
+    const percent: f64 = @as(f64, @floatFromInt((renderFrames % gm.GAME_MAP_RELOAD_PERIOD))) / gm.GAME_MAP_RELOAD_PERIOD;
+    const width = percent * UI_COUNTDOWN_BAR_WIDTH;
+    countDownBar.origin.width = @intFromFloat(width);
+    countDownBar.origin.crops[0].w = countDownBar.origin.width;
 }
 
 pub fn renderCenteredText(text: *const tps.Text, x: c_int, y: c_int, scale: f64) c.SDL_Point {
@@ -494,7 +529,7 @@ pub fn render() void {
     }
     // TODO: these funcs below.
     renderHp();
-    //renderCountDown();
+    renderCountDown();
     //renderInfo();
     //renderId();
     // Update Screen

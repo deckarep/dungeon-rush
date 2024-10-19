@@ -42,7 +42,7 @@ const SPIKE_TIME_MASK = 600;
 const SPRITES_MAX_NUM = 1024;
 const MOVE_STEP = 2;
 const GAME_MONSTERS_TEAM = 9;
-const GAME_MAP_RELOAD_PERIOD = 120;
+pub const GAME_MAP_RELOAD_PERIOD = 120;
 const GAME_HP_MEDICINE_EXTRA_DELTA = 33;
 const GAME_HP_MEDICINE_DELTA = 55;
 const GAME_FROZEN_DAMAGE_K = 0.1;
@@ -229,7 +229,6 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     var xx = x;
     var yy = y;
 
-    // TODO: Figure out if randInt should be inclusive on lower and upper bound?
     const heroId = hlp.randInt(res.SPRITE_KNIGHT, res.SPRITE_LIZARD);
     const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
 
@@ -1073,7 +1072,7 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
     flasksCount = 0;
     herosCount = 0;
     ren.initRenderer();
-    //initCountDownBar();
+    ren.initCountDownBar();
 
     // create default hero at (w/2, h/2) (as well push ani)
     for (0..(@as(usize, @intCast(localPlayers)) + @as(usize, @intCast(remotePlayers)))) |i| {
