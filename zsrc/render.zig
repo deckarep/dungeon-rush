@@ -29,6 +29,7 @@ const adt = @import("adt.zig");
 const spr = @import("sprite.zig");
 const pl = @import("player.zig");
 const gm = @import("game.zig");
+const ai = @import("ai.zig");
 
 pub const ANIMATION_LINK_LIST_NUM = 16;
 pub const RENDER_LIST_MAP_ID = 0;
@@ -194,6 +195,34 @@ fn renderSnakeHp(snake: *pl.Snake) void {
 fn renderHp() void {
     for (0..@intCast(gm.spritesCount)) |i| {
         renderSnakeHp(gm.spriteSnake[i].?);
+    }
+}
+
+fn renderCenteredTextBackground(text: *tps.Text, x: c_int, y: c_int, scale: f64) void {
+    const width: f64 = @as(f64, @floatFromInt(text.width)) * scale + 0.5;
+    const height: f64 = @as(f64, @floatFromInt(text.height)) * scale + 0.5;
+    const dst: c.SDL_Rect = .{
+        .x = x - @as(c_int, @intFromFloat(width / 2.0)),
+        .y = y - @as(c_int, @intFromFloat(height / 2.0)),
+        .w = @intFromFloat(width),
+        .h = @intFromFloat(height),
+    };
+    _ = c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND);
+    _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 200);
+    _ = c.SDL_RenderFillRect(renderer, &dst);
+}
+
+fn renderId() void {
+    const powerful = ai.getPowerfulPlayer();
+    for (0..@intCast(gm.playersCount)) |i| {
+        const snake = gm.spriteSnake[i].?;
+        if (snake.sprites.head != null) {
+            const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.head.?.element.?));
+            if (i == powerful) {
+                renderCenteredTextBackground(&res.texts[4 + i], snakeHead.x, snakeHead.y, 0.5);
+            }
+            _ = renderCenteredText(&res.texts[4 + i], snakeHead.x, snakeHead.y, 0.5);
+        }
     }
 }
 
@@ -531,7 +560,7 @@ pub fn render() void {
     renderHp();
     renderCountDown();
     //renderInfo();
-    //renderId();
+    renderId();
     // Update Screen
     c.SDL_RenderPresent(renderer);
     renderFrames += 1;

@@ -30,6 +30,7 @@ const spr = @import("sprite.zig");
 const ren = @import("render.zig");
 
 // Resource ID
+
 // Map Resource
 pub const RES_WALL_TOP_LEFT = 0;
 pub const RES_WALL_TOP_MID = 1;
@@ -135,10 +136,12 @@ pub const RES_THUNDER_STAFF = 201;
 pub const RES_THUNDER_YELLOW = 202;
 pub const RES_ATTACK_UP = 203;
 pub const RES_POWERFUL_BOW = 204;
+
 // Effect
 pub const EFFECT_DEATH = 0;
 pub const EFFECT_BLINK = 1;
 pub const EFFECT_VANISH30 = 2;
+
 // Sprite
 pub const COMMON_SPRITE_SIZE = 1024;
 pub const SPRITE_KNIGHT = 0;
