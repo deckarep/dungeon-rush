@@ -590,10 +590,11 @@ fn renderInfo() void {
         // TODO: try needs to be here.
         const strResult = std.fmt.bufPrintZ(
             &buf,
-            "Player{d}: {d:05}",
+            "Player{d}: {d}",
             .{ i + 1, @as(c_int, @intFromFloat(gm.spriteSnake[i].?.score.rank + 0.5)) },
         ) catch unreachable;
 
+        //std.log.info("a: {s}, b:{s}", .{ scoresText[i].?.text, strResult.ptr });
         tps.setText(scoresText[i].?, strResult.ptr);
         renderText(scoresText[i].?, startX, startY, 1);
         startY += lineGap;

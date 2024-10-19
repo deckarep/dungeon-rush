@@ -29,6 +29,7 @@ const rnd = @import("render.zig");
 const adt = @import("adt.zig");
 const spr = @import("sprite.zig");
 const gm = @import("game.zig");
+const hlp = @import("helper.zig");
 
 pub const BLACK: c.SDL_Color = .{
     .r = 0,
@@ -52,6 +53,7 @@ pub const BUFF_ATTACK = 3;
 pub const BUFF_END = 4;
 
 pub const POSITION_BUFFER_SIZE = 256;
+pub const TEXT_LEN = 1024;
 
 // Renderer Types
 pub const Direction = enum {
@@ -84,7 +86,12 @@ pub const Texture = struct {
 };
 
 pub const Text = struct {
-    text: [*:0]const u8,
+    // Changed text to be an array, it needs to own some dynamic strings.
+    // But I don't know if I've introduced a bug in other places.
+    //text: [*:0]const u8,
+
+    // The original game has this as an array btw.
+    text: [TEXT_LEN]u8 = undefined,
     width: c_int,
     height: c_int,
     origin: *c.SDL_Texture,
@@ -263,7 +270,8 @@ pub fn copyAnimation(src: *const Animation, dest: *Animation) void {
 
 pub fn initText(self: *Text, str: [*:0]const u8, color: c.SDL_Color) bool {
     self.color = color;
-    self.text = str; // safe to just reference global static read-only strings.
+
+    _ = c.strcpy(&self.text, str);
 
     // Render text surface
     const textSurface = c.TTF_RenderText_Solid(res.font, str, color);
@@ -294,10 +302,11 @@ pub fn createText(str: [*:0]const u8, color: c.SDL_Color) *Text {
     return self;
 }
 
-pub fn setText(self: *Text, str: [*c]const u8) void {
-    if (c.strcmp(str, self.text) == 0) {
+pub fn setText(self: *Text, str: [*:0]const u8) void {
+    if (c.strcmp(str, &self.text) == 0) {
         return;
     }
+
     c.SDL_DestroyTexture(self.origin);
     _ = initText(self, str, self.color);
 }
