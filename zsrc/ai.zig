@@ -74,7 +74,7 @@ pub fn getPowerfulPlayer() c_int {
     var id: c_int = -1;
 
     for (0..@intCast(gm.playersCount)) |i| {
-        const num = gm.spriteSnake[@intCast(i)].?.num;
+        const num = gm.spriteSnake[i].?.num;
         if (num > maxNum) {
             maxNum = num;
             mxCount = 1;

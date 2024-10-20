@@ -586,15 +586,13 @@ fn renderInfo() void {
         var buf: [1 << 8]u8 = undefined;
         tps.calcScore(gm.spriteSnake[i].?.score);
 
-        //c.sprintf(&buf, "Player%d:%5d", i + 1, (gm.spriteSnake[i].?.score.rank + 0.5));
         // TODO: try needs to be here.
         const strResult = std.fmt.bufPrintZ(
             &buf,
-            "Player{d}: {d}",
-            .{ i + 1, @as(c_int, @intFromFloat(gm.spriteSnake[i].?.score.rank + 0.5)) },
+            "Player{d}: {d: >5}",
+            .{ i + 1, @as(usize, @intFromFloat(gm.spriteSnake[i].?.score.rank + 0.5)) },
         ) catch unreachable;
 
-        //std.log.info("a: {s}, b:{s}", .{ scoresText[i].?.text, strResult.ptr });
         tps.setText(scoresText[i].?, strResult.ptr);
         renderText(scoresText[i].?, startX, startY, 1);
         startY += lineGap;
@@ -603,10 +601,6 @@ fn renderInfo() void {
     if (gm.playersCount == 1) {
         var buf: [1 << 8]u8 = undefined;
 
-        // c.sprintf(&buf, "Find %d more heros!", if (gm.GAME_WIN_NUM > gm.spriteSnake[0].?.num)
-        //     gm.GAME_WIN_NUM - gm.spriteSnake[0].?.num
-        // else
-        //     0);
         // TODO: try needs to be here.
         const strResult = std.fmt.bufPrintZ(
             &buf,

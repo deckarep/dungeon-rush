@@ -142,7 +142,7 @@ pub const Score = struct {
     damage: c_int,
     stand: c_int,
     killed: c_int,
-    got: c_int,
+    got: c_int, // Bumped, when a snake has a hero added to the chain.
     rank: f64,
 };
 
