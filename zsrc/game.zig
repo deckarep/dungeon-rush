@@ -162,7 +162,7 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*
 
 pub fn appendSpriteToSnake(
     snake: *pl.Snake,
-    sprite_id: c_int,
+    spriteId: c_int,
     x: c_int, // x ,y, dir only matter when empty snake
     y: c_int,
     direction: tps.Direction,
@@ -183,7 +183,7 @@ pub fn appendSpriteToSnake(
         newX = snakeHead.?.x;
         newY = snakeHead.?.y;
         const delta = @divTrunc((snakeHead.?.ani.origin.width * ren.SCALE_FACTOR +
-            res.commonSprites[@intCast(sprite_id)].ani.origin.width * ren.SCALE_FACTOR), 2);
+            res.commonSprites[@intCast(spriteId)].ani.origin.width * ren.SCALE_FACTOR), 2);
         if (snakeHead.?.direction == .LEFT) {
             newX -= delta;
         } else if (snakeHead.?.direction == .RIGHT) {
@@ -194,7 +194,7 @@ pub fn appendSpriteToSnake(
             newY += delta;
         }
     }
-    const sprite = spr.createSprite(&res.commonSprites[@intCast(sprite_id)], newX, newY);
+    const sprite = spr.createSprite(&res.commonSprites[@intCast(spriteId)], newX, newY);
     std.log.info("appendSpriteToSnake snake:{*}, sprite:{*}", .{ snake, sprite });
     sprite.direction = direction;
     if (direction == .LEFT) {
@@ -256,6 +256,17 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     // "This is likely because textures are guaranteed to be stored in a particular order.
     // You can try to trace how textures for heroes are loaded. I guess that the decrement
     // here is to get a different orientation of the same hero character."
+
+    // In the res.Textures array when they get loaded, they are always in this order
+    // and the game always refer to them by their "run" resource id.
+    // So when the game spawns it moves the pointer to pointer - 1.
+    // This puts hero in idle animation while they're waiting to get picked up.
+    // Later, if the hero is killed the pointer is put to: pointer + 1 and since
+    // they are running it's the <char>_hit_anim.
+
+    // <char>_idle_anim  - 1
+    // <char>_run_anim   - 0
+    // <char>_hit_anim   + 1
 
     // Zig replacement code (still dangerous btw):
     // Basically this code just moves the texture assignment to the previous created one

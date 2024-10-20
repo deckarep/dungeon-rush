@@ -31,7 +31,7 @@ const ren = @import("render.zig");
 
 // Resource ID
 
-// Map Resource
+// Map Resource - this ids correspond to the index at time of load.
 pub const RES_WALL_TOP_LEFT = 0;
 pub const RES_WALL_TOP_MID = 1;
 pub const RES_WALL_TOP_RIGHT = 2;
@@ -92,7 +92,7 @@ pub const RES_ORGRE = 132;
 pub const RES_BIG_DEMON = 134;
 pub const RES_ELF_F = 136;
 pub const RES_ELF_M = 139;
-pub const RES_KNIGHT_M = 145;
+pub const RES_KNIGHT_M = 142; //145 (male night)
 pub const RES_WIZZARD_M = 151;
 pub const RES_LIZARD_M = 157;
 pub const RES_FLOOR_SPIKE_DISABLED = 163;
@@ -394,6 +394,7 @@ fn loadTileset(path: [*]const u8, origin: ?*c.SDL_Texture) bool {
 
     var resName: [256]u8 = undefined;
 
+    // Convention of tileset: name, x, y, w, h, f (num of frames)
     while (c.fscanf(file, "%s %d %d %d %d %d", &resName, &x, &y, &w, &h, &f) == 6) {
         const p = &textures[texturesCount];
         texturesCount += 1;
