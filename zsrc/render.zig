@@ -120,8 +120,7 @@ pub fn initCountDownBar() void {
 
 pub fn initInfo() void {
     var buf: [1 << 8]u8 = undefined;
-    // _ = c.sprintf(&buf, "Stage:%3d", gm.stage);
-    const strResult = std.fmt.bufPrintZ(&buf, "Stage: {d}", .{gm.stage}) catch unreachable;
+    const strResult = std.fmt.bufPrintZ(&buf, "Stage: {d: >3}", .{gm.stage}) catch unreachable;
 
     if (stageText != null) {
         tps.setText(stageText.?, strResult.ptr);

@@ -63,10 +63,15 @@ pub const WeaponBuff = struct {
 
 pub const Weapon = struct {
     wp: WeaponType,
+    // distance for the projectile to fire, too far and it won't fire
     shootRange: c_int,
+    // not sure
     effectRange: c_int,
+    // how much hp damage
     damage: c_int,
+    // fire rate of weapon
     gap: c_int,
+    // speed of projectile
     bulletSpeed: c_int,
 
     birthAni: ?*tp.Animation,
