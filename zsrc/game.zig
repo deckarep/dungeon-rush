@@ -131,7 +131,7 @@ pub fn setLevel(level: c_int) void {
 }
 
 pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*]*tps.Score {
-    std.log.info("startGame!! was reached!", .{});
+    std.log.info("startGame!! was reached", .{});
 
     // NOTE: This gets free'd in the storage.zig code (not built yet!)
     const scores: [*]*tps.Score = @alignCast(@ptrCast(c.malloc(

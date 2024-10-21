@@ -203,6 +203,8 @@ pub const EFFECTS_SIZE = 128;
 pub const bgmNums = 4;
 pub const TEXTURES_SIZE = 1024;
 
+pub const nameOfTheGame = "Dungeon Rush: Zig-Edition v1.0 - by @deckarep";
+
 const fontPath = "res/font/m5x7.ttf";
 const soundsPath = "res/audio/";
 const soundsPathPrefix = "res/audio/";
@@ -313,7 +315,7 @@ pub fn init() bool {
         _ = c.printf("SDL could not initialize! SDL_Error: %s\n", c.SDL_GetError());
         success = false;
     } else {
-        const win = c.SDL_CreateWindow("Dungeon Rush v1.1(beta)", 0, 0, 1440, 960, c.SDL_WINDOW_SHOWN);
+        const win = c.SDL_CreateWindow(nameOfTheGame, 0, 0, 1440, 960, c.SDL_WINDOW_SHOWN);
         if (win) |w| {
             window = w;
 

@@ -159,7 +159,7 @@ pub fn mainUi() void {
     var startY: c_int = (res.SCREEN_HEIGHT / 2) - 70;
     var startX: c_int = (res.SCREEN_WIDTH / 5) + 32;
 
-    // Title
+    // Title - Logo
     _ = ren.createAndPushAnimation(
         &ren.animationsList[ren.RENDER_LIST_UI_ID],
         &res.textures[res.RES_TITLE],
@@ -400,13 +400,13 @@ pub fn mainUi() void {
             if (chooseLevelUi()) {
                 launchLocalGame(1);
             }
-            _ = c.printf("option 0 - local game!!\n");
+            std.debug.print("option 0 - local game!!\n", .{});
         },
         1 => {
-            _ = c.printf("option 1 - LAN game!!\n");
+            std.debug.print("option 1 - LAN game!!\n", .{});
         },
         2 => {
-            _ = c.printf("option 2 - show ranks!!\n");
+            std.debug.print("option 2 - show ranks!!\n", .{});
         },
         else => {},
     }

@@ -28,15 +28,15 @@ const res = @import("res.zig");
 const ui = @import("ui.zig");
 
 pub fn main() !void {
+    std.log.info(res.nameOfTheGame, .{});
     prng.prngSrand(@as(c_uint, @bitCast(@as(c_int, @truncate(c.time(null))))));
-    std.log.info("Hello from DungeonRush Zig-CC v2!", .{});
-    defer res.cleanup();
 
+    defer res.cleanup();
     if (!res.init()) {
-        _ = c.printf("Failed to initialize!\n");
+        std.log.err("Failed to init SDL and/or the game.", .{});
     } else {
         if (!try res.loadMedia()) {
-            _ = c.printf("Failed to load media!\n");
+            std.log.err("Failed to load media.", .{});
         } else {
             ui.mainUi();
         }
