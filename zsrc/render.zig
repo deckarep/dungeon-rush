@@ -30,6 +30,7 @@ const spr = @import("sprite.zig");
 const pl = @import("player.zig");
 const gm = @import("game.zig");
 const ai = @import("ai.zig");
+const hlp = @import("helper.zig");
 
 pub const ANIMATION_LINK_LIST_NUM = 16;
 pub const RENDER_LIST_MAP_ID = 0;
@@ -420,9 +421,8 @@ pub fn renderAnimation(a: ?*tps.Animation) void {
         setEffect(ani.origin, ef);
         ef.currentFrame = @mod(ef.currentFrame, ef.duration);
     }
-    // #ifdef DBG
-    //   assert(ani->duration >= ani->origin->frames);
-    // #endif
+
+    std.debug.assert(ani.duration >= ani.origin.frames);
 
     // rc: stage just means which animation frame.
     var stage: usize = 0;
@@ -442,24 +442,31 @@ pub fn renderAnimation(a: ?*tps.Animation) void {
     if (ani.effect) |_| {
         unsetEffect(ani.origin);
     }
-    // #ifdef DBG_CROSS
-    //   if (ani->at == AT_BOTTOM_CENTER) {
-    //     Sprite fake;
-    //     fake.ani = ani;
-    //     SDL_Rect tmp;
 
-    //     tmp = getSpriteBoundBox(&fake);
-    //     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 200);
-    //     SDL_RenderDrawRect(renderer, &tmp);
+    // When left-shift key is held down (eXtreme Developer Mode)
+    // Show the various debug bounding boxes of the sprites.
+    const state = c.SDL_GetKeyboardState(null);
+    if (state[c.SDL_SCANCODE_LSHIFT] > 0) {
+        if (ani.at == .AT_BOTTOM_CENTER) {
+            var tmp: c.SDL_Rect = undefined;
+            var fake: spr.Sprite = undefined;
+            fake.ani = ani;
 
-    //     tmp = getSpriteFeetBox(&fake);
-    //     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 200);
-    //     SDL_RenderDrawRect(renderer, &tmp);
+            // Debug draw bounded box
+            tmp = hlp.getSpriteBoundBox(&fake);
+            _ = c.SDL_SetRenderDrawColor(renderer, 0, 255, 0, 200);
+            _ = c.SDL_RenderDrawRect(renderer, &tmp);
 
-    //     SDL_SetRenderDrawColor(renderer, 0, 0, 255, 200);
-    //     SDL_RenderDrawRect(renderer, &dst);
-    //   }
-    // #endif
+            // Debug draw feet box.
+            tmp = hlp.getSpriteFeetBox(&fake);
+            _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 200);
+            _ = c.SDL_RenderDrawRect(renderer, &tmp);
+
+            // Debug draw dst box.
+            _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 255, 200);
+            _ = c.SDL_RenderDrawRect(renderer, &dst);
+        }
+    }
 }
 
 pub fn pushAnimationToRender(id: c_int, ani: *tps.Animation) void {
