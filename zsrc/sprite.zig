@@ -35,7 +35,7 @@ pub const PositionBufferSlot = struct {
 
 pub const PositionBuffer = struct {
     buffer: [tps.POSITION_BUFFER_SIZE]PositionBufferSlot,
-    size: c_int,
+    size: usize,
 };
 
 pub const Sprite = struct {
@@ -58,8 +58,7 @@ pub const Sprite = struct {
 
 pub fn pushToPositionBuffer(b: *PositionBuffer, slot: PositionBufferSlot) void {
     std.debug.assert(b.size < tps.POSITION_BUFFER_SIZE);
-    const sz: usize = @intCast(b.size);
-    b.buffer[sz] = slot;
+    b.buffer[b.size] = slot;
     b.size += 1;
 }
 
