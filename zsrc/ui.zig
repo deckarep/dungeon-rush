@@ -286,8 +286,8 @@ pub fn mainUi() void {
         .AT_BOTTOM_CENTER,
     );
 
-    startX += UI_MAIN_GAP_ALT * (18 + 4 * @as(c_int, @intFromFloat(hlp.randDouble())));
-    startY -= UI_MAIN_GAP * (1 + 3 + @as(c_int, @intFromFloat(hlp.randDouble())));
+    startX += @intFromFloat(UI_MAIN_GAP_ALT * (18.0 + 4.0 * hlp.randDouble()));
+    startY -= @intFromFloat(UI_MAIN_GAP * (1.0 + 3.0 * hlp.randDouble()));
 
     _ = ren.createAndPushAnimation(
         &ren.animationsList[ren.RENDER_LIST_SPRITE_ID],
