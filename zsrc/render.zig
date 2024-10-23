@@ -360,7 +360,8 @@ pub fn clearBindInAnimationsList(sprite: *spr.Sprite, id: c_int) void {
             ani.bind = null;
             if (ani.dieWithBind) {
                 tps.removeLinkNode(&animationsList[@intCast(id)], p.?);
-                tps.destroyAnimation(ani);
+                ani.deinit();
+                //tps.destroyAnimation(ani);
             }
         }
     }
@@ -518,12 +519,14 @@ fn updateAnimationLinkList(list: *adt.LinkList) void {
 
         if (ani.lp == .LOOP_ONCE) {
             if (ani.currentFrame == ani.duration) {
-                tps.destroyAnimation(ani);
+                //tps.destroyAnimation(ani);
+                ani.deinit();
                 tps.removeLinkNode(list, ptr);
             }
         } else {
             if (ani.lp == .LOOP_LIFESPAN and ani.lifeSpan <= 0) {
-                tps.destroyAnimation(ani);
+                //tps.destroyAnimation(ani);
+                ani.deinit();
                 tps.removeLinkNode(list, ptr);
             } else {
                 ani.currentFrame = @mod(ani.currentFrame, ani.duration);

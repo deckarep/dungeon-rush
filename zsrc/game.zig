@@ -220,8 +220,8 @@ pub fn appendSpriteToSnake(
 
 pub fn initPlayer(playerType: pl.PlayerType) void {
     spritesCount += 1;
-    spriteSnake[@intCast(playersCount)] = pl.createSnake(MOVE_STEP, playersCount, playerType);
-    const p = spriteSnake[@intCast(playersCount)].?;
+    const p = pl.createSnake(MOVE_STEP, playersCount, playerType);
+    spriteSnake[@intCast(playersCount)] = p;
     appendSpriteToSnake(p, res.SPRITE_KNIGHT, res.SCREEN_WIDTH / 2, res.SCREEN_HEIGHT / 2 + playersCount * 2 * res.UNIT, .RIGHT);
     playersCount += 1;
 }
@@ -297,30 +297,38 @@ pub fn generateItem(x: c_int, y: c_int, @"type": tps.ItemType) void {
         textureId = res.RES_FLASK_BIG_YELLOW;
     } else if (@"type" == .ITEM_WEAPON) {
         const kind = hlp.randInt(0, 5);
-        if (kind == 0) {
-            textureId = res.RES_ICE_SWORD;
-            id = wp.WEAPON_ICE_SWORD;
-            belong = res.SPRITE_KNIGHT;
-        } else if (kind == 1) {
-            textureId = res.RES_HOLY_SWORD;
-            id = wp.WEAPON_HOLY_SWORD;
-            belong = res.SPRITE_KNIGHT;
-        } else if (kind == 2) {
-            textureId = res.RES_THUNDER_STAFF;
-            id = wp.WEAPON_THUNDER_STAFF;
-            belong = res.SPRITE_WIZZARD;
-        } else if (kind == 3) {
-            textureId = res.RES_PURPLE_STAFF;
-            id = wp.WEAPON_PURPLE_STAFF;
-            belong = res.SPRITE_WIZZARD;
-        } else if (kind == 4) {
-            textureId = res.RES_GRASS_SWORD;
-            id = wp.WEAPON_SOLID_CLAW;
-            belong = res.SPRITE_LIZARD;
-        } else if (kind == 5) {
-            textureId = res.RES_POWERFUL_BOW;
-            id = wp.WEAPON_POWERFUL_BOW;
-            belong = res.SPRITE_ELF;
+        switch (kind) {
+            0 => {
+                textureId = res.RES_ICE_SWORD;
+                id = wp.WEAPON_ICE_SWORD;
+                belong = res.SPRITE_KNIGHT;
+            },
+            1 => {
+                textureId = res.RES_HOLY_SWORD;
+                id = wp.WEAPON_HOLY_SWORD;
+                belong = res.SPRITE_KNIGHT;
+            },
+            2 => {
+                textureId = res.RES_THUNDER_STAFF;
+                id = wp.WEAPON_THUNDER_STAFF;
+                belong = res.SPRITE_WIZZARD;
+            },
+            3 => {
+                textureId = res.RES_PURPLE_STAFF;
+                id = wp.WEAPON_PURPLE_STAFF;
+                belong = res.SPRITE_WIZZARD;
+            },
+            4 => {
+                textureId = res.RES_GRASS_SWORD;
+                id = wp.WEAPON_SOLID_CLAW;
+                belong = res.SPRITE_LIZARD;
+            },
+            5 => {
+                textureId = res.RES_POWERFUL_BOW;
+                id = wp.WEAPON_POWERFUL_BOW;
+                belong = res.SPRITE_ELF;
+            },
+            else => unreachable,
         }
     }
 
@@ -501,8 +509,8 @@ fn makeSnakeAttack(snake: *pl.Snake) void {
     if (snake.buffs[tps.BUFF_FROZEN] > 0) return;
 
     var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        makeSpriteAttack(@alignCast(@ptrCast(p.?.element)), snake);
+    while (p) |node| : (p = node.nxt) {
+        makeSpriteAttack(@alignCast(@ptrCast(node.element)), snake);
     }
 }
 
@@ -867,6 +875,8 @@ pub fn shieldSnake(snake: *pl.Snake, duration: c_int) void {
         const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
         shieldSprite(sprite, duration);
     }
+
+    aud.playAudio(res.AUDIO_HOLY);
 }
 
 fn attackUpSprite(sprite: *spr.Sprite, duration: c_int) void {

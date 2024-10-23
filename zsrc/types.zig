@@ -122,6 +122,17 @@ pub const Animation = struct {
     dieWithBind: bool,
     // How many seconds the animation should play
     lifeSpan: c_int,
+
+    const Self = @This();
+
+    pub fn as(ptr: *anyopaque) *Animation {
+        return @ptrCast(@alignCast(ptr));
+    }
+
+    pub fn deinit(self: *Self) void {
+        destroyEffect(self.effect);
+        c.free(self);
+    }
 };
 
 pub const Effect = struct {
@@ -255,10 +266,10 @@ pub fn createAnimation(
     return self;
 }
 
-pub fn destroyAnimation(self: *Animation) void {
-    destroyEffect(self.effect);
-    c.free(self);
-}
+// pub fn destroyAnimation(self: *Animation) void {
+//     destroyEffect(self.effect);
+//     c.free(self);
+// }
 
 pub fn copyAnimation(src: *const Animation, dest: *Animation) void {
     dest.* = src.*;
@@ -430,7 +441,10 @@ pub fn destroyAnimationsByLinkList(list: *adt.LinkList) void {
     var nxt: ?*adt.LinkNode = undefined;
     while (p != null) : (p = nxt) {
         nxt = p.?.nxt;
-        destroyAnimation(@alignCast(@ptrCast(p.?.element)));
+        //const ani: *Animation = @alignCast(@ptrCast(p.?.element));
+        const ani = Animation.as(p.?.element.?);
+        ani.deinit();
+        //destroyAnimation(@alignCast(@ptrCast(p.?.element)));
         removeLinkNode(list, p.?);
     }
 }
@@ -440,7 +454,8 @@ pub fn removeAnimationFromLinkList(self: *adt.LinkList, ani: *Animation) void {
     while (p != null) : (p = p.?.nxt) {
         if (p.?.element == @as(?*anyopaque, ani)) {
             removeLinkNode(self, p.?);
-            destroyAnimation(ani);
+            ani.deinit();
+            //destroyAnimation(ani);
             break;
         }
     }

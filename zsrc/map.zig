@@ -35,7 +35,7 @@ pub const MAP_BLOOD_SPILL_RANGE = 20;
 pub const MAP_SKULL_SPILL_RANGE = 6;
 
 const MAP_HOW_OLD = 0.05;
-// this will take effect in pushMaptoRender in game.c
+// this will take effect in pushMaptoRender in game.zig
 const MAP_WALL_HOW_DECORATED = 0.1;
 
 var isTrap: [MAP_SIZE][MAP_SIZE]bool = undefined;

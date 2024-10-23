@@ -187,6 +187,7 @@ pub const AUDIO_HUMAN_DEATH = 14;
 pub const AUDIO_CLAW_HIT_HEAVY = 15;
 pub const AUDIO_COIN = 16;
 pub const AUDIO_MED = 17;
+pub const AUDIO_HOLY = 18;
 // End Resource ID
 
 pub const UNIT = 32;
@@ -294,6 +295,7 @@ const soundfxList = &[_][]const u8{
     "claw_hit_heavy.wav",
     "coin.wav",
     "med.wav",
+    "holy.ogg",
 };
 
 // Globals

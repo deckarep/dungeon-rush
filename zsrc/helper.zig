@@ -31,6 +31,7 @@ const c = @import("cdefs.zig").c;
 
 const HELPER_RECT_CROSS_LIMIT = 8;
 
+// inr indicates if a val is within some lower (inclusive) and upper bound (inclusive).
 pub inline fn inr(val: c_int, lower: c_int, upper: c_int) bool {
     return lower <= val and val <= upper;
 }
