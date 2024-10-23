@@ -97,11 +97,17 @@ fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
         sprite.y = startY + cursorPos * lineGap;
         ren.updateAnimationOfSprite(sprite);
         ren.renderUi();
+
         const optsNum: usize = @intCast(optionsNum);
         for (0..optsNum) |i| {
             const ii: c_int = @intCast(i);
             _ = ren.renderCenteredText(options[i], res.SCREEN_WIDTH / 2, startY + ii * lineGap, 1);
         }
+
+        // Wedge in Zig-Edition
+        // by @deckarep text.
+        _ = ren.renderCenteredText(&res.texts[17], res.SCREEN_WIDTH / 2, 920, 1);
+
         // Update Screen
         c.SDL_RenderPresent(ren.renderer);
         ren.renderFrames += 1;
@@ -403,10 +409,10 @@ pub fn mainUi() void {
             std.debug.print("option 0 - local game!!\n", .{});
         },
         1 => {
-            std.debug.print("option 1 - LAN game!!\n", .{});
+            std.debug.print("option 1 - LAN game - (NOT BUILT OUT)!!\n", .{});
         },
         2 => {
-            std.debug.print("option 2 - show ranks!!\n", .{});
+            std.debug.print("option 2 - show ranks (NOT BUILT OUT)!!\n", .{});
         },
         else => {},
     }

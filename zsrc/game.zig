@@ -222,7 +222,9 @@ pub fn initPlayer(playerType: pl.PlayerType) void {
     spritesCount += 1;
     const p = pl.createSnake(MOVE_STEP, playersCount, playerType);
     spriteSnake[@intCast(playersCount)] = p;
-    appendSpriteToSnake(p, res.SPRITE_KNIGHT, res.SCREEN_WIDTH / 2, res.SCREEN_HEIGHT / 2 + playersCount * 2 * res.UNIT, .RIGHT);
+    // r.c. - Unlike original game, this one starts with a random hero each round.
+    const whichSprite = hlp.randInt(res.SPRITE_KNIGHT, res.SPRITE_LIZARD);
+    appendSpriteToSnake(p, whichSprite, res.SCREEN_WIDTH / 2, res.SCREEN_HEIGHT / 2 + playersCount * 2 * res.UNIT, .RIGHT);
     playersCount += 1;
 }
 
@@ -1740,6 +1742,7 @@ fn gameLoop() GameStatus {
         updateBuffDuration();
 
         {
+            // Cull snakes that have no more soldiers.
             var i: usize = @intCast(playersCount);
             while (i < spritesCount) : (i += 1) {
                 if (spriteSnake[i].?.num == 0) {

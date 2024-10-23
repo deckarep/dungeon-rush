@@ -210,6 +210,7 @@ const fontPath = "res/font/m5x7.ttf";
 const soundsPath = "res/audio/";
 const soundsPathPrefix = "res/audio/";
 
+// NOTE: the text file and .png tilesets must match in name.
 const tilesetPath = &[_][]const u8{
     "res/drawable/0x72_DungeonTilesetII_v1_3",
     "res/drawable/fireball_explosion1",
@@ -266,7 +267,7 @@ const textList = &[_][*:0]const u8{
     "Lan",
     "Host a game",
     "Join a game",
-    "Zig port by @deckarep", // <-- that's me!
+    "Zig Edition: by @deckarep - (c) 2024", // <-- that's me!
 };
 
 const bgmsPath = &[_][]const u8{
