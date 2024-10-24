@@ -98,10 +98,10 @@ pub fn getPowerfulPlayer() c_int {
 pub fn balanceVerdict(sprite: *spr.Sprite, id: c_int) c_int {
     if (id == -1) return 0;
 
-    if (gm.spriteSnake[@intCast(id)].?.sprites.head == null) return 0;
+    if (gm.spriteSnake[@intCast(id)].?.sprites.first == null) return 0;
 
     var ret: c_int = 0;
-    const player: *spr.Sprite = @alignCast(@ptrCast(gm.spriteSnake[@intCast(id)].?.sprites.head.?.element.?));
+    const player: *spr.Sprite = @alignCast(@ptrCast(gm.spriteSnake[@intCast(id)].?.sprites.first.?.data.?));
     if (player.x < sprite.x and sprite.direction == .LEFT) ret += 1;
     if (player.x > sprite.x and sprite.direction == .RIGHT) ret += 1;
     if (player.y > sprite.y and sprite.direction == .DOWN) ret += 1;
@@ -110,7 +110,7 @@ pub fn balanceVerdict(sprite: *spr.Sprite, id: c_int) c_int {
 }
 
 pub fn testOneMove(snake: *pl.Snake, direction: tps.Direction) c_int {
-    const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.head.?.element.?));
+    const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.first.?.data.?));
     const recover = snakeHead.direction;
     snakeHead.direction = direction;
 
@@ -156,7 +156,7 @@ fn intToDir(i: c_int) tps.Direction {
 }
 
 pub fn AiInput(snake: *pl.Snake) void {
-    const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.head.?.element.?));
+    const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.first.?.data.?));
     const currentDirection: c_int = switch (snakeHead.direction) {
         .LEFT => 0,
         .RIGHT => 1,
@@ -199,7 +199,7 @@ pub fn AiInput(snake: *pl.Snake) void {
 
             if (maxValue > originValue)
                 tps.changeSpriteDirection(
-                    snake.sprites.head.?,
+                    snake.sprites.first.?,
                     choices[nowChoice].direction,
                 );
         }

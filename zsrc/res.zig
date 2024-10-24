@@ -28,6 +28,7 @@ const tps = @import("types.zig");
 const wp = @import("weapons.zig");
 const spr = @import("sprite.zig");
 const ren = @import("render.zig");
+const gAllocator = @import("alloc.zig").gAllocator;
 
 // Resource ID
 
@@ -370,11 +371,6 @@ pub fn loadSDLTexture(path: [:0]const u8) ?*c.SDL_Texture {
     return newTexture;
 }
 
-// Hacky as shit!
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-var allocator = gpa.allocator();
-//pub var fpsTextList: [61][*:0]const u8 = undefined;
-
 fn loadTextset() bool {
     var success = true;
     var count: usize = 0;
@@ -391,8 +387,9 @@ fn loadTextset() bool {
     // This is here to just use what's in place and still be performant.
     // You wouldn't get it script kiddy.
     // NOTE: as of now, these lives for the life of the app and is never cleaned up.
+
     for (0..61) |i| {
-        const res = std.fmt.allocPrintZ(allocator, "FPS: {d}", .{i}) catch unreachable;
+        const res = std.fmt.allocPrintZ(gAllocator, "FPS: {d}", .{i}) catch unreachable;
         if (!tps.initText(&texts[count + i], res.ptr, tps.WHITE)) {
             success = false;
             break;

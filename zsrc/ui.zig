@@ -98,7 +98,7 @@ fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
             continue;
         }
 
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(player.sprites.head.?.element));
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(player.sprites.first.?.data));
         sprite.ani.at = .AT_CENTER;
         sprite.x = (res.SCREEN_WIDTH / 2) - @divTrunc(options[@intCast(cursorPos)].width, 2) - (res.UNIT / 2);
         sprite.y = startY + cursorPos * lineGap;

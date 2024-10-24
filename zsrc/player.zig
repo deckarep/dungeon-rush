@@ -32,7 +32,7 @@ pub const PlayerType = enum {
 };
 
 pub const Snake = struct {
-    sprites: *adt.LinkList,
+    sprites: *adt.GenericLL,
     moveStep: c_int,
     team: c_int,
     // num is how many sprites (heroes or baddies) form the snake.

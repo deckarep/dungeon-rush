@@ -20,6 +20,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+const std = @import("std");
+const tps = @import("types.zig");
+
+// Phase 1: Just start off by storing a pointer to an opaque.
+// Phase 2: Break these out into type-safe individual linked lists. (maybe)
+pub const GenericLL = std.DoublyLinkedList(?*anyopaque);
+pub const GenericNode = GenericLL.Node;
 
 pub const LinkNode = struct {
     const Self = @This();
