@@ -248,7 +248,7 @@ const tilesetPath = &[_][]const u8{
     "res/drawable/powerful_bow",
 };
 
-const textList = &[_][*:0]const u8{
+pub const textList = &[_][*:0]const u8{
     // r.c.: Moved to a static embedded list cause I don't want to do file-io right now.
     "DungeonRush",
     "By Rapiz",
@@ -322,7 +322,7 @@ pub fn init() bool {
         if (win) |w| {
             window = w;
 
-            const rend = c.SDL_CreateRenderer(window, -1, c.SDL_RENDERER_ACCELERATED | c.SDL_RENDERER_PRESENTVSYNC);
+            const rend = c.SDL_CreateRenderer(window, -1, c.SDL_RENDERER_ACCELERATED); //| c.SDL_RENDERER_PRESENTVSYNC);
             if (rend == null) {
                 _ = c.printf("Renderer could not be created! SDL Error: %s\n", c.SDL_GetError());
                 success = false;
@@ -370,11 +370,30 @@ pub fn loadSDLTexture(path: [:0]const u8) ?*c.SDL_Texture {
     return newTexture;
 }
 
+// Hacky as shit!
+var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+var allocator = gpa.allocator();
+//pub var fpsTextList: [61][*:0]const u8 = undefined;
+
 fn loadTextset() bool {
     var success = true;
+    var count: usize = 0;
     for (0..textList.len) |idx| {
         const str = textList[idx];
         if (!tps.initText(&texts[idx], str, tps.WHITE)) {
+            success = false;
+            break;
+        }
+        count += 1;
+    }
+
+    // Total hack, create a dynamic textset as a FPS counter.
+    // This is here to just use what's in place and still be performant.
+    // You wouldn't get it script kiddy.
+    // NOTE: as of now, these lives for the life of the app and is never cleaned up.
+    for (0..61) |i| {
+        const res = std.fmt.allocPrintZ(allocator, "FPS: {d}", .{i}) catch unreachable;
+        if (!tps.initText(&texts[count + i], res.ptr, tps.WHITE)) {
             success = false;
             break;
         }

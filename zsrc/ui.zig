@@ -32,6 +32,7 @@ const gm = @import("game.zig");
 const spr = @import("sprite.zig");
 const mp = @import("map.zig");
 const c = @import("cdefs.zig").c;
+const th = @import("throttler.zig");
 
 const UI_MAIN_GAP = 40;
 const UI_MAIN_GAP_ALT = 22;
@@ -90,7 +91,13 @@ fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
     const lineGap: c_int = res.FONT_SIZE + res.FONT_SIZE / 2;
     const totalHeight: c_int = lineGap * (optionsNum - 1);
     const startY: c_int = @divTrunc((res.SCREEN_HEIGHT - totalHeight), 2);
+
+    var throttler = th.Throttler.init();
     while (!moveCursor(optionsNum)) {
+        if (throttler.shouldWait()) {
+            continue;
+        }
+
         const sprite: *spr.Sprite = @alignCast(@ptrCast(player.sprites.head.?.element));
         sprite.ani.at = .AT_CENTER;
         sprite.x = (res.SCREEN_WIDTH / 2) - @divTrunc(options[@intCast(cursorPos)].width, 2) - (res.UNIT / 2);
@@ -111,6 +118,8 @@ fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
         // Update Screen
         c.SDL_RenderPresent(ren.renderer);
         ren.renderFrames += 1;
+
+        throttler.tick();
     }
     aud.playAudio(res.AUDIO_BUTTON1);
     gm.destroySnake(player);

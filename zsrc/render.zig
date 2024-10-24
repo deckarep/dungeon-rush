@@ -627,6 +627,18 @@ fn renderInfo() void {
     }
 }
 
+fn renderFps() void {
+    // Get the fps from the game.
+    const fps = gm.fps;
+    // Ensure it's within range because our text objs are only from 0-60.
+    const fpsRange = @min(@max(fps, 0), 60);
+    // Convert to usize so it can be used as an offset.
+    const fpsUsize: usize = @intFromFloat(fpsRange);
+    // The FPS text objects reside after the textList.len and the fpsUsize is used as an offset.
+    // So fpsUsize = 4, means it's 4 fprs so textList.len + 4 is where the text object lives.
+    _ = renderCenteredText(&res.texts[res.textList.len + fpsUsize], 300, 10, 1);
+}
+
 pub fn render() void {
     _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
     _ = c.SDL_RenderClear(renderer);
@@ -644,6 +656,8 @@ pub fn render() void {
     renderCountDown();
     renderInfo();
     renderId();
+    renderFps();
+
     // Update Screen
     c.SDL_RenderPresent(renderer);
     renderFrames += 1;

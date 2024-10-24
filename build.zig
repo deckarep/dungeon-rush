@@ -11,28 +11,14 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // Any contributors want to help get this building on other platforms and clean this up?
-    const macos_arm64_homebrew_path = "/opt/homebrew/opt/";
-    exe.addIncludePath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2/include/SDL2" });
-    exe.addLibraryPath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2/lib" });
+    // Link SDL2 and friends.
     exe.linkSystemLibrary("SDL2");
-
-    exe.addIncludePath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2_mixer/include/SDL2" });
-    exe.addLibraryPath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2_mixer/lib" });
     exe.linkSystemLibrary("SDL2_mixer");
-
-    exe.addIncludePath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2_image/include/SDL2" });
-    exe.addLibraryPath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2_image/lib" });
     exe.linkSystemLibrary("SDL2_image");
-
-    exe.addIncludePath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2_ttf/include/SDL2" });
-    exe.addLibraryPath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2_ttf/lib" });
     exe.linkSystemLibrary("SDL2_ttf");
-
-    exe.addIncludePath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2_net/include/SDL2" });
-    exe.addLibraryPath(.{ .cwd_relative = macos_arm64_homebrew_path ++ "sdl2_net/lib" });
     exe.linkSystemLibrary("SDL2_net");
 
+    // Link C
     exe.linkSystemLibrary("c");
 
     const run_cmd = b.addRunArtifact(exe);

@@ -35,12 +35,13 @@ const aud = @import("audio.zig");
 const wp = @import("weapons.zig");
 const hlp = @import("helper.zig");
 const c = @import("cdefs.zig").c;
+const th = @import("throttler.zig");
 
 const SPIKE_ANI_DURATION = 20;
 const SPIKE_OUT_INTERVAL = 120;
 const SPIKE_TIME_MASK = 600;
 const SPRITES_MAX_NUM = 1024;
-const MOVE_STEP = 2;
+const MOVE_STEP = 3;
 const GAME_MONSTERS_TEAM = 9;
 pub const GAME_MAP_RELOAD_PERIOD = 120;
 pub const MAX_PLAYERS_NUM = 2;
@@ -76,6 +77,7 @@ pub var GAME_WIN_NUM: c_int = undefined;
 var termCount: c_int = undefined;
 var status: GameStatus = undefined;
 var willTerm: bool = undefined;
+pub var fps: f32 = 0;
 
 // Drop rate
 var GAME_LUCKY: f64 = undefined;
@@ -1694,7 +1696,21 @@ fn handleLocalKeypress() bool {
 
 fn gameLoop() GameStatus {
     var quit = false;
+    var throttler = th.Throttler.init();
+    //var lastTicks: u32 = 0;
+
     while (!quit) {
+        if (throttler.shouldWait()) {
+            continue;
+        }
+        // // Get ticks
+        // const newTicks = c.SDL_GetTicks();
+        // // Get ticks from last frame and compare with framerate
+        // if (newTicks - lastTicks < 17) {
+        //     c.SDL_Delay(17 - (newTicks - lastTicks));
+        //     continue;
+        // }
+
         quit = handleLocalKeypress();
         // if (quit) sendGameOverPacket(3);
         // if (lanClientSocket != NULL) handleLanKeypress();
@@ -1737,6 +1753,7 @@ fn gameLoop() GameStatus {
                 }
             }
         }
+
         makeCross();
         ren.render();
         updateBuffDuration();
@@ -1780,6 +1797,11 @@ fn gameLoop() GameStatus {
                 setTerm(.STAGE_CLEAR);
             }
         }
+
+        // Update the ticks
+        //lastTicks = newTicks;
+        throttler.tick();
+        fps = throttler.frameRate();
     }
 
     return status;
