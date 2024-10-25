@@ -306,7 +306,7 @@ pub fn mainUi() void {
 
     _ = ren.createAndPushAnimation(
         &ren.animationsList[ren.RENDER_LIST_SPRITE_ID],
-        &res.textures[res.RES_LIZARD_M],
+        &res.textures[res.RES_ZIGGY_M],
         null,
         .LOOP_INFI,
         ren.SPRITE_ANIMATION_DURATION,
