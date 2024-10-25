@@ -393,7 +393,6 @@ pub fn mainUi() void {
         .AT_BOTTOM_CENTER,
     );
 
-    // TODO: get rid of malloc/free crapola.
     const optsNum = 4;
     const opts = gAllocator.alloc(*tps.Text, optsNum) catch unreachable;
     for (0..optsNum) |i| {

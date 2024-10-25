@@ -209,9 +209,10 @@ pub fn initTexture(
     self.crops = gAllocator.alloc(c.SDL_Rect, @as(usize, @intCast(frames))) catch unreachable;
 }
 
+// NOTE: currently not used because we don't alloc any Textures apparently.
 pub fn destroyTexture(self: *Texture) void {
-    c.free(self.crops);
-    c.free(self);
+    gAllocator.free(self.crops);
+    gAllocator.destroy(self);
 }
 
 pub fn initAnimation(
@@ -319,7 +320,6 @@ pub fn setText(self: *Text, str: [*:0]const u8) void {
 pub fn destroyText(self: *Text) void {
     c.SDL_DestroyTexture(self.origin);
     gAllocator.destroy(self);
-    //c.free(self);
 }
 
 pub fn initEffect(self: *Effect, duration: c_int, length: c_int, mode: c.SDL_BlendMode) void {

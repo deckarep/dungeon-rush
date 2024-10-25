@@ -55,7 +55,6 @@ pub fn createBullet(
         .team = team,
         .owner = owner,
         .rad = rad,
-        //.ani = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation)))),
         .ani = gAllocator.create(tps.Animation) catch unreachable,
     };
     tps.copyAnimation(ani, bullet.ani);

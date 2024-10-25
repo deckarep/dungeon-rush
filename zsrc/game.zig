@@ -172,7 +172,6 @@ pub fn appendSpriteToSnake(
     var newY = y;
 
     // at head
-    //const node: *adt.LinkNode = @alignCast(@ptrCast(c.malloc(@sizeOf(adt.LinkNode))));
     const node = gAllocator.create(adt.GenericNode) catch unreachable;
     tps.initLinkNode(node);
 
@@ -234,8 +233,6 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     var yy = y;
 
     const heroId = hlp.randInt(res.SPRITE_KNIGHT, res.SPRITE_LIZARD);
-
-    //const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
     const ani = gAllocator.create(tps.Animation) catch unreachable;
 
     itemMap[@intCast(x)][@intCast(y)] = .{
@@ -451,7 +448,6 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
                 if (weapon.wp == .WEAPON_SWORD_POINT or
                     weapon.wp == .WEAPON_SWORD_RANGE)
                 {
-                    //const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
                     const ani = gAllocator.create(tps.Animation) catch unreachable;
 
                     tps.copyAnimation(weapon.deathAni.?, ani);
@@ -492,7 +488,6 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
 
     if (attacked) {
         if (weapon.birthAni) |birthAni| {
-            //const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
             const ani = gAllocator.create(tps.Animation) catch unreachable;
             tps.copyAnimation(birthAni, ani);
             ren.bindAnimationToSprite(ani, sprite, true);
@@ -788,7 +783,6 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
     var dur: c_int = duration;
     var effect: ?*tps.Effect = null;
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
-        //effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
         effect = gAllocator.create(tps.Effect) catch unreachable;
         tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
         dur = 30;
@@ -829,7 +823,6 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
     var dur: c_int = duration;
     var effect: ?*tps.Effect = null;
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
-        //effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
         effect = gAllocator.create(tps.Effect) catch unreachable;
         tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
         dur = 30;
@@ -1190,7 +1183,7 @@ pub fn destroySnake(snake: *pl.Snake) void {
     tps.destroyScore(snake.score);
     //snake.score = null; // currently it's non-nullable.
     std.log.info("destroySnake: Freeing snake at address: {*}", .{snake});
-    c.free(snake);
+    gAllocator.destroy(snake);
 }
 
 ///  Helper function to determine whehter a snake is a player
@@ -1527,7 +1520,6 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
 
     // r.c. - I think this is invoked when we hit a wall.
     if (!mp.hasMap[@intCast(@divTrunc(bullet.x, res.UNIT))][@intCast(@divTrunc(bullet.y, res.UNIT))]) {
-        //const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
         const ani = gAllocator.create(tps.Animation) catch unreachable;
         tps.copyAnimation(weapon.deathAni.?, ani);
         ani.x = bullet.x;
@@ -1545,7 +1537,6 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
                     const target: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
                     const box = hlp.getSpriteBoundBox(target);
                     if (hlp.RectRectCross(&box, &bulletBox)) {
-                        //const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
                         const ani = gAllocator.create(tps.Animation) catch unreachable;
                         tps.copyAnimation(weapon.deathAni.?, ani);
                         ani.x = bullet.x;

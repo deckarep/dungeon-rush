@@ -79,7 +79,6 @@ pub fn initSprite(model: *const Sprite, self: *Sprite, x: c_int, y: c_int) void 
 }
 
 pub fn createSprite(model: *Sprite, x: c_int, y: c_int) *Sprite {
-    //const self: *Sprite = @alignCast(@ptrCast(c.malloc(@sizeOf(Sprite))));
     const self = gAllocator.create(Sprite) catch unreachable;
     initSprite(model, self, x, y);
     return self;

@@ -24,6 +24,7 @@
 const adt = @import("adt.zig");
 const tps = @import("types.zig");
 const c = @import("cdefs.zig").c;
+const gAllocator = @import("alloc.zig").gAllocator;
 
 pub const PlayerType = enum {
     LOCAL,
@@ -60,7 +61,7 @@ pub fn initSnake(snake: *Snake, step: c_int, team: c_int, playerType: PlayerType
 }
 
 pub fn createSnake(step: c_int, team: c_int, playerType: PlayerType) *Snake {
-    const self: *Snake = @alignCast(@ptrCast(c.malloc(@sizeOf(Snake))));
+    const self = gAllocator.create(Snake) catch unreachable;
     initSnake(self, step, team, playerType);
     return self;
 }
