@@ -26,6 +26,7 @@ const tps = @import("types.zig");
 const wp = @import("weapons.zig");
 const ren = @import("render.zig");
 const c = @import("cdefs.zig").c;
+const gAllocator = @import("alloc.zig").gAllocator;
 
 pub const PositionBufferSlot = struct {
     x: c_int,
@@ -70,7 +71,8 @@ pub fn initSprite(model: *const Sprite, self: *Sprite, x: c_int, y: c_int) void 
     self.x = x;
     self.y = y;
     self.posBuffer.size = 0;
-    const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+    //const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+    const ani = gAllocator.create(tps.Animation) catch unreachable;
     tps.copyAnimation(model.ani, ani);
     self.ani = ani;
     ren.updateAnimationOfSprite(self);

@@ -132,7 +132,8 @@ pub const Animation = struct {
 
     pub fn deinit(self: *Self) void {
         destroyEffect(self.effect);
-        c.free(self);
+        gAllocator.destroy(self);
+        //c.free(self);
     }
 };
 
@@ -262,7 +263,8 @@ pub fn createAnimation(
     angle: f64,
     at: At,
 ) *Animation {
-    const self: *Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(Animation))));
+    //const self: *Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(Animation))));
+    const self = gAllocator.create(Animation) catch unreachable;
     initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
     return self;
 }

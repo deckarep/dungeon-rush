@@ -26,6 +26,7 @@ const wp = @import("weapons.zig");
 const pl = @import("player.zig");
 const tps = @import("types.zig");
 const c = @import("cdefs.zig").c;
+const gAllocator = @import("alloc.zig").gAllocator;
 
 pub const Bullet = struct {
     parent: *wp.Weapon,
@@ -46,7 +47,7 @@ pub fn createBullet(
     team: c_int,
     ani: *tps.Animation,
 ) *Bullet {
-    const bullet: *Bullet = @alignCast(@ptrCast(c.malloc(@sizeOf(Bullet))));
+    const bullet = gAllocator.create(Bullet) catch unreachable;
     bullet.* = .{
         .parent = parent,
         .x = x,
@@ -54,7 +55,8 @@ pub fn createBullet(
         .team = team,
         .owner = owner,
         .rad = rad,
-        .ani = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation)))),
+        //.ani = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation)))),
+        .ani = gAllocator.create(tps.Animation) catch unreachable,
     };
     tps.copyAnimation(ani, bullet.ani);
     bullet.ani.x = x;
@@ -72,5 +74,5 @@ pub fn moveBullet(bullet: *Bullet) void {
 }
 
 pub fn destroyBullet(bullet: *Bullet) void {
-    c.free(bullet);
+    gAllocator.destroy(bullet);
 }

@@ -306,6 +306,7 @@ pub var textures: [TEXTURES_SIZE]tps.Texture = undefined;
 pub var texturesCount: usize = 0;
 pub var bgms: [AUDIO_BGM_SIZE]?*c.Mix_Music = undefined;
 pub var commonSprites: [COMMON_SPRITE_SIZE]spr.Sprite = undefined;
+var commonSpriteCounter: usize = 0;
 pub var font: *c.TTF_Font = undefined;
 pub var sounds: [AUDIO_SOUND_SIZE]?*c.Mix_Chunk = undefined;
 pub var texts: [TEXTSET_SIZE]tps.Text = undefined;
@@ -537,6 +538,13 @@ pub fn cleanup() void {
         tps.destroyAnimationsByLinkList(&ren.animationsList[i]);
     }
 
+    // These live for the life of the app, but I'm destroy them so we have no leaks at the end.
+    for (0..commonSpriteCounter) |i| {
+        gAllocator.destroy(commonSprites[i].ani);
+    }
+    // These also live for the life of the app.
+    wp.destroyWeapons();
+
     c.SDL_DestroyRenderer(rnd.renderer);
     // rnd.renderer = null; // rc: choosing to use non-nullable var.
     c.SDL_DestroyWindow(window);
@@ -604,6 +612,8 @@ fn initCommonSprite(sprite: *spr.Sprite, weapon: *wp.Weapon, res_id: c_int, hp: 
         .lastAttack = 0,
         .dropRate = 1,
     };
+
+    commonSpriteCounter += 1;
 }
 
 fn initCommonSprites() void {

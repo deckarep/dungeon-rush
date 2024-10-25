@@ -238,7 +238,9 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     var yy = y;
 
     const heroId = hlp.randInt(res.SPRITE_KNIGHT, res.SPRITE_LIZARD);
-    const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
+
+    //const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
+    const ani = gAllocator.create(tps.Animation) catch unreachable;
 
     itemMap[@intCast(x)][@intCast(y)] = .{
         .type = .ITEM_HERO,
@@ -453,7 +455,9 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
                 if (weapon.wp == .WEAPON_SWORD_POINT or
                     weapon.wp == .WEAPON_SWORD_RANGE)
                 {
-                    const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
+                    //const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
+                    const ani = gAllocator.create(tps.Animation) catch unreachable;
+
                     tps.copyAnimation(weapon.deathAni.?, ani);
                     // r.c. - Line commented out in original.
                     // ani->x = target->x, ani->y = target->y;
@@ -492,7 +496,8 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
 
     if (attacked) {
         if (weapon.birthAni) |birthAni| {
-            const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+            //const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+            const ani = gAllocator.create(tps.Animation) catch unreachable;
             tps.copyAnimation(birthAni, ani);
             ren.bindAnimationToSprite(ani, sprite, true);
             ani.at = .AT_BOTTOM_CENTER;
@@ -1129,6 +1134,7 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
 }
 
 fn destroyGame(currentStatus: GameStatus) void {
+    std.log.info("destroyGame...", .{});
     while (spritesCount > 0) {
         spritesCount -= 1;
         destroySnake(spriteSnake[@intCast(spritesCount)].?);
@@ -1140,9 +1146,9 @@ fn destroyGame(currentStatus: GameStatus) void {
     }
 
     var p = bullets.?.first;
-    while (p != null) : (p = p.?.next) {
-        blt.destroyBullet(@alignCast(@ptrCast(p.?.data)));
-        p.?.data = null;
+    while (p) |node| : (p = node.next) {
+        blt.destroyBullet(@alignCast(@ptrCast(node.data)));
+        node.data = null;
     }
 
     tps.destroyLinkList(bullets.?);
@@ -1523,7 +1529,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
 
     // r.c. - I think this is invoked when we hit a wall.
     if (!mp.hasMap[@intCast(@divTrunc(bullet.x, res.UNIT))][@intCast(@divTrunc(bullet.y, res.UNIT))]) {
-        const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+        //const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+        const ani = gAllocator.create(tps.Animation) catch unreachable;
         tps.copyAnimation(weapon.deathAni.?, ani);
         ani.x = bullet.x;
         ani.y = bullet.y;
@@ -1540,7 +1547,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
                     const target: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
                     const box = hlp.getSpriteBoundBox(target);
                     if (hlp.RectRectCross(&box, &bulletBox)) {
-                        const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+                        //const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+                        const ani = gAllocator.create(tps.Animation) catch unreachable;
                         tps.copyAnimation(weapon.deathAni.?, ani);
                         ani.x = bullet.x;
                         ani.y = bullet.y;
@@ -1600,6 +1608,7 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
             }
         }
     }
+
     return hit;
 }
 
@@ -1610,9 +1619,9 @@ fn makeCross() void {
 
     var p = bullets.?.first;
     var nxt: ?*adt.GenericNode = null;
-    while (p != null) : (p = nxt) {
-        nxt = p.?.next;
-        const bullet: *blt.Bullet = @ptrCast(@alignCast(p.?.data));
+    while (p) |node| : (p = nxt) {
+        nxt = node.next;
+        const bullet: *blt.Bullet = @ptrCast(@alignCast(node.data));
         // If bullet crossed paths with something and a hit was registered
         // then remove the bullet.
         if (makeBulletCross(bullet)) {
@@ -1620,7 +1629,8 @@ fn makeCross() void {
                 &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
                 bullet.ani,
             );
-            tps.removeLinkNode(bullets.?, p.?);
+            blt.destroyBullet(bullet); // r.c. This was leaking.
+            tps.removeLinkNode(bullets.?, node);
         }
     }
 }
