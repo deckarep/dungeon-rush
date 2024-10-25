@@ -1511,8 +1511,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
     var hit = false;
 
     const bulletScale: f64 = if (bullet.ani.scaled) ren.SCALE_FACTOR else 1.0;
-    const width: c_int = @min(bullet.ani.origin.width, bullet.ani.origin.height) *
-        @as(c_int, @intFromFloat(bulletScale * 0.8));
+    const width: c_int = @intFromFloat(@as(f64, @floatFromInt(@min(bullet.ani.origin.width, bullet.ani.origin.height))) *
+        (bulletScale * 0.8));
 
     const bulletBox: c.SDL_Rect = .{
         .x = bullet.x - @divTrunc(width, 2),
@@ -1521,6 +1521,7 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
         .h = width,
     };
 
+    // r.c. - I think this is invoked when we hit a wall.
     if (!mp.hasMap[@intCast(@divTrunc(bullet.x, res.UNIT))][@intCast(@divTrunc(bullet.y, res.UNIT))]) {
         const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
         tps.copyAnimation(weapon.deathAni.?, ani);
@@ -1529,6 +1530,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
         ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
         hit = true;
     }
+
+    // r.c. - If no hit from a wall, check against the snake and each sprite.
     if (!hit) {
         for (0..@intCast(spritesCount)) |i| {
             if (bullet.team != spriteSnake[i].?.team) {
@@ -1567,6 +1570,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
             }
         }
     }
+
+    // r.c. - If a hit was registered, and there is splash damage.
     if (hit) {
         aud.playAudio(@intCast(weapon.deathAudio));
         for (0..@intCast(spritesCount)) |i| {

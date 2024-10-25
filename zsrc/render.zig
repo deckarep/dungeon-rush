@@ -475,12 +475,6 @@ pub fn pushAnimationToRender(id: c_int, ani: *tps.Animation) void {
     tps.pushLinkNode(&animationsList[@intCast(id)], p);
 }
 
-// pub fn pushAnimationToRender2(id: c_int, ani: *tps.Animation) void {
-//     const p: *adt.AnimLL.Node = gAllocator.create(adt.AnimLL.Node) catch unreachable;
-//     p.data = ani;
-//     animationsList2[@intCast(id)].append(p);
-// }
-
 pub fn createAndPushAnimation(
     list: *adt.GenericLL,
     texture: *tps.Texture,
