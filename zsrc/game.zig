@@ -25,7 +25,7 @@ const std = @import("std");
 const pl = @import("player.zig");
 const tps = @import("types.zig");
 const res = @import("res.zig");
-const adt = @import("adt.zig");
+const ll = @import("linkedlist.zig");
 const spr = @import("sprite.zig");
 const blt = @import("bullet.zig");
 const ren = @import("render.zig");
@@ -59,7 +59,7 @@ var hasEnemy: [mp.MAP_SIZE][mp.MAP_SIZE]bool = undefined;
 const spikeDamage = 1;
 pub var spriteSnake: [SPRITES_MAX_NUM]?*pl.Snake = undefined;
 
-var bullets: ?*adt.GenericLL = null;
+var bullets: ?*ll.GenericLL = null;
 
 pub var gameLevel: c_int = undefined;
 pub var stage: c_int = undefined;
@@ -172,7 +172,7 @@ pub fn appendSpriteToSnake(
     var newY = y;
 
     // at head
-    const node = gAllocator.create(adt.GenericNode) catch unreachable;
+    const node = gAllocator.create(ll.GenericNode) catch unreachable;
     tps.initLinkNode(node);
 
     // create a sprite
@@ -1458,7 +1458,7 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
     {
         // r.c. - Introduced scope to limit p lifetime.
         var p = snake.sprites.first;
-        var nxt: ?*adt.GenericNode = undefined;
+        var nxt: ?*ll.GenericNode = undefined;
         while (p != null) : (p = nxt) {
             // r.c. - NOTE: Code is slightly different from original as a double-free was occuring.
             // This code ensures that the a fresh const possibleSpriteToDelete identifier
@@ -1533,8 +1533,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
         for (0..@intCast(spritesCount)) |i| {
             if (bullet.team != spriteSnake[i].?.team) {
                 var p = spriteSnake[i].?.sprites.first;
-                while (p != null) : (p = p.?.next) {
-                    const target: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
+                while (p) |node| : (p = node.next) {
+                    const target: *spr.Sprite = @alignCast(@ptrCast(node.data));
                     const box = hlp.getSpriteBoundBox(target);
                     if (hlp.RectRectCross(&box, &bulletBox)) {
                         const ani = gAllocator.create(tps.Animation) catch unreachable;
@@ -1607,7 +1607,7 @@ fn makeCross() void {
     }
 
     var p = bullets.?.first;
-    var nxt: ?*adt.GenericNode = null;
+    var nxt: ?*ll.GenericNode = null;
     while (p) |node| : (p = nxt) {
         nxt = node.next;
         const bullet: *blt.Bullet = @ptrCast(@alignCast(node.data));
@@ -1710,13 +1710,6 @@ fn gameLoop() GameStatus {
         if (throttler.shouldWait()) {
             continue;
         }
-        // // Get ticks
-        // const newTicks = c.SDL_GetTicks();
-        // // Get ticks from last frame and compare with framerate
-        // if (newTicks - lastTicks < 17) {
-        //     c.SDL_Delay(17 - (newTicks - lastTicks));
-        //     continue;
-        // }
 
         quit = handleLocalKeypress();
         // if (quit) sendGameOverPacket(3);
@@ -1806,8 +1799,8 @@ fn gameLoop() GameStatus {
         }
 
         // Update the ticks
-        //lastTicks = newTicks;
         throttler.tick();
+        // Record the framerate.
         fps = throttler.frameRate();
     }
 

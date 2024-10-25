@@ -23,7 +23,8 @@
 const std = @import("std");
 const tps = @import("types.zig");
 
-// Phase 1: Just start off by storing a pointer to an opaque.
+// Phase 1: Just start off by storing a pointer to a nullable opaque type.
+// Original C-style ADT linked list has been deprecated in favor of this!
 pub const GenericLL = std.DoublyLinkedList(?*anyopaque);
 pub const GenericNode = GenericLL.Node;
 

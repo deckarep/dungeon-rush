@@ -25,7 +25,7 @@ const std = @import("std");
 const c = @import("cdefs.zig").c;
 const res = @import("res.zig");
 const tps = @import("types.zig");
-const adt = @import("adt.zig");
+const ll = @import("linkedlist.zig");
 const spr = @import("sprite.zig");
 const pl = @import("player.zig");
 const gm = @import("game.zig");
@@ -61,7 +61,7 @@ pub const SCALE_FACTOR = 2;
 pub var renderer: *c.SDL_Renderer = undefined;
 pub var renderFrames: usize = 0;
 
-pub var animationsList: [ANIMATION_LINK_LIST_NUM]adt.GenericLL = undefined;
+pub var animationsList: [ANIMATION_LINK_LIST_NUM]ll.GenericLL = undefined;
 var countDownBar: *tps.Animation = undefined;
 var stageText: ?*tps.Text = null;
 var taskText: ?*tps.Text = null;
@@ -360,7 +360,7 @@ pub fn updateAnimationOfBlock(self: *tps.Block) void {
 
 pub fn clearBindInAnimationsList(sprite: *spr.Sprite, id: c_int) void {
     var p = animationsList[@intCast(id)].first;
-    var nxt: ?*adt.GenericNode = null;
+    var nxt: ?*ll.GenericNode = null;
     while (p != null) : (p = nxt) {
         nxt = p.?.next;
         const ani: *tps.Animation = @alignCast(@ptrCast(p.?.data));
@@ -483,7 +483,7 @@ pub fn pushAnimationToRender(id: c_int, ani: *tps.Animation) void {
 }
 
 pub fn createAndPushAnimation(
-    list: *adt.GenericLL,
+    list: *ll.GenericLL,
     texture: *tps.Texture,
     effect: ?*const tps.Effect,
     lp: tps.LoopType,
@@ -510,7 +510,7 @@ pub fn createAndPushAnimation(
     return ani;
 }
 
-fn updateAnimationLinkList(list: *adt.GenericLL) void {
+fn updateAnimationLinkList(list: *ll.GenericLL) void {
     var p = list.first;
     while (p != null) {
         const ptr = p.?;
@@ -544,7 +544,7 @@ fn updateAnimationLinkList(list: *adt.GenericLL) void {
     }
 }
 
-pub fn renderAnimationLinkList(list: *adt.GenericLL) void {
+pub fn renderAnimationLinkList(list: *ll.GenericLL) void {
     var p = list.first;
     while (p != null) {
         const ptr = p.?;
@@ -563,7 +563,7 @@ fn compareAnimationByY(x: ?*const anyopaque, y: ?*const anyopaque) callconv(.C) 
     return b.*.y - a.*.y;
 }
 
-fn renderAnimationLinkListWithSort(list: *adt.GenericLL) void {
+fn renderAnimationLinkListWithSort(list: *ll.GenericLL) void {
     // 1. Ported C static array to Zig's static array.
     // const S = struct {
     //     var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;

@@ -26,7 +26,7 @@ const c = @import("cdefs.zig").c;
 const std = @import("std");
 const res = @import("res.zig");
 const rnd = @import("render.zig");
-const adt = @import("adt.zig");
+const ll = @import("linkedlist.zig");
 const spr = @import("sprite.zig");
 const gm = @import("game.zig");
 const hlp = @import("helper.zig");
@@ -262,7 +262,18 @@ pub fn createAnimation(
     at: At,
 ) *Animation {
     const self = gAllocator.create(Animation) catch unreachable;
-    initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
+    initAnimation(
+        self,
+        origin,
+        effect,
+        lp,
+        duration,
+        x,
+        y,
+        flip,
+        angle,
+        at,
+    );
     return self;
 }
 
@@ -349,49 +360,49 @@ pub fn destroyEffect(self: ?*Effect) void {
     }
 }
 
-pub fn initLinkNode(self: *adt.GenericNode) void {
+pub fn initLinkNode(self: *ll.GenericNode) void {
     self.next = null;
     self.prev = null;
     self.data = null;
 }
 
-pub fn createLinkNode(element: *anyopaque) *adt.GenericNode {
+pub fn createLinkNode(element: *anyopaque) *ll.GenericNode {
     // TODO: this needs a try
-    const node = gAllocator.create(adt.GenericNode) catch unreachable;
+    const node = gAllocator.create(ll.GenericNode) catch unreachable;
     initLinkNode(node);
     node.data = element;
     return node;
 }
 
-pub fn initLinkList(self: *adt.GenericLL) void {
+pub fn initLinkList(self: *ll.GenericLL) void {
     self.first = null;
     self.last = null;
     self.len = 0;
 }
 
-pub fn createLinkList() *adt.GenericLL {
+pub fn createLinkList() *ll.GenericLL {
     // TODO: this needs a try
-    const ll = gAllocator.create(adt.GenericLL) catch unreachable;
-    initLinkList(ll);
-    return ll;
+    const list = gAllocator.create(ll.GenericLL) catch unreachable;
+    initLinkList(list);
+    return list;
 }
 
-pub fn pushLinkNodeAtHead(list: *adt.GenericLL, node: *adt.GenericNode) void {
+pub fn pushLinkNodeAtHead(list: *ll.GenericLL, node: *ll.GenericNode) void {
     list.prepend(node);
 }
 
-pub fn pushLinkNode(list: *adt.GenericLL, node: *adt.GenericNode) void {
+pub fn pushLinkNode(list: *ll.GenericLL, node: *ll.GenericNode) void {
     list.append(node);
 }
 
-pub fn removeLinkNode(list: *adt.GenericLL, node: *adt.GenericNode) void {
+pub fn removeLinkNode(list: *ll.GenericLL, node: *ll.GenericNode) void {
     list.remove(node);
     gAllocator.destroy(node);
 }
 
-pub fn destroyLinkList(self: *adt.GenericLL) void {
+pub fn destroyLinkList(self: *ll.GenericLL) void {
     var p = self.first;
-    var nxt: ?*adt.GenericNode = undefined;
+    var nxt: ?*ll.GenericNode = undefined;
 
     while (p) |node| : (p = nxt) {
         nxt = node.next;
@@ -401,9 +412,10 @@ pub fn destroyLinkList(self: *adt.GenericLL) void {
     gAllocator.destroy(self);
 }
 
-pub fn destroyAnimationsByLinkList(list: *adt.GenericLL) void {
+pub fn destroyAnimationsByLinkList(list: *ll.GenericLL) void {
     var it = list.first;
-    var nxt: ?*adt.GenericNode = undefined;
+    var nxt: ?*ll.GenericNode = undefined;
+
     while (it) |node| : (it = nxt) {
         nxt = node.next;
 
@@ -415,8 +427,9 @@ pub fn destroyAnimationsByLinkList(list: *adt.GenericLL) void {
     }
 }
 
-pub fn removeAnimationFromLinkList(self: *adt.GenericLL, ani: *Animation) void {
+pub fn removeAnimationFromLinkList(self: *ll.GenericLL, ani: *Animation) void {
     var p = self.first;
+
     while (p) |node| : (p = node.next) {
         if (node.data == @as(?*anyopaque, ani)) {
             removeLinkNode(self, node);
@@ -426,7 +439,7 @@ pub fn removeAnimationFromLinkList(self: *adt.GenericLL, ani: *Animation) void {
     }
 }
 
-pub fn changeSpriteDirection(self: *adt.GenericNode, newDirection: Direction) void {
+pub fn changeSpriteDirection(self: *ll.GenericNode, newDirection: Direction) void {
     const sprite: *spr.Sprite = @alignCast(@ptrCast(self.data.?));
     if (sprite.direction == newDirection) {
         return;
@@ -482,7 +495,7 @@ pub fn calcScore(self: *Score) void {
     self.rank *= gl + 1;
 }
 
-pub fn addScore(a: *Score, b: *Score) void {
+pub fn addScore(a: *Score, b: *const Score) void {
     a.got += b.got;
     a.damage += b.damage;
     a.killed += b.killed;

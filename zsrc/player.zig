@@ -21,7 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const adt = @import("adt.zig");
+const ll = @import("linkedlist.zig");
 const tps = @import("types.zig");
 const c = @import("cdefs.zig").c;
 const gAllocator = @import("alloc.zig").gAllocator;
@@ -33,7 +33,7 @@ pub const PlayerType = enum {
 };
 
 pub const Snake = struct {
-    sprites: *adt.GenericLL,
+    sprites: *ll.GenericLL,
     moveStep: c_int,
     team: c_int,
     // num is how many sprites (heroes or baddies) form the snake.

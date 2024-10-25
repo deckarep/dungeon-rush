@@ -5,9 +5,18 @@
 This is a near exact **Zig port** of the [original DungeonRush `C-based`](https://github.com/rapiz1/DungeonRush) rogue-like game running on SDL2 originally developed by @rapiz1.
 
 ## Status
-* ⚠️ Actively in development, but not yet complete!
-* Hunting down a few bugs at the moment
-* A couple render functions not complete.
+* Nearly complete port, no networking or auxillary menus done.
+* No known bugs.
+* Many memory leaks were tracked down and fixed using the GeneralPurposeAllocator leak detection feature.
+* Code is largely done, but now being incrementally improved, refactored and cleaned-up.
+
+## A twist on classic Snake
+* DungeonRush is a pretty fun project/game.
+  * It's a twist on Snake
+  * It uses cellular automata to generate random dungeon levels
+  * It has weapons, buffs, enemies, bosses and loot drops
+  * It features classic pixel art and animations
+  * Don't forget the 8-bit style music and sound-fx
 
 ## Port Goals
 * To re-create a moderately complex game, fully in Zig and to get better at the language.
@@ -18,14 +27,14 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
 * To fully eradicate all original C-based files and C-based build scripts.
 * To port in phases:
   1. Phase 1: port the C code almost as-is to minimize bugs introduced
-      * Still using `c.malloc`/`c.free` in many cases, most cases don't check for null (alloc failure)
+      * ✅ Deprecated usage of `c.malloc`/`c.free` in all cases
       * A few cases are using callbacks using the `callconv(.C)` for `c.qsort`
-      * Still using multi-pointers or a few `[*c]` style pointers
+      * Deprecate all [*c] style pointers
+      * ✅ Deprecated C-style multi-pointers
       * Find and improve `const` correctness in some cases.
   2. Phase 2: Ziggify
-      * Use proper Zig `allocators` instead of `c.malloc`/`c.free`
       * Move away from `c_int` or C specific types
-      * Favor slices over multi-pointers, remove any pointer arithmetic.
+      * ✅ Favor slices over multi-pointers, remove any pointer arithmetic.
       * Use more of Zig's stdlib for logging, file-io, etc.
       * Utilize `defer`/`errdefer` for effective cleanup
       * Migrate to a Zig-based SDL wrapper, for a nicer SDL experience.
@@ -39,19 +48,11 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
       * Use less globals
       * Fix namespace issues
       * Remove redundant naming like some enumerations have their container name as the prefix
-      * Use some Zig based collections like the `generic` LinkList over the original C ADT style.
+      * ✅ Use some Zig based collections like the `generic` LinkList over the original C ADT style.
       * Bonus: Introduce unit-tests
       * Get building for other OSes (w/ community contributions)
   4. Phase 4: ???
       * I'd love to port this to Raylib.
-
-## A twist on classic Snake
-* DungeonRush is a pretty fun project/game.
-  * It's a twist on Snake
-  * It uses cellular automata to generate random dungeon levels
-  * It has weapons, buffs, enemies, bosses and loot drops
-  * It features classic pixel art and animations
-  * Don't forget the 8-bit style music and sound-fx
 
 ## Why Zig?
 Cause it's a game-changing, bad-ass language that unlocks super-powers and clicks in my head and this was a great learning experience.
