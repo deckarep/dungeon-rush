@@ -79,7 +79,7 @@ fn moveCursor(optsNum: c_int) bool {
     return quit;
 }
 
-fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
+fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) c_int {
     cursorPos = 0;
     const player = pl.createSnake(2, 0, .LOCAL);
     gm.appendSpriteToSnake(
@@ -138,7 +138,9 @@ fn chooseLevelUi() bool {
     baseUi(30, 12);
     const optsNum = 3;
 
-    const opts: [*]*tps.Text = @alignCast(@ptrCast(c.malloc(@sizeOf(*tps.Text) * optsNum)));
+    const opts = gAllocator.alloc(*tps.Text, @as(usize, @intCast((optsNum)))) catch unreachable;
+    defer gAllocator.free(opts);
+
     for (0..optsNum) |i| {
         opts[i] = &res.texts[i + 10];
     }
@@ -147,13 +149,6 @@ fn chooseLevelUi() bool {
         gm.setLevel(opt);
     }
     ren.clearRenderer();
-
-    // NOTE: Original code didn't free the opts!!!
-    // NOTE: when I move away from malloc/free this crap goes away
-    // But c.free doesn't know how to deal with a Zig multi-pointer.
-    // So we cast it to a an opaque.
-    const freeStylePointer: ?*anyopaque = @ptrCast(opts);
-    c.free(freeStylePointer);
 
     return opt != optsNum;
 }
@@ -399,20 +394,15 @@ pub fn mainUi() void {
     );
 
     // TODO: get rid of malloc/free crapola.
-    const optsNum: c_int = 4;
-    const opts: [*]*tps.Text = @alignCast(@ptrCast(c.malloc(@sizeOf(*tps.Text) * optsNum)));
+    const optsNum = 4;
+    const opts = gAllocator.alloc(*tps.Text, optsNum) catch unreachable;
     for (0..optsNum) |i| {
         // r.c.: Original code is straight up pointer arithmetic.
         // offset 6 is where "Single Player" is.
         opts[i] = &res.texts[i + 6];
     }
     const opt = chooseOptions(optsNum, opts);
-
-    // NOTE: when I move away from malloc/free this crap goes away
-    // But c.free doesn't know how to deal with a Zig multi-pointer.
-    // So we cast it to a an opaque.
-    const freeStylePointer: ?*anyopaque = @ptrCast(opts);
-    c.free(freeStylePointer);
+    gAllocator.free(opts);
 
     ren.blackout();
     ren.clearRenderer();
