@@ -25,18 +25,8 @@ const tps = @import("types.zig");
 
 // Phase 1: Just start off by storing a pointer to an opaque.
 // Phase 2: Break these out into type-safe individual linked lists. (maybe)
+//      Need one for: *Animation
+//      Need one for: *Bullet
+//      Need one for: *Sprite
 pub const GenericLL = std.DoublyLinkedList(?*anyopaque);
 pub const GenericNode = GenericLL.Node;
-
-pub const LinkNode = struct {
-    const Self = @This();
-
-    element: ?*anyopaque,
-    pre: ?*Self,
-    nxt: ?*Self,
-};
-
-pub const LinkList = struct {
-    head: ?*LinkNode,
-    tail: ?*LinkNode,
-};

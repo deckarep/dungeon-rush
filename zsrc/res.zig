@@ -387,9 +387,11 @@ fn loadTextset() bool {
     // This is here to just use what's in place and still be performant.
     // You wouldn't get it script kiddy.
     // NOTE: as of now, these lives for the life of the app and is never cleaned up.
-
     for (0..61) |i| {
+        // NOTE: initTexts copies the text, so we just free it asap.
         const res = std.fmt.allocPrintZ(gAllocator, "FPS: {d}", .{i}) catch unreachable;
+        defer gAllocator.free(res);
+
         if (!tps.initText(&texts[count + i], res.ptr, tps.WHITE)) {
             success = false;
             break;
@@ -527,6 +529,11 @@ pub fn cleanup() void {
     for (0..TILESET_SIZE) |idx| {
         c.SDL_DestroyTexture(originTextures[idx]);
         originTextures[idx] = null;
+    }
+
+    // NOTE: r.c. added by me - destroy all animations!
+    for (0..ren.ANIMATION_LINK_LIST_NUM) |i| {
+        tps.destroyAnimationsByLinkList(&ren.animationsList[i]);
     }
 
     c.SDL_DestroyRenderer(rnd.renderer);

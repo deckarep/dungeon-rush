@@ -358,87 +358,43 @@ pub fn destroyEffect(self: ?*Effect) void {
     }
 }
 
-// rc: Made decision to port over raw C ADT LinkList logic
-// eventually, I will do away with this crap in favor of a more
-// Zig-friendly approach and delete all this crap.
-// First goal: get the game working as-is.
 pub fn initLinkNode(self: *adt.GenericNode) void {
     self.next = null;
     self.prev = null;
     self.data = null;
-    // self.nxt = null;
-    // self.pre = null;
-    // self.element = null;
 }
 
 pub fn createLinkNode(element: *anyopaque) *adt.GenericNode {
+    // TODO: this needs a try
     const node = gAllocator.create(adt.GenericNode) catch unreachable;
     initLinkNode(node);
     node.data = element;
     return node;
-    // const self: *adt.LinkNode = @alignCast(@ptrCast(c.malloc(@sizeOf(adt.LinkNode))));
-    // initLinkNode(self);
-    // self.element = element;
-    // return self;
 }
 
 pub fn initLinkList(self: *adt.GenericLL) void {
     self.first = null;
     self.last = null;
-    // self.head = null;
-    // self.tail = null;
 }
 
 pub fn createLinkList() *adt.GenericLL {
+    // TODO: this needs a try
     const ll = gAllocator.create(adt.GenericLL) catch unreachable;
     initLinkList(ll);
     return ll;
-    // const self: *adt.LinkList = @alignCast(@ptrCast(c.malloc(@sizeOf(adt.LinkList))));
-    // initLinkList(self);
-    // return self;
 }
 
 pub fn pushLinkNodeAtHead(list: *adt.GenericLL, node: *adt.GenericNode) void {
     list.prepend(node);
-    // if (list.head == null) {
-    //     list.head = node;
-    //     list.tail = node;
-    // } else {
-    //     node.nxt = list.head;
-    //     list.head.?.pre = node;
-    //     list.head = node;
-    // }
 }
 
 pub fn pushLinkNode(list: *adt.GenericLL, node: *adt.GenericNode) void {
     list.append(node);
-    // if (list.head == null) {
-    //     list.head = node;
-    //     list.tail = node;
-    // } else {
-    //     list.tail.?.nxt = node;
-    //     node.pre = list.tail;
-
-    //     list.tail = node;
-    // }
 }
 
 pub fn removeLinkNode(list: *adt.GenericLL, node: *adt.GenericNode) void {
     list.remove(node);
-    // if (node.pre) |pre| {
-    //     pre.nxt = node.nxt;
-    // } else {
-    //     list.head = node.nxt;
-    // }
-
-    // if (node.nxt) |nxt| {
-    //     nxt.pre = node.pre;
-    // } else {
-    //     list.tail = node.pre;
-    // }
-
     gAllocator.destroy(node);
-    //c.free(node);
 }
 
 pub fn destroyLinkList(self: *adt.GenericLL) void {
@@ -447,42 +403,25 @@ pub fn destroyLinkList(self: *adt.GenericLL) void {
 
     while (p != null) : (p = nxt) {
         nxt = p.?.next;
-        //c.free(p);
         gAllocator.destroy(p.?);
     }
 
     gAllocator.destroy(self);
-    //c.free(self);
 }
 
 pub fn destroyAnimationsByLinkList(list: *adt.GenericLL) void {
     var it = list.first;
-    while (it) |node| : (it = node.next) {
+    var nxt: ?*adt.GenericNode = undefined;
+    while (it) |node| : (it = nxt) {
+        nxt = node.next;
+
         const ani = Animation.as(node.data.?);
         ani.deinit();
         list.remove(node);
+
+        gAllocator.destroy(node);
     }
-
-    // var p: ?*adt.LinkNode = list.head;
-    // var nxt: ?*adt.LinkNode = undefined;
-    // while (p != null) : (p = nxt) {
-    //     nxt = p.?.nxt;
-    //     //const ani: *Animation = @alignCast(@ptrCast(p.?.element));
-    //     const ani = Animation.as(p.?.element.?);
-    //     ani.deinit();
-    //     //destroyAnimation(@alignCast(@ptrCast(p.?.element)));
-    //     removeLinkNode(list, p.?);
-    // }
 }
-
-// pub fn destroyAnimationsByLinkList2(list: *adt.AnimLL) void {
-//     var it = list.first;
-//     while (it) |node| : (it = node.next) {
-//         const ani = node.data.?;
-//         ani.deinit();
-//         list.remove(node);
-//     }
-// }
 
 pub fn removeAnimationFromLinkList(self: *adt.GenericLL, ani: *Animation) void {
     var p = self.first;
@@ -490,7 +429,6 @@ pub fn removeAnimationFromLinkList(self: *adt.GenericLL, ani: *Animation) void {
         if (p.?.data == @as(?*anyopaque, ani)) {
             removeLinkNode(self, p.?);
             ani.deinit();
-            //destroyAnimation(ani);
             break;
         }
     }
