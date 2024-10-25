@@ -36,6 +36,7 @@ const wp = @import("weapons.zig");
 const hlp = @import("helper.zig");
 const c = @import("cdefs.zig").c;
 const th = @import("throttler.zig");
+const gAllocator = @import("alloc.zig").gAllocator;
 
 const SPIKE_ANI_DURATION = 20;
 const SPIKE_OUT_INTERVAL = 120;
@@ -58,7 +59,7 @@ var hasEnemy: [mp.MAP_SIZE][mp.MAP_SIZE]bool = undefined;
 const spikeDamage = 1;
 pub var spriteSnake: [SPRITES_MAX_NUM]?*pl.Snake = undefined;
 
-var bullets: ?*adt.LinkList = null;
+var bullets: ?*adt.GenericLL = null;
 
 pub var gameLevel: c_int = undefined;
 pub var stage: c_int = undefined;
@@ -132,14 +133,10 @@ pub fn setLevel(level: c_int) void {
     bossSetting += @divTrunc(stage, 3);
 }
 
-pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*]*tps.Score {
+pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) []const *tps.Score {
     std.log.info("startGame!! was reached", .{});
 
-    // NOTE: This gets free'd in the storage.zig code (not built yet!)
-    const scores: [*]*tps.Score = @alignCast(@ptrCast(c.malloc(
-        @sizeOf(*tps.Score) * @as(usize, @intCast(localPlayers)),
-    )));
-
+    const scores = gAllocator.alloc(*tps.Score, @as(usize, @intCast(localPlayers))) catch unreachable;
     for (0..@intCast(localPlayers)) |i| {
         scores[i] = tps.createScore();
     }
@@ -175,13 +172,13 @@ pub fn appendSpriteToSnake(
     var newY = y;
 
     // at head
-    const node: *adt.LinkNode = @alignCast(@ptrCast(c.malloc(@sizeOf(adt.LinkNode))));
+    const node = gAllocator.create(adt.GenericNode) catch unreachable;
     tps.initLinkNode(node);
 
     // create a sprite
     var snakeHead: ?*spr.Sprite = null;
-    if (snake.sprites.head != null) {
-        snakeHead = @alignCast(@ptrCast(snake.sprites.head.?.element));
+    if (snake.sprites.first != null) {
+        snakeHead = @alignCast(@ptrCast(snake.sprites.first.?.data));
         newX = snakeHead.?.x;
         newY = snakeHead.?.y;
         const delta = @divTrunc((snakeHead.?.ani.origin.width * ren.SCALE_FACTOR +
@@ -208,7 +205,8 @@ pub fn appendSpriteToSnake(
         sprite.ani.currentFrame = snakeHead.?.ani.currentFrame;
     }
     // insert the sprite
-    node.element = sprite;
+    //node.element = sprite;
+    node.data = sprite;
     tps.pushLinkNodeAtHead(snake.sprites, node);
 
     // push ani
@@ -235,7 +233,7 @@ pub fn generateHeroItem(x: c_int, y: c_int) void {
     var yy = y;
 
     const heroId = hlp.randInt(res.SPRITE_KNIGHT, res.SPRITE_LIZARD);
-    const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
+    const ani = gAllocator.create(tps.Animation) catch unreachable;
 
     itemMap[@intCast(x)][@intCast(y)] = .{
         .type = .ITEM_HERO,
@@ -429,9 +427,9 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
     attack_end: for (0..@intCast(spritesCount)) |i| {
         // Not on the same team...
         if (snake.team != spriteSnake[i].?.team) {
-            var p = spriteSnake[i].?.sprites.head;
-            while (p != null) : (p = p.?.nxt) {
-                const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+            var p = spriteSnake[i].?.sprites.first;
+            while (p != null) : (p = p.?.next) {
+                const target: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
                 // Can the shooter's weapon reach the enemy?
                 if (hlp.distance(
                     .{ .x = sprite.x, .y = sprite.y },
@@ -450,7 +448,8 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
                 if (weapon.wp == .WEAPON_SWORD_POINT or
                     weapon.wp == .WEAPON_SWORD_RANGE)
                 {
-                    const ani: *tps.Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(tps.Animation))));
+                    const ani = gAllocator.create(tps.Animation) catch unreachable;
+
                     tps.copyAnimation(weapon.deathAni.?, ani);
                     // r.c. - Line commented out in original.
                     // ani->x = target->x, ani->y = target->y;
@@ -489,7 +488,7 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
 
     if (attacked) {
         if (weapon.birthAni) |birthAni| {
-            const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+            const ani = gAllocator.create(tps.Animation) catch unreachable;
             tps.copyAnimation(birthAni, ani);
             ren.bindAnimationToSprite(ani, sprite, true);
             ani.at = .AT_BOTTOM_CENTER;
@@ -512,9 +511,9 @@ fn makeSnakeAttack(snake: *pl.Snake) void {
     // Snek can't attack when frozen..pssh, exit function.
     if (snake.buffs[tps.BUFF_FROZEN] > 0) return;
 
-    var p = snake.sprites.head;
-    while (p) |node| : (p = node.nxt) {
-        makeSpriteAttack(@alignCast(@ptrCast(node.element)), snake);
+    var p = snake.sprites.first;
+    while (p) |node| : (p = node.next) {
+        makeSpriteAttack(@alignCast(@ptrCast(node.data)), snake);
     }
 }
 
@@ -784,14 +783,14 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
     var dur: c_int = duration;
     var effect: ?*tps.Effect = null;
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
-        effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
+        effect = gAllocator.create(tps.Effect) catch unreachable;
         tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
         dur = 30;
     }
 
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
         const ani = ren.createAndPushAnimation(
             &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
             &res.textures[res.RES_ICE],
@@ -824,14 +823,14 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
     var dur: c_int = duration;
     var effect: ?*tps.Effect = null;
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
-        effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
+        effect = gAllocator.create(tps.Effect) catch unreachable;
         tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
         dur = 30;
     }
 
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
         const ani = ren.createAndPushAnimation(
             &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
             &res.textures[res.RES_SOLIDFX],
@@ -874,9 +873,9 @@ pub fn shieldSnake(snake: *pl.Snake, duration: c_int) void {
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) return;
     snake.buffs[tps.BUFF_DEFENCE] += duration;
 
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
         shieldSprite(sprite, duration);
     }
 
@@ -905,16 +904,16 @@ fn attackUpSnake(snake: *pl.Snake, duration: c_int) void {
 
     snake.buffs[tps.BUFF_ATTACK] += duration;
 
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        attackUpSprite(@alignCast(@ptrCast(p.?.element)), duration);
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        attackUpSprite(@alignCast(@ptrCast(p.?.data)), duration);
     }
 }
 
 fn takeHpMedcine(snake: *pl.Snake, delta: c_int, extra: bool) void {
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
         if (sprite.hp == sprite.totalHp and !extra) {
             continue;
         }
@@ -948,9 +947,9 @@ fn takeWeapon(snake: *pl.Snake, weaponItem: *tps.Item) bool {
     const weapon = &wp.weapons[@intCast(weaponItem.id)];
     var taken = false;
 
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
         if (sprite.ani.origin == res.commonSprites[@intCast(weaponItem.belong)].ani.origin and
             sprite.weapon == res.commonSprites[@intCast(weaponItem.belong)].weapon)
         {
@@ -1126,6 +1125,7 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
 }
 
 fn destroyGame(currentStatus: GameStatus) void {
+    std.log.info("destroyGame...", .{});
     while (spritesCount > 0) {
         spritesCount -= 1;
         destroySnake(spriteSnake[@intCast(spritesCount)].?);
@@ -1136,10 +1136,10 @@ fn destroyGame(currentStatus: GameStatus) void {
         tps.destroyAnimationsByLinkList(&ren.animationsList[i]);
     }
 
-    var p = bullets.?.head;
-    while (p != null) : (p = p.?.nxt) {
-        blt.destroyBullet(@alignCast(@ptrCast(p.?.element)));
-        p.?.element = null;
+    var p = bullets.?.first;
+    while (p) |node| : (p = node.next) {
+        blt.destroyBullet(@alignCast(@ptrCast(node.data)));
+        node.data = null;
     }
 
     tps.destroyLinkList(bullets.?);
@@ -1162,20 +1162,20 @@ fn destroyGame(currentStatus: GameStatus) void {
 
 pub fn destroySnake(snake: *pl.Snake) void {
     if (bullets) |bu| {
-        var p = bu.head;
-        while (p != null) : (p = p.?.nxt) {
-            const bullet: *blt.Bullet = @alignCast(@ptrCast(p.?.element.?));
+        var p = bu.first;
+        while (p != null) : (p = p.?.next) {
+            const bullet: *blt.Bullet = @alignCast(@ptrCast(p.?.data.?));
             if (bullet.owner == snake) {
                 bullet.owner = null;
             }
         }
     }
 
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element.?));
-        c.free(sprite);
-        p.?.element = null;
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data.?));
+        gAllocator.destroy(sprite);
+        p.?.data = null;
     }
 
     tps.destroyLinkList(snake.sprites);
@@ -1183,7 +1183,7 @@ pub fn destroySnake(snake: *pl.Snake) void {
     tps.destroyScore(snake.score);
     //snake.score = null; // currently it's non-nullable.
     std.log.info("destroySnake: Freeing snake at address: {*}", .{snake});
-    c.free(snake);
+    gAllocator.destroy(snake);
 }
 
 ///  Helper function to determine whehter a snake is a player
@@ -1231,13 +1231,13 @@ pub fn crushVerdict(sprite: *spr.Sprite, loose: bool, useAnimationBox: bool) boo
     // If it has crushed on other sprites
     for (0..@intCast(spritesCount)) |i| {
         var self = false;
-        var p = spriteSnake[i].?.sprites.head;
-        while (p != null) : (p = p.?.nxt) {
-            const other: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+        var p = spriteSnake[i].?.sprites.first;
+        while (p != null) : (p = p.?.next) {
+            const other: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
             if (other != sprite) {
                 const otherBox = if (useAnimationBox) hlp.getSpriteAnimationBox(other) else hlp.getSpriteFeetBox(other);
                 if (hlp.RectRectCross(&box, &otherBox)) {
-                    if ((self and loose) or (p.?.pre != null and p.?.pre.?.element == @as(?*anyopaque, @ptrCast(sprite)))) {
+                    if ((self and loose) or (p.?.prev != null and p.?.prev.?.data == @as(?*anyopaque, @ptrCast(sprite)))) {
                         // Do nothing.
                     } else {
                         return true;
@@ -1319,7 +1319,7 @@ fn dealDamage(src: ?*pl.Snake, dest: *pl.Snake, target: *spr.Sprite, damage: c_i
 }
 
 fn makeSnakeCross(snake: *pl.Snake) bool {
-    if (snake.sprites.head == null) return false;
+    if (snake.sprites.first == null) return false;
 
     // Trap and Item ( everything related to block ) verdict
     for (0..(res.SCREEN_WIDTH / res.UNIT)) |i| {
@@ -1332,9 +1332,9 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                     .h = res.UNIT,
                 };
                 if (map[i][j].bp == .BLOCK_TRAP and map[i][j].enable) {
-                    var p = snake.sprites.head;
-                    while (p != null) : (p = p.?.nxt) {
-                        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                    var p = snake.sprites.first;
+                    while (p != null) : (p = p.?.next) {
+                        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
                         const spriteRect = hlp.getSpriteFeetBox(sprite);
                         if (hlp.RectRectCross(&spriteRect, &block)) {
                             dealDamage(null, snake, sprite, spikeDamage);
@@ -1342,7 +1342,7 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                     }
                 }
                 if (isPlayer(snake)) {
-                    const headBox = hlp.getSpriteFeetBox(@alignCast(@ptrCast(snake.sprites.head.?.element)));
+                    const headBox = hlp.getSpriteFeetBox(@alignCast(@ptrCast(snake.sprites.first.?.data)));
                     if (itemMap[i][j].type != .ITEM_NONE) {
                         if (hlp.RectRectCross(&headBox, &block)) {
                             var taken = true;
@@ -1377,9 +1377,9 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
     {
         // Created inner scope to limit p lifetime.
         // Death verdict, create death ani
-        var p = snake.sprites.head;
-        while (p != null) : (p = p.?.nxt) {
-            const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+        var p = snake.sprites.first;
+        while (p != null) : (p = p.?.next) {
+            const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
             if (sprite.hp <= 0) {
                 aud.playAudio(res.AUDIO_HUMAN_DEATH);
 
@@ -1457,20 +1457,20 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
     // Remove sprites where hp is 0 and shift over positions in Linked List.
     {
         // r.c. - Introduced scope to limit p lifetime.
-        var p = snake.sprites.head;
-        var nxt: ?*adt.LinkNode = undefined;
+        var p = snake.sprites.first;
+        var nxt: ?*adt.GenericNode = undefined;
         while (p != null) : (p = nxt) {
             // r.c. - NOTE: Code is slightly different from original as a double-free was occuring.
             // This code ensures that the a fresh const possibleSpriteToDelete identifier
             // is used so that it doesn't get overwritten in the inner loop.
             // We need to ensure we only delete one sprite when the hp <= 0.
-            const possibleSpriteToDelete: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
-            nxt = p.?.nxt;
+            const possibleSpriteToDelete: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
+            nxt = p.?.next;
             if (possibleSpriteToDelete.hp <= 0) {
-                var q = snake.sprites.tail;
-                while (q != p) : (q = q.?.pre) {
-                    const prevSprite: *spr.Sprite = @alignCast(@ptrCast(q.?.pre.?.element));
-                    const currSprite: *spr.Sprite = @alignCast(@ptrCast(q.?.element));
+                var q = snake.sprites.last;
+                while (q != p) : (q = q.?.prev) {
+                    const prevSprite: *spr.Sprite = @alignCast(@ptrCast(q.?.prev.?.data));
+                    const currSprite: *spr.Sprite = @alignCast(@ptrCast(q.?.data));
                     currSprite.direction = prevSprite.direction;
                     currSprite.face = prevSprite.face;
                     currSprite.posBuffer = prevSprite.posBuffer;
@@ -1479,20 +1479,20 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                 }
                 tps.removeLinkNode(snake.sprites, p.?);
                 // NOTE: Double free was occuring here.
-                c.free(possibleSpriteToDelete);
+                gAllocator.destroy(possibleSpriteToDelete);
             }
         }
     }
 
-    if (snake.sprites.head == null) {
+    if (snake.sprites.first == null) {
         return false;
     }
-    const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.head.?.element));
+    const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.first.?.data));
     const die = crushVerdict(snakeHead, !isPlayer(snake), false);
     if (die) {
-        var p = snake.sprites.head;
-        while (p != null) : (p = p.?.nxt) {
-            const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+        var p = snake.sprites.first;
+        while (p != null) : (p = p.?.next) {
+            const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
             sprite.hp = 0;
         }
     }
@@ -1508,8 +1508,8 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
     var hit = false;
 
     const bulletScale: f64 = if (bullet.ani.scaled) ren.SCALE_FACTOR else 1.0;
-    const width: c_int = @min(bullet.ani.origin.width, bullet.ani.origin.height) *
-        @as(c_int, @intFromFloat(bulletScale * 0.8));
+    const width: c_int = @intFromFloat(@as(f64, @floatFromInt(@min(bullet.ani.origin.width, bullet.ani.origin.height))) *
+        (bulletScale * 0.8));
 
     const bulletBox: c.SDL_Rect = .{
         .x = bullet.x - @divTrunc(width, 2),
@@ -1518,23 +1518,26 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
         .h = width,
     };
 
+    // r.c. - I think this is invoked when we hit a wall.
     if (!mp.hasMap[@intCast(@divTrunc(bullet.x, res.UNIT))][@intCast(@divTrunc(bullet.y, res.UNIT))]) {
-        const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+        const ani = gAllocator.create(tps.Animation) catch unreachable;
         tps.copyAnimation(weapon.deathAni.?, ani);
         ani.x = bullet.x;
         ani.y = bullet.y;
         ren.pushAnimationToRender(ren.RENDER_LIST_EFFECT_ID, ani);
         hit = true;
     }
+
+    // r.c. - If no hit from a wall, check against the snake and each sprite.
     if (!hit) {
         for (0..@intCast(spritesCount)) |i| {
             if (bullet.team != spriteSnake[i].?.team) {
-                var p = spriteSnake[i].?.sprites.head;
-                while (p != null) : (p = p.?.nxt) {
-                    const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                var p = spriteSnake[i].?.sprites.first;
+                while (p != null) : (p = p.?.next) {
+                    const target: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
                     const box = hlp.getSpriteBoundBox(target);
                     if (hlp.RectRectCross(&box, &bulletBox)) {
-                        const ani: *tps.Animation = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Animation))));
+                        const ani = gAllocator.create(tps.Animation) catch unreachable;
                         tps.copyAnimation(weapon.deathAni.?, ani);
                         ani.x = bullet.x;
                         ani.y = bullet.y;
@@ -1564,13 +1567,15 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
             }
         }
     }
+
+    // r.c. - If a hit was registered, and there is splash damage.
     if (hit) {
         aud.playAudio(@intCast(weapon.deathAudio));
         for (0..@intCast(spritesCount)) |i| {
             if (bullet.team != spriteSnake[i].?.team) {
-                var p = spriteSnake[i].?.sprites.head;
-                while (p != null) : (p = p.?.nxt) {
-                    const target: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                var p = spriteSnake[i].?.sprites.first;
+                while (p != null) : (p = p.?.next) {
+                    const target: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
                     if (hlp.distance(
                         .{ .x = target.x, .y = target.y },
                         .{ .x = bullet.x, .y = bullet.y },
@@ -1592,6 +1597,7 @@ fn makeBulletCross(bullet: *blt.Bullet) bool {
             }
         }
     }
+
     return hit;
 }
 
@@ -1600,11 +1606,11 @@ fn makeCross() void {
         _ = makeSnakeCross(spriteSnake[i].?);
     }
 
-    var p = bullets.?.head;
-    var nxt: ?*adt.LinkNode = null;
-    while (p != null) : (p = nxt) {
-        nxt = p.?.nxt;
-        const bullet: *blt.Bullet = @ptrCast(@alignCast(p.?.element));
+    var p = bullets.?.first;
+    var nxt: ?*adt.GenericNode = null;
+    while (p) |node| : (p = nxt) {
+        nxt = node.next;
+        const bullet: *blt.Bullet = @ptrCast(@alignCast(node.data));
         // If bullet crossed paths with something and a hit was registered
         // then remove the bullet.
         if (makeBulletCross(bullet)) {
@@ -1612,7 +1618,8 @@ fn makeCross() void {
                 &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
                 bullet.ani,
             );
-            tps.removeLinkNode(bullets.?, p.?);
+            blt.destroyBullet(bullet); // r.c. This was leaking.
+            tps.removeLinkNode(bullets.?, node);
         }
     }
 }
@@ -1636,9 +1643,9 @@ fn moveSnake(snake: *pl.Snake) void {
         step = @max(@divTrunc(step, 2), 1);
     }
 
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @ptrCast(@alignCast(p.?.element));
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        const sprite: *spr.Sprite = @ptrCast(@alignCast(p.?.data));
 
         for (0..@intCast(step)) |_| {
             const b = &sprite.posBuffer;
@@ -1679,11 +1686,11 @@ fn handleLocalKeypress() bool {
                 const player = spriteSnake[@intCast(id)].?;
                 // BUG: for player 0, why isn't .LOCAL condition passing????
                 if (player.playerType == .LOCAL) {
-                    if (player.buffs[tps.BUFF_FROZEN] == 0 and player.sprites.head != null) {
+                    if (player.buffs[tps.BUFF_FROZEN] == 0 and player.sprites.first != null) {
                         const direction = if (id == 0) arrowsToDirection(keyValue) else wasdToDirection(keyValue);
                         if (direction) |dir| {
                             //sendPlayerMovePacket(id, direction); // TODO for networking.
-                            tps.changeSpriteDirection(player.sprites.head.?, dir);
+                            tps.changeSpriteDirection(player.sprites.first.?, dir);
                         }
                     }
                 }
@@ -1718,7 +1725,7 @@ fn gameLoop() GameStatus {
         updateMap();
 
         for (0..@intCast(spritesCount)) |i| {
-            if (spriteSnake[i].?.sprites.head == null) {
+            if (spriteSnake[i].?.sprites.first == null) {
                 continue; // some snakes killed by before but not clean up yet
             }
             if (i >= playersCount and ren.renderFrames % ai.AI_DECIDE_RATE == 0)
@@ -1729,9 +1736,9 @@ fn gameLoop() GameStatus {
 
         // Move bullets.
         if (bullets) |b| {
-            var p = b.head;
-            while (p != null) : (p = p.?.nxt) {
-                blt.moveBullet(@ptrCast(@alignCast(p.?.element)));
+            var p = b.first;
+            while (p != null) : (p = p.?.next) {
+                blt.moveBullet(@ptrCast(@alignCast(p.?.data)));
             }
         }
 
@@ -1746,9 +1753,9 @@ fn gameLoop() GameStatus {
         for (0..@intCast(spritesCount)) |i| {
             ren.updateAnimationOfSnake(spriteSnake[i].?);
             if (spriteSnake[i].?.buffs[tps.BUFF_FROZEN] > 0) {
-                var p = spriteSnake[i].?.sprites.head;
-                while (p != null) : (p = p.?.nxt) {
-                    const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+                var p = spriteSnake[i].?.sprites.first;
+                while (p != null) : (p = p.?.next) {
+                    const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
                     sprite.ani.currentFrame -= 1;
                 }
             }
@@ -1785,7 +1792,7 @@ fn gameLoop() GameStatus {
         } else {
             var alivePlayer: c_int = -1;
             for (0..@intCast(playersCount)) |i| {
-                if (spriteSnake[i].?.sprites.head == null) {
+                if (spriteSnake[i].?.sprites.first == null) {
                     setTerm(.GAME_OVER);
                     //sendGameOverPacket(alivePlayer);
                     break;

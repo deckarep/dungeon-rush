@@ -33,6 +33,7 @@ const spr = @import("sprite.zig");
 const mp = @import("map.zig");
 const c = @import("cdefs.zig").c;
 const th = @import("throttler.zig");
+const gAllocator = @import("alloc.zig").gAllocator;
 
 const UI_MAIN_GAP = 40;
 const UI_MAIN_GAP_ALT = 22;
@@ -78,7 +79,7 @@ fn moveCursor(optsNum: c_int) bool {
     return quit;
 }
 
-fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
+fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) c_int {
     cursorPos = 0;
     const player = pl.createSnake(2, 0, .LOCAL);
     gm.appendSpriteToSnake(
@@ -98,7 +99,7 @@ fn chooseOptions(optionsNum: c_int, options: [*]*tps.Text) c_int {
             continue;
         }
 
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(player.sprites.head.?.element));
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(player.sprites.first.?.data));
         sprite.ani.at = .AT_CENTER;
         sprite.x = (res.SCREEN_WIDTH / 2) - @divTrunc(options[@intCast(cursorPos)].width, 2) - (res.UNIT / 2);
         sprite.y = startY + cursorPos * lineGap;
@@ -137,7 +138,9 @@ fn chooseLevelUi() bool {
     baseUi(30, 12);
     const optsNum = 3;
 
-    const opts: [*]*tps.Text = @alignCast(@ptrCast(c.malloc(@sizeOf(*tps.Text) * optsNum)));
+    const opts = gAllocator.alloc(*tps.Text, @as(usize, @intCast((optsNum)))) catch unreachable;
+    defer gAllocator.free(opts);
+
     for (0..optsNum) |i| {
         opts[i] = &res.texts[i + 10];
     }
@@ -147,19 +150,18 @@ fn chooseLevelUi() bool {
     }
     ren.clearRenderer();
 
-    // NOTE: Original code didn't free the opts!!!
-    // NOTE: when I move away from malloc/free this crap goes away
-    // But c.free doesn't know how to deal with a Zig multi-pointer.
-    // So we cast it to a an opaque.
-    const freeStylePointer: ?*anyopaque = @ptrCast(opts);
-    c.free(freeStylePointer);
-
     return opt != optsNum;
 }
 
 fn launchLocalGame(localPlayerNum: c_int) void {
     const scores = gm.startGame(localPlayerNum, 0, true);
-    _ = scores;
+
+    // TODO: Cleaning up score temporarily, but it's used in commented out code below which is not finished!
+    defer gAllocator.free(scores);
+    for (scores) |sc| {
+        tps.destroyScore(sc);
+    }
+
     //rankListUi(localPlayerNum, scores);
     //   for (int i = 0; i < localPlayerNum; i++) {
     //     updateLocalRanklist(scores[i]);
@@ -306,7 +308,7 @@ pub fn mainUi() void {
 
     _ = ren.createAndPushAnimation(
         &ren.animationsList[ren.RENDER_LIST_SPRITE_ID],
-        &res.textures[res.RES_LIZARD_M],
+        &res.textures[res.RES_ZIGGY_M],
         null,
         .LOOP_INFI,
         ren.SPRITE_ANIMATION_DURATION,
@@ -391,21 +393,15 @@ pub fn mainUi() void {
         .AT_BOTTOM_CENTER,
     );
 
-    // TODO: get rid of malloc/free crapola.
-    const optsNum: c_int = 4;
-    const opts: [*]*tps.Text = @alignCast(@ptrCast(c.malloc(@sizeOf(*tps.Text) * optsNum)));
+    const optsNum = 4;
+    const opts = gAllocator.alloc(*tps.Text, optsNum) catch unreachable;
     for (0..optsNum) |i| {
         // r.c.: Original code is straight up pointer arithmetic.
         // offset 6 is where "Single Player" is.
         opts[i] = &res.texts[i + 6];
     }
     const opt = chooseOptions(optsNum, opts);
-
-    // NOTE: when I move away from malloc/free this crap goes away
-    // But c.free doesn't know how to deal with a Zig multi-pointer.
-    // So we cast it to a an opaque.
-    const freeStylePointer: ?*anyopaque = @ptrCast(opts);
-    c.free(freeStylePointer);
+    gAllocator.free(opts);
 
     ren.blackout();
     ren.clearRenderer();

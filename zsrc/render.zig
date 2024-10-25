@@ -31,6 +31,7 @@ const pl = @import("player.zig");
 const gm = @import("game.zig");
 const ai = @import("ai.zig");
 const hlp = @import("helper.zig");
+const gAllocator = @import("alloc.zig").gAllocator;
 
 pub const ANIMATION_LINK_LIST_NUM = 16;
 pub const RENDER_LIST_MAP_ID = 0;
@@ -60,7 +61,7 @@ pub const SCALE_FACTOR = 2;
 pub var renderer: *c.SDL_Renderer = undefined;
 pub var renderFrames: usize = 0;
 
-pub var animationsList: [ANIMATION_LINK_LIST_NUM]adt.LinkList = undefined;
+pub var animationsList: [ANIMATION_LINK_LIST_NUM]adt.GenericLL = undefined;
 var countDownBar: *tps.Animation = undefined;
 var stageText: ?*tps.Text = null;
 var taskText: ?*tps.Text = null;
@@ -147,14 +148,21 @@ pub fn initRenderer() void {
 }
 
 pub fn clearInfo() void {
-    tps.destroyText(stageText);
-    stageText = null;
-    tps.destroyText(taskText);
-    taskText = null;
+    if (stageText) |st| {
+        tps.destroyText(st);
+        stageText = null;
+    }
+
+    if (taskText) |tt| {
+        tps.destroyText(tt);
+        taskText = null;
+    }
 
     for (0..@intCast(gm.playersCount)) |i| {
-        tps.destroyText(scoresText[i]);
-        scoresText[i] = null;
+        if (scoresText[i]) |sct| {
+            tps.destroyText(sct);
+            scoresText[i] = null;
+        }
     }
 }
 
@@ -166,9 +174,9 @@ pub fn clearRenderer() void {
 }
 
 fn renderSnakeHp(snake: *pl.Snake) void {
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.element));
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
 
         // Skip showing HP bar when health is at 100%
         if (sprite.hp == sprite.totalHp) {
@@ -238,8 +246,8 @@ fn renderId() void {
     const powerful = ai.getPowerfulPlayer();
     for (0..@intCast(gm.playersCount)) |i| {
         const snake = gm.spriteSnake[i].?;
-        if (snake.sprites.head != null) {
-            const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.head.?.element.?));
+        if (snake.sprites.first != null) {
+            const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.first.?.data.?));
             if (i == powerful) {
                 renderCenteredTextBackground(&res.texts[4 + i], snakeHead.x, snakeHead.y, 0.5);
             }
@@ -316,9 +324,9 @@ pub fn updateAnimationOfSprite(self: *spr.Sprite) void {
 }
 
 pub fn updateAnimationOfSnake(snake: *pl.Snake) void {
-    var p = snake.sprites.head;
-    while (p != null) : (p = p.?.nxt) {
-        updateAnimationOfSprite(@alignCast(@ptrCast(p.?.element)));
+    var p = snake.sprites.first;
+    while (p != null) : (p = p.?.next) {
+        updateAnimationOfSprite(@alignCast(@ptrCast(p.?.data)));
     }
 }
 
@@ -351,11 +359,11 @@ pub fn updateAnimationOfBlock(self: *tps.Block) void {
 }
 
 pub fn clearBindInAnimationsList(sprite: *spr.Sprite, id: c_int) void {
-    var p = animationsList[@intCast(id)].head;
-    var nxt: ?*adt.LinkNode = null;
+    var p = animationsList[@intCast(id)].first;
+    var nxt: ?*adt.GenericNode = null;
     while (p != null) : (p = nxt) {
-        nxt = p.?.nxt;
-        const ani: *tps.Animation = @alignCast(@ptrCast(p.?.element));
+        nxt = p.?.next;
+        const ani: *tps.Animation = @alignCast(@ptrCast(p.?.data));
         if (ani.bind != null and ani.bind.? == @as(*anyopaque, sprite)) {
             ani.bind = null;
             if (ani.dieWithBind) {
@@ -475,7 +483,7 @@ pub fn pushAnimationToRender(id: c_int, ani: *tps.Animation) void {
 }
 
 pub fn createAndPushAnimation(
-    list: *adt.LinkList,
+    list: *adt.GenericLL,
     texture: *tps.Texture,
     effect: ?*const tps.Effect,
     lp: tps.LoopType,
@@ -502,13 +510,13 @@ pub fn createAndPushAnimation(
     return ani;
 }
 
-fn updateAnimationLinkList(list: *adt.LinkList) void {
-    var p = list.head;
+fn updateAnimationLinkList(list: *adt.GenericLL) void {
+    var p = list.first;
     while (p != null) {
         const ptr = p.?;
         // r.c. going to make that we always have an animation in within the linked list.
-        const ani: *tps.Animation = @alignCast(@ptrCast(ptr.element.?));
-        const nxt = ptr.nxt;
+        const ani: *tps.Animation = @alignCast(@ptrCast(ptr.data.?));
+        const nxt = ptr.next;
         ani.currentFrame += 1;
         ani.lifeSpan -= 1;
 
@@ -536,12 +544,12 @@ fn updateAnimationLinkList(list: *adt.LinkList) void {
     }
 }
 
-pub fn renderAnimationLinkList(list: *adt.LinkList) void {
-    var p = list.head;
+pub fn renderAnimationLinkList(list: *adt.GenericLL) void {
+    var p = list.first;
     while (p != null) {
         const ptr = p.?;
-        renderAnimation(@alignCast(@ptrCast(ptr.element)));
-        p = ptr.nxt;
+        renderAnimation(@alignCast(@ptrCast(ptr.data)));
+        p = ptr.next;
     }
 }
 
@@ -555,7 +563,7 @@ fn compareAnimationByY(x: ?*const anyopaque, y: ?*const anyopaque) callconv(.C) 
     return b.*.y - a.*.y;
 }
 
-fn renderAnimationLinkListWithSort(list: *adt.LinkList) void {
+fn renderAnimationLinkListWithSort(list: *adt.GenericLL) void {
     // 1. Ported C static array to Zig's static array.
     // const S = struct {
     //     var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;
@@ -565,9 +573,9 @@ fn renderAnimationLinkListWithSort(list: *adt.LinkList) void {
     var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;
 
     var count: usize = 0;
-    var p = list.head;
-    while (p != null) : (p = p.?.nxt) {
-        buffer[count] = @alignCast(@ptrCast(p.?.element));
+    var p = list.first;
+    while (p != null) : (p = p.?.next) {
+        buffer[count] = @alignCast(@ptrCast(p.?.data));
         count += 1;
     }
 

@@ -28,6 +28,7 @@ const tps = @import("types.zig");
 const wp = @import("weapons.zig");
 const spr = @import("sprite.zig");
 const ren = @import("render.zig");
+const gAllocator = @import("alloc.zig").gAllocator;
 
 // Resource ID
 
@@ -71,8 +72,6 @@ pub const RES_FLASK_BIG_BLUE = 67;
 pub const RES_FLASK_BIG_GREEN = 68;
 pub const RES_FLASK_BIG_YELLOW = 69;
 pub const RES_SKULL = 74;
-pub const RES_BLOOD1 = 179;
-pub const RES_BLOOD4 = 182;
 pub const RES_TINY_ZOMBIE = 102;
 pub const RES_GOBLIN = 104;
 pub const RES_IMP = 106;
@@ -95,47 +94,50 @@ pub const RES_ELF_M = 139;
 pub const RES_KNIGHT_M = 142; //145 (male night)
 pub const RES_WIZZARD_M = 151;
 pub const RES_LIZARD_M = 157;
-pub const RES_FLOOR_SPIKE_DISABLED = 163;
-pub const RES_FLOOR_SPIKE_ENABLED = 164;
-pub const RES_FLOOR_SPIKE_OUT_ANI = 165;
-pub const RES_FLOOR_SPIKE_IN_ANI = 166;
-pub const RES_FLOOR_EXIT = 167;
-pub const RES_HALO_EXPLOSION1 = 160;
-pub const RES_HALO_EXPLOSION2 = 161;
-pub const RES_FIREBALL = 162;
-pub const RES_HP_MED = 168;
-pub const RES_SwordFx = 169;
-pub const RES_CLAWFX = 170;
-pub const RES_Shine = 171;
-pub const RES_Thunder = 172;
-pub const RES_BLOOD_BOUND = 173;
-pub const RES_ARROW = 174;
-pub const RES_EXPOLSTION2 = 175;
-pub const RES_CLAWFX2 = 176;
-pub const RES_AXE = 177;
-pub const RES_CROSS_HIT = 178;
-pub const RES_SOLIDFX = 183;
-pub const RES_SOLID_GREENFX = 184;
-pub const RES_ICEPICK = 185;
-pub const RES_ICESHATTER = 186;
-pub const RES_ICE = 187;
-pub const RES_HOLY_SWORD = 188;
-pub const RES_FIRE_SWORD = 189;
-pub const RES_ICE_SWORD = 190;
-pub const RES_GRASS_SWORD = 191;
-pub const RES_IRON_SWORD = 192;
-pub const RES_HOLY_SHIELD = 193;
-pub const RES_GOLDEN_CROSS_HIT = 194;
-pub const RES_SLIDER = 195;
-pub const RES_BAR_BLUE = 196;
-pub const RES_TITLE = 197;
-pub const RES_PURPLE_BALL = 198;
-pub const RES_PURPLE_EXP = 199;
-pub const RES_PURPLE_STAFF = 200;
-pub const RES_THUNDER_STAFF = 201;
-pub const RES_THUNDER_YELLOW = 202;
-pub const RES_ATTACK_UP = 203;
-pub const RES_POWERFUL_BOW = 204;
+pub const RES_ZIGGY_M = 160;
+pub const RES_FLOOR_SPIKE_DISABLED = 166;
+pub const RES_FLOOR_SPIKE_ENABLED = 167;
+pub const RES_FLOOR_SPIKE_OUT_ANI = 168;
+pub const RES_FLOOR_SPIKE_IN_ANI = 169;
+pub const RES_FLOOR_EXIT = 170;
+pub const RES_HALO_EXPLOSION1 = 163;
+pub const RES_HALO_EXPLOSION2 = 164;
+pub const RES_FIREBALL = 165;
+pub const RES_HP_MED = 171;
+pub const RES_SwordFx = 172;
+pub const RES_CLAWFX = 173;
+pub const RES_Shine = 174;
+pub const RES_Thunder = 175;
+pub const RES_BLOOD_BOUND = 176;
+pub const RES_ARROW = 177;
+pub const RES_EXPOLSTION2 = 178;
+pub const RES_CLAWFX2 = 179;
+pub const RES_AXE = 180;
+pub const RES_CROSS_HIT = 181;
+pub const RES_BLOOD1 = 182;
+pub const RES_BLOOD4 = 185;
+pub const RES_SOLIDFX = 186;
+pub const RES_SOLID_GREENFX = 187;
+pub const RES_ICEPICK = 188;
+pub const RES_ICESHATTER = 189;
+pub const RES_ICE = 190;
+pub const RES_HOLY_SWORD = 191;
+pub const RES_FIRE_SWORD = 192;
+pub const RES_ICE_SWORD = 193;
+pub const RES_GRASS_SWORD = 194;
+pub const RES_IRON_SWORD = 195;
+pub const RES_HOLY_SHIELD = 196;
+pub const RES_GOLDEN_CROSS_HIT = 197;
+pub const RES_SLIDER = 198;
+pub const RES_BAR_BLUE = 199;
+pub const RES_TITLE = 200;
+pub const RES_PURPLE_BALL = 201;
+pub const RES_PURPLE_EXP = 202;
+pub const RES_PURPLE_STAFF = 203;
+pub const RES_THUNDER_STAFF = 204;
+pub const RES_THUNDER_YELLOW = 205;
+pub const RES_ATTACK_UP = 206;
+pub const RES_POWERFUL_BOW = 207;
 
 // Effect
 pub const EFFECT_DEATH = 0;
@@ -304,6 +306,7 @@ pub var textures: [TEXTURES_SIZE]tps.Texture = undefined;
 pub var texturesCount: usize = 0;
 pub var bgms: [AUDIO_BGM_SIZE]?*c.Mix_Music = undefined;
 pub var commonSprites: [COMMON_SPRITE_SIZE]spr.Sprite = undefined;
+var commonSpriteCounter: usize = 0;
 pub var font: *c.TTF_Font = undefined;
 pub var sounds: [AUDIO_SOUND_SIZE]?*c.Mix_Chunk = undefined;
 pub var texts: [TEXTSET_SIZE]tps.Text = undefined;
@@ -318,7 +321,16 @@ pub fn init() bool {
         _ = c.printf("SDL could not initialize! SDL_Error: %s\n", c.SDL_GetError());
         success = false;
     } else {
-        const win = c.SDL_CreateWindow(nameOfTheGame, 0, 0, 1440, 960, c.SDL_WINDOW_SHOWN);
+        // NOTE: enabled high-dpi mode and window resizing.
+        // Taken from: https://github.com/midzer/DungeonRush/commit/a78751d4cd3bd336e4499b17f2772a57c0cb5b2a
+        const win = c.SDL_CreateWindow(
+            nameOfTheGame,
+            c.SDL_WINDOWPOS_CENTERED,
+            c.SDL_WINDOWPOS_CENTERED,
+            SCREEN_WIDTH / 2, // Half for high dpi mode.
+            SCREEN_HEIGHT / 2, // Same.
+            c.SDL_WINDOW_ALLOW_HIGHDPI | c.SDL_WINDOW_RESIZABLE,
+        );
         if (win) |w| {
             window = w;
 
@@ -329,6 +341,8 @@ pub fn init() bool {
             } else {
                 rnd.renderer = rend.?;
                 _ = c.SDL_SetRenderDrawColor(rnd.renderer, 0xff, 0xff, 0xff, 0xff);
+                // Added for high dpi mode!
+                _ = c.SDL_RenderSetLogicalSize(ren.renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
                 const imgFlags: c_int = c.IMG_INIT_PNG;
                 if (!((c.IMG_Init(imgFlags) & imgFlags) != 0)) {
@@ -355,25 +369,13 @@ pub fn init() bool {
 }
 
 pub fn loadSDLTexture(path: [:0]const u8) ?*c.SDL_Texture {
-    var newTexture: ?*c.SDL_Texture = null;
-    const loadedSurface: ?*c.SDL_Surface = c.IMG_Load(path);
-
-    if (loadedSurface == null) {
-        std.log.debug("Unable to load image {s}! SDL_image Error: {s}\n", .{ path, c.SDL_GetError() });
-    } else {
-        newTexture = c.SDL_CreateTextureFromSurface(rnd.renderer, loadedSurface);
-        if (newTexture == null) {
-            std.log.debug("Unable to create texture from {s}! SDL Error: {s}\n", .{ path, c.SDL_GetError() });
-        }
-        c.SDL_FreeSurface(loadedSurface);
+    // Load teexture at specified path.
+    const texture = c.IMG_LoadTexture(ren.renderer, path);
+    if (texture == null) {
+        std.log.err("Unable to create texture from: {s}. SDL Error: {s}", .{ path, c.SDL_GetError() });
     }
-    return newTexture;
+    return texture;
 }
-
-// Hacky as shit!
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-var allocator = gpa.allocator();
-//pub var fpsTextList: [61][*:0]const u8 = undefined;
 
 fn loadTextset() bool {
     var success = true;
@@ -392,7 +394,10 @@ fn loadTextset() bool {
     // You wouldn't get it script kiddy.
     // NOTE: as of now, these lives for the life of the app and is never cleaned up.
     for (0..61) |i| {
-        const res = std.fmt.allocPrintZ(allocator, "FPS: {d}", .{i}) catch unreachable;
+        // NOTE: initTexts copies the text, so we just free it asap.
+        const res = std.fmt.allocPrintZ(gAllocator, "FPS: {d}", .{i}) catch unreachable;
+        defer gAllocator.free(res);
+
         if (!tps.initText(&texts[count + i], res.ptr, tps.WHITE)) {
             success = false;
             break;
@@ -532,6 +537,31 @@ pub fn cleanup() void {
         originTextures[idx] = null;
     }
 
+    // NOTE: r.c. added by me - destroy all animations!
+    for (0..ren.ANIMATION_LINK_LIST_NUM) |i| {
+        tps.destroyAnimationsByLinkList(&ren.animationsList[i]);
+    }
+
+    // These live for the life of the app, but I'm destroy them so we have no leaks at the end.
+    for (0..commonSpriteCounter) |i| {
+        gAllocator.destroy(commonSprites[i].ani);
+    }
+    // These also live for the life of the app.
+    wp.destroyWeapons();
+
+    // Effects also live for the life of the app and should be cleaned up.
+    // NOTE: 3 is hardoded - baaaad.
+    for (0..3) |i| {
+        gAllocator.free(effects[i].keys);
+    }
+
+    // Clean up long-lived texture crops, which are dynamically alloc'd.
+    for (0..texturesCount) |i| {
+        gAllocator.free(textures[i].crops);
+    }
+
+    ren.clearInfo();
+
     c.SDL_DestroyRenderer(rnd.renderer);
     // rnd.renderer = null; // rc: choosing to use non-nullable var.
     c.SDL_DestroyWindow(window);
@@ -556,6 +586,7 @@ pub fn initCommonEffects() void {
     death.r = 0;
     death.a = 0;
     effects[0].keys[0] = death;
+
     tps.initEffect(&effects[1], 30, 3, c.SDL_BLENDMODE_ADD);
     var blink: c.SDL_Color = .{ .r = 0, .g = 0, .b = 0, .a = 255 };
     effects[1].keys[0] = blink;
@@ -567,6 +598,7 @@ pub fn initCommonEffects() void {
     blink.g = 0;
     blink.b = 0;
     effects[1].keys[2] = blink;
+
     tps.initEffect(&effects[2], 30, 2, c.SDL_BLENDMODE_BLEND);
     var vanish: c.SDL_Color = .{ .r = 255, .g = 255, .b = 255, .a = 255 };
     effects[2].keys[0] = vanish;
@@ -599,6 +631,8 @@ fn initCommonSprite(sprite: *spr.Sprite, weapon: *wp.Weapon, res_id: c_int, hp: 
         .lastAttack = 0,
         .dropRate = 1,
     };
+
+    commonSpriteCounter += 1;
 }
 
 fn initCommonSprites() void {
@@ -606,7 +640,7 @@ fn initCommonSprites() void {
     initCommonSprite(&commonSprites[SPRITE_KNIGHT], &wp.weapons[wp.WEAPON_SWORD], RES_KNIGHT_M, 150);
     initCommonSprite(&commonSprites[SPRITE_ELF], &wp.weapons[wp.WEAPON_ARROW], RES_ELF_M, 100);
     initCommonSprite(&commonSprites[SPRITE_WIZZARD], &wp.weapons[wp.WEAPON_FIREBALL], RES_WIZZARD_M, 95);
-    initCommonSprite(&commonSprites[SPRITE_LIZARD], &wp.weapons[wp.WEAPON_MONSTER_CLAW], RES_LIZARD_M, 120);
+    initCommonSprite(&commonSprites[SPRITE_LIZARD], &wp.weapons[wp.WEAPON_MONSTER_CLAW], RES_ZIGGY_M, 120);
 
     // Baddies
     initCommonSprite(&commonSprites[SPRITE_TINY_ZOMBIE], &wp.weapons[wp.WEAPON_MONSTER_CLAW2], RES_TINY_ZOMBIE, 50);

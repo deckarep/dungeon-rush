@@ -700,7 +700,7 @@ pub fn pushMapToRender() void {
                 continue;
             }
             const node = tps.createLinkNode(gm.map[i][j].ani);
-            std.debug.assert(node.element != null);
+            std.debug.assert(node.data != null);
             tps.pushLinkNode(&ren.animationsList[ren.RENDER_LIST_MAP_ID], node);
         }
     }

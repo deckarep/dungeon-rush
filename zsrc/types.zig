@@ -30,6 +30,7 @@ const adt = @import("adt.zig");
 const spr = @import("sprite.zig");
 const gm = @import("game.zig");
 const hlp = @import("helper.zig");
+const gAllocator = @import("alloc.zig").gAllocator;
 
 pub const BLACK: c.SDL_Color = .{
     .r = 0,
@@ -82,7 +83,7 @@ pub const Texture = struct {
     height: c_int,
     frames: c_int,
     dbgName: [256]u8 = undefined,
-    crops: [*]c.SDL_Rect,
+    crops: []c.SDL_Rect,
 };
 
 pub const Text = struct {
@@ -131,7 +132,7 @@ pub const Animation = struct {
 
     pub fn deinit(self: *Self) void {
         destroyEffect(self.effect);
-        c.free(self);
+        gAllocator.destroy(self);
     }
 };
 
@@ -139,7 +140,8 @@ pub const Effect = struct {
     duration: c_int,
     currentFrame: c_int,
     length: c_int,
-    keys: [*]c.SDL_Color,
+    //keys: [*]c.SDL_Color,
+    keys: []c.SDL_Color,
     mode: c.SDL_BlendMode,
 };
 
@@ -204,15 +206,13 @@ pub fn initTexture(
     self.width = width;
     self.height = height;
     self.frames = frames;
-    self.crops = @alignCast(@ptrCast(c.malloc(@sizeOf(c.SDL_Rect) * @as(usize, @intCast(frames)))));
+    self.crops = gAllocator.alloc(c.SDL_Rect, @as(usize, @intCast(frames))) catch unreachable;
 }
 
+// NOTE: currently not used because we don't alloc any Textures apparently.
 pub fn destroyTexture(self: *Texture) void {
-    //     #ifdef DBG
-    //   assert(self);
-    //     #endif
-    c.free(self.crops);
-    c.free(self);
+    gAllocator.free(self.crops);
+    gAllocator.destroy(self);
 }
 
 pub fn initAnimation(
@@ -231,7 +231,7 @@ pub fn initAnimation(
 
     // will deep copy effect
     if (effect) |ef| {
-        self.effect = @as(*Effect, @ptrCast(@alignCast(c.malloc(@sizeOf(Effect)))));
+        self.effect = gAllocator.create(Effect) catch unreachable;
         copyEffect(ef, self.effect.?);
     } else {
         self.effect = null;
@@ -261,20 +261,15 @@ pub fn createAnimation(
     angle: f64,
     at: At,
 ) *Animation {
-    const self: *Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(Animation))));
+    const self = gAllocator.create(Animation) catch unreachable;
     initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
     return self;
 }
 
-// pub fn destroyAnimation(self: *Animation) void {
-//     destroyEffect(self.effect);
-//     c.free(self);
-// }
-
 pub fn copyAnimation(src: *const Animation, dest: *Animation) void {
     dest.* = src.*;
     if (src.effect) |eff| {
-        dest.effect = @alignCast(@ptrCast(c.malloc(@sizeOf(Effect))));
+        dest.effect = gAllocator.create(Effect) catch unreachable;
         copyEffect(eff, dest.effect.?);
     }
 }
@@ -308,7 +303,7 @@ pub fn initText(self: *Text, str: [*:0]const u8, color: c.SDL_Color) bool {
 }
 
 pub fn createText(str: [*:0]const u8, color: c.SDL_Color) *Text {
-    const self: *Text = @alignCast(@ptrCast(c.malloc(@sizeOf(Text))));
+    const self = gAllocator.create(Text) catch unreachable;
     _ = initText(self, str, color);
     return self;
 }
@@ -324,14 +319,11 @@ pub fn setText(self: *Text, str: [*:0]const u8) void {
 
 pub fn destroyText(self: *Text) void {
     c.SDL_DestroyTexture(self.origin);
-    c.free(self);
+    gAllocator.destroy(self);
 }
 
 pub fn initEffect(self: *Effect, duration: c_int, length: c_int, mode: c.SDL_BlendMode) void {
-    self.keys = @as(
-        [*]c.SDL_Color,
-        @ptrCast(@alignCast(c.malloc(@sizeOf(c.SDL_Color) * @as(usize, @intCast(length))))),
-    );
+    self.keys = gAllocator.alloc(c.SDL_Color, @as(usize, @intCast(length))) catch unreachable;
     self.duration = duration;
     self.length = length;
     self.currentFrame = 0;
@@ -343,8 +335,8 @@ pub fn copyEffect(src: *const Effect, dest: *Effect) void {
     // rc: change from memcopy to just regular ass copy.
     dest.* = src.*;
 
-    dest.*.keys = @ptrCast(@alignCast(c.malloc(@sizeOf(c.SDL_Color) * @as(usize, @intCast(src.length)))));
     const len: usize = @intCast(src.length);
+    dest.*.keys = gAllocator.alloc(c.SDL_Color, len) catch unreachable;
     for (0..len) |idx| {
         dest.keys[idx] = src.keys[idx];
     }
@@ -352,117 +344,90 @@ pub fn copyEffect(src: *const Effect, dest: *Effect) void {
 
 pub fn destroyEffect(self: ?*Effect) void {
     if (self) |ef| {
-        c.free(ef.keys);
-        c.free(ef);
+        gAllocator.free(ef.keys);
+        gAllocator.destroy(ef);
     }
 }
 
-// rc: Made decision to port over raw C ADT LinkList logic
-// eventually, I will do away with this crap in favor of a more
-// Zig-friendly approach and delete all this crap.
-// First goal: get the game working as-is.
-pub fn initLinkNode(self: *adt.LinkNode) void {
-    self.nxt = null;
-    self.pre = null;
-    self.element = null;
+pub fn initLinkNode(self: *adt.GenericNode) void {
+    self.next = null;
+    self.prev = null;
+    self.data = null;
 }
 
-pub fn createLinkNode(element: *anyopaque) *adt.LinkNode {
-    const self: *adt.LinkNode = @alignCast(@ptrCast(c.malloc(@sizeOf(adt.LinkNode))));
-    initLinkNode(self);
-    self.element = element;
-    return self;
+pub fn createLinkNode(element: *anyopaque) *adt.GenericNode {
+    // TODO: this needs a try
+    const node = gAllocator.create(adt.GenericNode) catch unreachable;
+    initLinkNode(node);
+    node.data = element;
+    return node;
 }
 
-pub fn initLinkList(self: *adt.LinkList) void {
-    self.head = null;
-    self.tail = null;
+pub fn initLinkList(self: *adt.GenericLL) void {
+    self.first = null;
+    self.last = null;
+    self.len = 0;
 }
 
-pub fn createLinkList() *adt.LinkList {
-    const self: *adt.LinkList = @alignCast(@ptrCast(c.malloc(@sizeOf(adt.LinkList))));
-    initLinkList(self);
-    return self;
+pub fn createLinkList() *adt.GenericLL {
+    // TODO: this needs a try
+    const ll = gAllocator.create(adt.GenericLL) catch unreachable;
+    initLinkList(ll);
+    return ll;
 }
 
-pub fn pushLinkNodeAtHead(list: *adt.LinkList, node: *adt.LinkNode) void {
-    if (list.head == null) {
-        list.head = node;
-        list.tail = node;
-    } else {
-        node.nxt = list.head;
-        list.head.?.pre = node;
-        list.head = node;
-    }
+pub fn pushLinkNodeAtHead(list: *adt.GenericLL, node: *adt.GenericNode) void {
+    list.prepend(node);
 }
 
-pub fn pushLinkNode(list: *adt.LinkList, node: *adt.LinkNode) void {
-    if (list.head == null) {
-        list.head = node;
-        list.tail = node;
-    } else {
-        list.tail.?.nxt = node;
-        node.pre = list.tail;
-
-        list.tail = node;
-    }
+pub fn pushLinkNode(list: *adt.GenericLL, node: *adt.GenericNode) void {
+    list.append(node);
 }
 
-pub fn removeLinkNode(list: *adt.LinkList, node: *adt.LinkNode) void {
-    if (node.pre) |pre| {
-        pre.nxt = node.nxt;
-    } else {
-        list.head = node.nxt;
+pub fn removeLinkNode(list: *adt.GenericLL, node: *adt.GenericNode) void {
+    list.remove(node);
+    gAllocator.destroy(node);
+}
+
+pub fn destroyLinkList(self: *adt.GenericLL) void {
+    var p = self.first;
+    var nxt: ?*adt.GenericNode = undefined;
+
+    while (p) |node| : (p = nxt) {
+        nxt = node.next;
+        gAllocator.destroy(node);
     }
 
-    if (node.nxt) |nxt| {
-        nxt.pre = node.pre;
-    } else {
-        list.tail = node.pre;
-    }
-
-    c.free(node);
+    gAllocator.destroy(self);
 }
 
-pub fn destroyLinkList(self: *adt.LinkList) void {
-    var p: ?*adt.LinkNode = self.head;
-    var nxt: ?*adt.LinkNode = undefined;
+pub fn destroyAnimationsByLinkList(list: *adt.GenericLL) void {
+    var it = list.first;
+    var nxt: ?*adt.GenericNode = undefined;
+    while (it) |node| : (it = nxt) {
+        nxt = node.next;
 
-    while (p != null) : (p = nxt) {
-        nxt = p.?.nxt;
-        c.free(p);
-    }
-
-    c.free(self);
-}
-
-pub fn destroyAnimationsByLinkList(list: *adt.LinkList) void {
-    var p: ?*adt.LinkNode = list.head;
-    var nxt: ?*adt.LinkNode = undefined;
-    while (p != null) : (p = nxt) {
-        nxt = p.?.nxt;
-        //const ani: *Animation = @alignCast(@ptrCast(p.?.element));
-        const ani = Animation.as(p.?.element.?);
+        const ani = Animation.as(node.data.?);
         ani.deinit();
-        //destroyAnimation(@alignCast(@ptrCast(p.?.element)));
-        removeLinkNode(list, p.?);
+        list.remove(node);
+
+        gAllocator.destroy(node);
     }
 }
 
-pub fn removeAnimationFromLinkList(self: *adt.LinkList, ani: *Animation) void {
-    var p = self.head;
-    while (p != null) : (p = p.?.nxt) {
-        if (p.?.element == @as(?*anyopaque, ani)) {
-            removeLinkNode(self, p.?);
+pub fn removeAnimationFromLinkList(self: *adt.GenericLL, ani: *Animation) void {
+    var p = self.first;
+    while (p) |node| : (p = node.next) {
+        if (node.data == @as(?*anyopaque, ani)) {
+            removeLinkNode(self, node);
             ani.deinit();
-            //destroyAnimation(ani);
             break;
         }
     }
 }
 
-pub fn changeSpriteDirection(self: *adt.LinkNode, newDirection: Direction) void {
-    const sprite: *spr.Sprite = @alignCast(@ptrCast(self.element.?));
+pub fn changeSpriteDirection(self: *adt.GenericNode, newDirection: Direction) void {
+    const sprite: *spr.Sprite = @alignCast(@ptrCast(self.data.?));
     if (sprite.direction == newDirection) {
         return;
     }
@@ -472,8 +437,8 @@ pub fn changeSpriteDirection(self: *adt.LinkNode, newDirection: Direction) void 
         sprite.face = newDirection;
     }
 
-    if (self.nxt) |n| {
-        const nextSprite: *spr.Sprite = @alignCast(@ptrCast(n.element));
+    if (self.next) |n| {
+        const nextSprite: *spr.Sprite = @alignCast(@ptrCast(n.data));
         const slot: spr.PositionBufferSlot = .{
             .x = sprite.x,
             .y = sprite.y,
@@ -490,13 +455,13 @@ fn initScore(score: *Score) void {
 }
 
 pub fn createScore() *Score {
-    const score: *Score = @alignCast(@ptrCast(c.malloc(@sizeOf(Score))));
+    const score = gAllocator.create(Score) catch unreachable;
     initScore(score);
     return score;
 }
 
 pub fn destroyScore(self: *Score) void {
-    c.free(self);
+    gAllocator.destroy(self);
 }
 
 pub fn calcScore(self: *Score) void {

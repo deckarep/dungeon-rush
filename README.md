@@ -21,6 +21,7 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
       * Still using `c.malloc`/`c.free` in many cases, most cases don't check for null (alloc failure)
       * A few cases are using callbacks using the `callconv(.C)` for `c.qsort`
       * Still using multi-pointers or a few `[*c]` style pointers
+      * Find and improve `const` correctness in some cases.
   2. Phase 2: Ziggify
       * Use proper Zig `allocators` instead of `c.malloc`/`c.free`
       * Move away from `c_int` or C specific types

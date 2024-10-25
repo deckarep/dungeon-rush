@@ -21,39 +21,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-const prng = @import("prng.zig");
-const c = @import("cdefs.zig").c;
 const std = @import("std");
-const res = @import("res.zig");
-const ui = @import("ui.zig");
-const alloc = @import("alloc.zig");
 
-pub fn main() !void {
-    std.log.info(res.nameOfTheGame, .{});
-    prng.prngSrand(@as(c_uint, @bitCast(@as(c_int, @truncate(c.time(null))))));
-
-    defer {
-        std.log.info("checking for leaks on gAllocator...", .{});
-        const deinit_status = alloc.gpa.deinit();
-        if (deinit_status == .leak) {
-            std.log.err("leaks were detected :(", .{});
-        } else {
-            std.log.info("No leaks detected. :)", .{});
-        }
-    }
-
-    defer {
-        std.log.info("cleaning up all resources!", .{});
-        res.cleanup();
-    }
-
-    if (!res.init()) {
-        std.log.err("Failed to init SDL and/or the game.", .{});
-    } else {
-        if (!try res.loadMedia()) {
-            std.log.err("Failed to load media.", .{});
-        } else {
-            ui.mainUi();
-        }
-    }
-}
+// For now, using a global allocator for everything!
+pub var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+pub const gAllocator = gpa.allocator();
