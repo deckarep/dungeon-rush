@@ -83,7 +83,7 @@ pub const Texture = struct {
     height: c_int,
     frames: c_int,
     dbgName: [256]u8 = undefined,
-    crops: [*]c.SDL_Rect,
+    crops: []c.SDL_Rect,
 };
 
 pub const Text = struct {
@@ -133,7 +133,6 @@ pub const Animation = struct {
     pub fn deinit(self: *Self) void {
         destroyEffect(self.effect);
         gAllocator.destroy(self);
-        //c.free(self);
     }
 };
 
@@ -141,7 +140,8 @@ pub const Effect = struct {
     duration: c_int,
     currentFrame: c_int,
     length: c_int,
-    keys: [*]c.SDL_Color,
+    //keys: [*]c.SDL_Color,
+    keys: []c.SDL_Color,
     mode: c.SDL_BlendMode,
 };
 
@@ -206,13 +206,10 @@ pub fn initTexture(
     self.width = width;
     self.height = height;
     self.frames = frames;
-    self.crops = @alignCast(@ptrCast(c.malloc(@sizeOf(c.SDL_Rect) * @as(usize, @intCast(frames)))));
+    self.crops = gAllocator.alloc(c.SDL_Rect, @as(usize, @intCast(frames))) catch unreachable;
 }
 
 pub fn destroyTexture(self: *Texture) void {
-    //     #ifdef DBG
-    //   assert(self);
-    //     #endif
     c.free(self.crops);
     c.free(self);
 }
@@ -233,7 +230,7 @@ pub fn initAnimation(
 
     // will deep copy effect
     if (effect) |ef| {
-        self.effect = @as(*Effect, @ptrCast(@alignCast(c.malloc(@sizeOf(Effect)))));
+        self.effect = gAllocator.create(Effect) catch unreachable;
         copyEffect(ef, self.effect.?);
     } else {
         self.effect = null;
@@ -263,21 +260,15 @@ pub fn createAnimation(
     angle: f64,
     at: At,
 ) *Animation {
-    //const self: *Animation = @ptrCast(@alignCast(c.malloc(@sizeOf(Animation))));
     const self = gAllocator.create(Animation) catch unreachable;
     initAnimation(self, origin, effect, lp, duration, x, y, flip, angle, at);
     return self;
 }
 
-// pub fn destroyAnimation(self: *Animation) void {
-//     destroyEffect(self.effect);
-//     c.free(self);
-// }
-
 pub fn copyAnimation(src: *const Animation, dest: *Animation) void {
     dest.* = src.*;
     if (src.effect) |eff| {
-        dest.effect = @alignCast(@ptrCast(c.malloc(@sizeOf(Effect))));
+        dest.effect = gAllocator.create(Effect) catch unreachable;
         copyEffect(eff, dest.effect.?);
     }
 }
@@ -311,7 +302,7 @@ pub fn initText(self: *Text, str: [*:0]const u8, color: c.SDL_Color) bool {
 }
 
 pub fn createText(str: [*:0]const u8, color: c.SDL_Color) *Text {
-    const self: *Text = @alignCast(@ptrCast(c.malloc(@sizeOf(Text))));
+    const self = gAllocator.create(Text) catch unreachable;
     _ = initText(self, str, color);
     return self;
 }
@@ -327,14 +318,12 @@ pub fn setText(self: *Text, str: [*:0]const u8) void {
 
 pub fn destroyText(self: *Text) void {
     c.SDL_DestroyTexture(self.origin);
-    c.free(self);
+    gAllocator.destroy(self);
+    //c.free(self);
 }
 
 pub fn initEffect(self: *Effect, duration: c_int, length: c_int, mode: c.SDL_BlendMode) void {
-    self.keys = @as(
-        [*]c.SDL_Color,
-        @ptrCast(@alignCast(c.malloc(@sizeOf(c.SDL_Color) * @as(usize, @intCast(length))))),
-    );
+    self.keys = gAllocator.alloc(c.SDL_Color, @as(usize, @intCast(length))) catch unreachable;
     self.duration = duration;
     self.length = length;
     self.currentFrame = 0;
@@ -346,8 +335,8 @@ pub fn copyEffect(src: *const Effect, dest: *Effect) void {
     // rc: change from memcopy to just regular ass copy.
     dest.* = src.*;
 
-    dest.*.keys = @ptrCast(@alignCast(c.malloc(@sizeOf(c.SDL_Color) * @as(usize, @intCast(src.length)))));
     const len: usize = @intCast(src.length);
+    dest.*.keys = gAllocator.alloc(c.SDL_Color, len) catch unreachable;
     for (0..len) |idx| {
         dest.keys[idx] = src.keys[idx];
     }
@@ -355,8 +344,8 @@ pub fn copyEffect(src: *const Effect, dest: *Effect) void {
 
 pub fn destroyEffect(self: ?*Effect) void {
     if (self) |ef| {
-        c.free(ef.keys);
-        c.free(ef);
+        gAllocator.free(ef.keys);
+        gAllocator.destroy(ef);
     }
 }
 
@@ -377,6 +366,7 @@ pub fn createLinkNode(element: *anyopaque) *adt.GenericNode {
 pub fn initLinkList(self: *adt.GenericLL) void {
     self.first = null;
     self.last = null;
+    self.len = 0;
 }
 
 pub fn createLinkList() *adt.GenericLL {
@@ -403,9 +393,9 @@ pub fn destroyLinkList(self: *adt.GenericLL) void {
     var p = self.first;
     var nxt: ?*adt.GenericNode = undefined;
 
-    while (p != null) : (p = nxt) {
-        nxt = p.?.next;
-        gAllocator.destroy(p.?);
+    while (p) |node| : (p = nxt) {
+        nxt = node.next;
+        gAllocator.destroy(node);
     }
 
     gAllocator.destroy(self);
@@ -427,9 +417,9 @@ pub fn destroyAnimationsByLinkList(list: *adt.GenericLL) void {
 
 pub fn removeAnimationFromLinkList(self: *adt.GenericLL, ani: *Animation) void {
     var p = self.first;
-    while (p != null) : (p = p.?.next) {
-        if (p.?.data == @as(?*anyopaque, ani)) {
-            removeLinkNode(self, p.?);
+    while (p) |node| : (p = node.next) {
+        if (node.data == @as(?*anyopaque, ani)) {
+            removeLinkNode(self, node);
             ani.deinit();
             break;
         }
@@ -465,13 +455,13 @@ fn initScore(score: *Score) void {
 }
 
 pub fn createScore() *Score {
-    const score: *Score = @alignCast(@ptrCast(c.malloc(@sizeOf(Score))));
+    const score = gAllocator.create(Score) catch unreachable;
     initScore(score);
     return score;
 }
 
 pub fn destroyScore(self: *Score) void {
-    c.free(self);
+    gAllocator.destroy(self);
 }
 
 pub fn calcScore(self: *Score) void {

@@ -321,7 +321,16 @@ pub fn init() bool {
         _ = c.printf("SDL could not initialize! SDL_Error: %s\n", c.SDL_GetError());
         success = false;
     } else {
-        const win = c.SDL_CreateWindow(nameOfTheGame, 0, 0, 1440, 960, c.SDL_WINDOW_SHOWN);
+        // NOTE: enabled high-dpi mode and window resizing.
+        // Taken from: https://github.com/midzer/DungeonRush/commit/a78751d4cd3bd336e4499b17f2772a57c0cb5b2a
+        const win = c.SDL_CreateWindow(
+            nameOfTheGame,
+            c.SDL_WINDOWPOS_CENTERED,
+            c.SDL_WINDOWPOS_CENTERED,
+            SCREEN_WIDTH / 2, // Half for high dpi mode.
+            SCREEN_HEIGHT / 2, // Same.
+            c.SDL_WINDOW_ALLOW_HIGHDPI | c.SDL_WINDOW_RESIZABLE,
+        );
         if (win) |w| {
             window = w;
 
@@ -332,6 +341,8 @@ pub fn init() bool {
             } else {
                 rnd.renderer = rend.?;
                 _ = c.SDL_SetRenderDrawColor(rnd.renderer, 0xff, 0xff, 0xff, 0xff);
+                // Added for high dpi mode!
+                _ = c.SDL_RenderSetLogicalSize(ren.renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
                 const imgFlags: c_int = c.IMG_INIT_PNG;
                 if (!((c.IMG_Init(imgFlags) & imgFlags) != 0)) {
@@ -358,19 +369,12 @@ pub fn init() bool {
 }
 
 pub fn loadSDLTexture(path: [:0]const u8) ?*c.SDL_Texture {
-    var newTexture: ?*c.SDL_Texture = null;
-    const loadedSurface: ?*c.SDL_Surface = c.IMG_Load(path);
-
-    if (loadedSurface == null) {
-        std.log.debug("Unable to load image {s}! SDL_image Error: {s}\n", .{ path, c.SDL_GetError() });
-    } else {
-        newTexture = c.SDL_CreateTextureFromSurface(rnd.renderer, loadedSurface);
-        if (newTexture == null) {
-            std.log.debug("Unable to create texture from {s}! SDL Error: {s}\n", .{ path, c.SDL_GetError() });
-        }
-        c.SDL_FreeSurface(loadedSurface);
+    // Load teexture at specified path.
+    const texture = c.IMG_LoadTexture(ren.renderer, path);
+    if (texture == null) {
+        std.log.err("Unable to create texture from: {s}. SDL Error: {s}", .{ path, c.SDL_GetError() });
     }
-    return newTexture;
+    return texture;
 }
 
 fn loadTextset() bool {
@@ -545,6 +549,19 @@ pub fn cleanup() void {
     // These also live for the life of the app.
     wp.destroyWeapons();
 
+    // Effects also live for the life of the app and should be cleaned up.
+    // NOTE: 3 is hardoded - baaaad.
+    for (0..3) |i| {
+        gAllocator.free(effects[i].keys);
+    }
+
+    // Clean up long-lived texture crops, which are dynamically alloc'd.
+    for (0..texturesCount) |i| {
+        gAllocator.free(textures[i].crops);
+    }
+
+    ren.clearInfo();
+
     c.SDL_DestroyRenderer(rnd.renderer);
     // rnd.renderer = null; // rc: choosing to use non-nullable var.
     c.SDL_DestroyWindow(window);
@@ -569,6 +586,7 @@ pub fn initCommonEffects() void {
     death.r = 0;
     death.a = 0;
     effects[0].keys[0] = death;
+
     tps.initEffect(&effects[1], 30, 3, c.SDL_BLENDMODE_ADD);
     var blink: c.SDL_Color = .{ .r = 0, .g = 0, .b = 0, .a = 255 };
     effects[1].keys[0] = blink;
@@ -580,6 +598,7 @@ pub fn initCommonEffects() void {
     blink.g = 0;
     blink.b = 0;
     effects[1].keys[2] = blink;
+
     tps.initEffect(&effects[2], 30, 2, c.SDL_BLENDMODE_BLEND);
     var vanish: c.SDL_Color = .{ .r = 255, .g = 255, .b = 255, .a = 255 };
     effects[2].keys[0] = vanish;

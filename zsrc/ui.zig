@@ -33,6 +33,7 @@ const spr = @import("sprite.zig");
 const mp = @import("map.zig");
 const c = @import("cdefs.zig").c;
 const th = @import("throttler.zig");
+const gAllocator = @import("alloc.zig").gAllocator;
 
 const UI_MAIN_GAP = 40;
 const UI_MAIN_GAP_ALT = 22;
@@ -159,7 +160,13 @@ fn chooseLevelUi() bool {
 
 fn launchLocalGame(localPlayerNum: c_int) void {
     const scores = gm.startGame(localPlayerNum, 0, true);
-    _ = scores;
+
+    // TODO: Cleaning up score temporarily, but it's used in commented out code below which is not finished!
+    defer gAllocator.free(scores);
+    for (scores) |sc| {
+        tps.destroyScore(sc);
+    }
+
     //rankListUi(localPlayerNum, scores);
     //   for (int i = 0; i < localPlayerNum; i++) {
     //     updateLocalRanklist(scores[i]);

@@ -152,13 +152,15 @@ pub fn destroyWeapons() void {
     defer weaponIndexesUsed.deinit();
 
     for (weaponIndexesUsed.items) |i| {
-        if (weapons[i].birthAni) |ba| {
+        const wp = weapons[i];
+
+        if (wp.birthAni) |ba| {
             gAllocator.destroy(ba);
         }
-        if (weapons[i].deathAni) |da| {
+        if (wp.deathAni) |da| {
             gAllocator.destroy(da);
         }
-        if (weapons[i].flyAni) |fa| {
+        if (wp.flyAni) |fa| {
             gAllocator.destroy(fa);
         }
     }

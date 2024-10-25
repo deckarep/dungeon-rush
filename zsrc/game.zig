@@ -133,14 +133,10 @@ pub fn setLevel(level: c_int) void {
     bossSetting += @divTrunc(stage, 3);
 }
 
-pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) [*]*tps.Score {
+pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) []const *tps.Score {
     std.log.info("startGame!! was reached", .{});
 
-    // NOTE: This gets free'd in the storage.zig code (not built yet!)
-    const scores: [*]*tps.Score = @alignCast(@ptrCast(c.malloc(
-        @sizeOf(*tps.Score) * @as(usize, @intCast(localPlayers)),
-    )));
-
+    const scores = gAllocator.alloc(*tps.Score, @as(usize, @intCast(localPlayers))) catch unreachable;
     for (0..@intCast(localPlayers)) |i| {
         scores[i] = tps.createScore();
     }
@@ -792,7 +788,8 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
     var dur: c_int = duration;
     var effect: ?*tps.Effect = null;
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
-        effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
+        //effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
+        effect = gAllocator.create(tps.Effect) catch unreachable;
         tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
         dur = 30;
     }
@@ -832,7 +829,8 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
     var dur: c_int = duration;
     var effect: ?*tps.Effect = null;
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
-        effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
+        //effect = @alignCast(@ptrCast(c.malloc(@sizeOf(tps.Effect))));
+        effect = gAllocator.create(tps.Effect) catch unreachable;
         tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
         dur = 30;
     }
@@ -1183,7 +1181,7 @@ pub fn destroySnake(snake: *pl.Snake) void {
     var p = snake.sprites.first;
     while (p != null) : (p = p.?.next) {
         const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data.?));
-        c.free(sprite);
+        gAllocator.destroy(sprite);
         p.?.data = null;
     }
 
@@ -1488,7 +1486,7 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                 }
                 tps.removeLinkNode(snake.sprites, p.?);
                 // NOTE: Double free was occuring here.
-                c.free(possibleSpriteToDelete);
+                gAllocator.destroy(possibleSpriteToDelete);
             }
         }
     }

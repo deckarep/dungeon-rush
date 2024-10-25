@@ -148,14 +148,21 @@ pub fn initRenderer() void {
 }
 
 pub fn clearInfo() void {
-    tps.destroyText(stageText);
-    stageText = null;
-    tps.destroyText(taskText);
-    taskText = null;
+    if (stageText) |st| {
+        tps.destroyText(st);
+        stageText = null;
+    }
+
+    if (taskText) |tt| {
+        tps.destroyText(tt);
+        taskText = null;
+    }
 
     for (0..@intCast(gm.playersCount)) |i| {
-        tps.destroyText(scoresText[i]);
-        scoresText[i] = null;
+        if (scoresText[i]) |sct| {
+            tps.destroyText(sct);
+            scoresText[i] = null;
+        }
     }
 }
 
