@@ -832,7 +832,7 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
     // This is safe to do because each call to createAndPushAnimation will
     // simply deep copy and alloc the effect yet again, so this one must be
     // cleaned up.
-    defer if (effect != null) gAllocator.destroy(effect.?);
+    defer if (effect != null) tps.destroyEffect(effect);
 
     var p = snake.sprites.first;
     while (p) |node| : (p = node.next) {
