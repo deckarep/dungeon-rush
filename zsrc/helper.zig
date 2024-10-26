@@ -36,6 +36,7 @@ pub inline fn inr(val: c_int, lower: c_int, upper: c_int) bool {
     return lower <= val and val <= upper;
 }
 
+/// Generates a random int from l to r inclusive on both ends.
 pub fn randInt(l: c_int, r: c_int) c_int {
     const rdm: c_int = @intCast(rng.prngRand()); // Assume rng.prngRand() gives you a valid random number.
     return @mod(rdm, (r - l + 1)) + l; // Generate a number between l and r
