@@ -131,7 +131,7 @@ pub const Animation = struct {
     }
 
     pub fn deinit(self: *Self) void {
-        destroyEffect(self.effect);
+        if (self.effect) |ef| ef.deinit();
         gAllocator.destroy(self);
     }
 };
@@ -143,6 +143,12 @@ pub const Effect = struct {
     //keys: [*]c.SDL_Color,
     keys: []c.SDL_Color,
     mode: c.SDL_BlendMode,
+
+    pub fn deinit(self: *Effect) void {
+        // TODO: migrate the destroyEffect code INTO this method.
+        // delete all uses of destroyEffect in favor of effect.deinit()
+        destroyEffect(self);
+    }
 };
 
 // Game Logic Types

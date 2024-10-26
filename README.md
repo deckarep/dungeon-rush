@@ -6,10 +6,11 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
 
 ## Status
 * Fully playable - confirmed working on MacOS, Linux Mint
-* Nearly complete port, no networking or auxillary menus done.
+* Nearly complete port, no networking or auxillary menus done
 * No known bugs.
-* Many memory leaks were tracked down and fixed using Zig's `GeneralPurposeAllocator` leak detection feature.
-* Code is largely done, but now being incrementally improved, refactored and cleaned-up.
+* Many memory leaks were tracked down and fixed using Zig's `GeneralPurposeAllocator` leak detection feature
+* Game speed is now appropriately throttled and consistent across platforms.
+* Code is largely done, but now being incrementally improved, refactored and cleaned-up
 
 ## A twist on classic Snake
 * DungeonRush is a pretty fun game:

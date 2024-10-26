@@ -788,9 +788,15 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
         dur = 30;
     }
 
+    // NOTE: without this, this was leaking in the original C code.
+    // This is safe to do because each call to createAndPushAnimation will
+    // simply deep copy and alloc the effect yet again (for each sprite), so
+    // this one is temporary and must be cleaned up.
+    defer if (effect) |ef| ef.deinit();
+
     var p = snake.sprites.first;
-    while (p != null) : (p = p.?.next) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
+    while (p) |node| : (p = node.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(node.data));
         const ani = ren.createAndPushAnimation(
             &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
             &res.textures[res.RES_ICE],
@@ -830,9 +836,9 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
 
     // NOTE: without this, this was leaking in the original C code.
     // This is safe to do because each call to createAndPushAnimation will
-    // simply deep copy and alloc the effect yet again, so this one must be
-    // cleaned up.
-    defer if (effect != null) tps.destroyEffect(effect);
+    // simply deep copy and alloc the effect yet again (for each sprite), so
+    // this one is temporary and must be cleaned up.
+    defer if (effect) |ef| ef.deinit();
 
     var p = snake.sprites.first;
     while (p) |node| : (p = node.next) {
@@ -880,8 +886,8 @@ pub fn shieldSnake(snake: *pl.Snake, duration: c_int) void {
     snake.buffs[tps.BUFF_DEFENCE] += duration;
 
     var p = snake.sprites.first;
-    while (p != null) : (p = p.?.next) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
+    while (p) |node| : (p = node.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(node.data));
         shieldSprite(sprite, duration);
     }
 
