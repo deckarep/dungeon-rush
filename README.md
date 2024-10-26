@@ -5,18 +5,18 @@
 This is a near exact **Zig port** of the [original DungeonRush `C-based`](https://github.com/rapiz1/DungeonRush) rogue-like game running on SDL2 originally developed by @rapiz1.
 
 ## Status
+* Fully playable - confirmed working on MacOS, Linux Mint
 * Nearly complete port, no networking or auxillary menus done.
 * No known bugs.
-* Many memory leaks were tracked down and fixed using the GeneralPurposeAllocator leak detection feature.
+* Many memory leaks were tracked down and fixed using Zig's `GeneralPurposeAllocator` leak detection feature.
 * Code is largely done, but now being incrementally improved, refactored and cleaned-up.
 
 ## A twist on classic Snake
-* DungeonRush is a pretty fun project/game.
-  * It's a twist on Snake
-  * It uses cellular automata to generate random dungeon levels
-  * It has weapons, buffs, enemies, bosses and loot drops
-  * It features classic pixel art and animations
-  * Don't forget the 8-bit style music and sound-fx
+* DungeonRush is a pretty fun game:
+  * Cellular automata to generate random dungeon levels
+  * Features weapons, buffs, enemies, bosses and loot drops
+  * Classic pixel art and animations
+  * 8-bit style music and many sound sfx
 
 ## Port Goals
 * To re-create a moderately complex game, fully in Zig and to get better at the language.
@@ -28,7 +28,7 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
 * To port in phases:
   1. Phase 1: port the C code almost as-is to minimize bugs introduced
       * ✅ Deprecated usage of `c.malloc`/`c.free` in all cases
-      * A few cases are using callbacks using the `callconv(.C)` for `c.qsort`
+      * ✅ Deprecated use of `c.qsort` with a `callconv(.C)` callback in favor of Zig's sorting.
       * Deprecate all [*c] style pointers
       * ✅ Deprecated C-style multi-pointers
       * Find and improve `const` correctness in some cases.
@@ -48,14 +48,16 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
       * Use less globals
       * Fix namespace issues
       * Remove redundant naming like some enumerations have their container name as the prefix
-      * ✅ Use some Zig based collections like the `generic` LinkList over the original C ADT style.
+      * ✅ Use some Zig based collections like the `generic` LinkList over the original C ADT style
       * Bonus: Introduce unit-tests
       * Get building for other OSes (w/ community contributions)
+      * Migrated hardcoded textures, music + sound sfx out of the source code and into config files
+        * This will allow the game to be easily skinned, for a whole new experience.
   4. Phase 4: ???
       * I'd love to port this to Raylib.
 
 ## Why Zig?
-Cause it's a game-changing, bad-ass language that unlocks super-powers and clicks in my head and this was a great learning experience.
+Cause it's a game-changing, bad-ass language that unlocks super-powers and was a fun learning experience.
 
 ## Source
   * `zrc/` - Ziglang port (by @deckarep)
@@ -77,5 +79,5 @@ If people want to change the overall look and feel or game logic, please fork Du
 * Zig doesn't have `do/while` so they've all been replaced with `while` with a break on a `negated` condition.
 * Before anyone complains about the port looking like ugly Zig code written like C, this is why I'm taking a multi-phase approach. If you've ever done migrations, changing too many things at once introduces bugs, especially when tests don't exist.
 * All original development was done on Apple MacOS Silcon, contributions are welcome for other OSes.
-* The game has some multi-player networking code, I don't care about it at the moment so it's not done.
+* The game has some multi-player networking code, I don't care about it at the moment so it's not started.
 * It's very possible this manual port has introduced a bug or two, the game needs to be well tested.

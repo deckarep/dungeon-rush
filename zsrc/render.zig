@@ -555,40 +555,48 @@ pub fn renderAnimationLinkList(list: *ll.GenericLL) void {
 
 // NOTE: currently this is the only callconv(.C) cause I'm still using qsort.
 // TODO: Migrate to Zig's sorting facility at some pointer.
-fn compareAnimationByY(x: ?*const anyopaque, y: ?*const anyopaque) callconv(.C) c_int {
-    // NOTE: r.c. - this gives a pointer to a pointer.
-    const a: *const *tps.Animation = @alignCast(@ptrCast(x));
-    const b: *const *tps.Animation = @alignCast(@ptrCast(y));
-    //std.log.info("doing compare: b.y:{d} - a.y:{d} = {d}", .{ b.*.y, a.*.y, b.*.y - a.*.y });
-    return b.*.y - a.*.y;
-}
+// fn compareAnimationByY(x: ?*const anyopaque, y: ?*const anyopaque) callconv(.C) c_int {
+//     // NOTE: r.c. - this gives a pointer to a pointer.
+//     const a: *const *tps.Animation = @alignCast(@ptrCast(x));
+//     const b: *const *tps.Animation = @alignCast(@ptrCast(y));
+//     //std.log.info("doing compare: b.y:{d} - a.y:{d} = {d}", .{ b.*.y, a.*.y, b.*.y - a.*.y });
+//     return b.*.y - a.*.y;
+// }
 
-fn renderAnimationLinkListWithSort(list: *ll.GenericLL) void {
-    // 1. Ported C static array to Zig's static array.
-    // const S = struct {
-    //     var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;
-    // };
+fn renderAnimationLinkListWithSort(list: *ll.GenericLL) !void {
+    // r.c. - this method differs from the original C code but should preserve
+    // the exact same semantics.
 
-    // 2. After thinking it through, no need for buffer to be static.
-    var buffer: [RENDER_BUFFER_SIZE]*tps.Animation = undefined;
+    // 1. Create a large temp buffer, it does not need to be static like the original C code.
+    // 2. I chose a dynamic buffer because I can use the precise amount of memory y'all.
+    var buffer = try gAllocator.alloc(*tps.Animation, list.len);
+    defer gAllocator.free(buffer);
 
+    // 2. Iterate the linked-list, copy over all animations because we need to sort
+    // against a slice.
     var count: usize = 0;
     var p = list.first;
-    while (p != null) : (p = p.?.next) {
-        buffer[count] = @alignCast(@ptrCast(p.?.data));
+    while (p) |node| : (p = node.next) {
+        buffer[count] = @alignCast(@ptrCast(node.data));
         count += 1;
     }
 
-    // TODO: Swap c.qsort in favor of Zig's sorting mechanics.
-    c.qsort(@ptrCast(&buffer), @intCast(count), @sizeOf(*tps.Animation), compareAnimationByY);
+    // 3. Create a sort callback.
+    const sorter = struct {
+        fn sort(_: void, a: *tps.Animation, b: *tps.Animation) bool {
+            const result = b.y < a.y;
+            return result;
+        }
+    };
 
-    // This iteration verified y are in descending order.
-    // for (0..count) |i| {
-    //     std.log.info("y=>{d}", .{S.buffer[i].y});
-    // }
+    // 4. Do an in-place sort.
+    std.mem.sort(*tps.Animation, buffer, {}, comptime sorter.sort);
 
+    // 4. Render that shit in reverse order.
     while (count > 0) {
         count -= 1;
+        // Used to peek at final result:
+        //std.log.info("y = {d}", .{buffer[count].y});
         renderAnimation(buffer[count]);
     }
 }
@@ -647,14 +655,14 @@ fn renderFps() void {
     _ = renderCenteredText(&res.texts[res.textList.len + fpsUsize], 300, 10, 1);
 }
 
-pub fn render() void {
+pub fn render() !void {
     _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
     _ = c.SDL_RenderClear(renderer);
 
     for (0..ANIMATION_LINK_LIST_NUM) |i| {
         updateAnimationLinkList(&animationsList[i]);
         if (i == RENDER_LIST_SPRITE_ID) {
-            renderAnimationLinkListWithSort(&animationsList[i]);
+            try renderAnimationLinkListWithSort(&animationsList[i]);
         } else {
             renderAnimationLinkList(&animationsList[i]);
         }
@@ -671,7 +679,7 @@ pub fn render() void {
     renderFrames += 1;
 }
 
-pub fn renderUi() void {
+pub fn renderUi() !void {
     _ = c.SDL_SetRenderDrawColor(
         renderer,
         RENDER_BG_COLOR.r,
@@ -684,7 +692,7 @@ pub fn renderUi() void {
     for (0..ANIMATION_LINK_LIST_NUM) |i| {
         updateAnimationLinkList(&animationsList[i]);
         if (i == RENDER_LIST_SPRITE_ID) {
-            renderAnimationLinkListWithSort(&animationsList[i]);
+            try renderAnimationLinkListWithSort(&animationsList[i]);
         } else {
             renderAnimationLinkList(&animationsList[i]);
         }

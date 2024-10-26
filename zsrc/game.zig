@@ -133,7 +133,7 @@ pub fn setLevel(level: c_int) void {
     bossSetting += @divTrunc(stage, 3);
 }
 
-pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) []const *tps.Score {
+pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) ![]const *tps.Score {
     std.log.info("startGame!! was reached", .{});
 
     const scores = gAllocator.alloc(*tps.Score, @as(usize, @intCast(localPlayers))) catch unreachable;
@@ -147,7 +147,7 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) []
     while (true) {
         initGame(localPlayers, remotePlayers, localFirst);
         setLevel(gameLevel);
-        currentStatus = gameLoop();
+        currentStatus = try gameLoop();
         for (0..@intCast(localPlayers)) |i| {
             tps.addScore(scores[i], spriteSnake[i].?.score);
         }
@@ -828,9 +828,15 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
         dur = 30;
     }
 
+    // NOTE: without this, this was leaking in the original C code.
+    // This is safe to do because each call to createAndPushAnimation will
+    // simply deep copy and alloc the effect yet again, so this one must be
+    // cleaned up.
+    defer if (effect != null) gAllocator.destroy(effect.?);
+
     var p = snake.sprites.first;
-    while (p != null) : (p = p.?.next) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
+    while (p) |node| : (p = node.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(node.data));
         const ani = ren.createAndPushAnimation(
             &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
             &res.textures[res.RES_SOLIDFX],
@@ -1644,15 +1650,15 @@ fn moveSnake(snake: *pl.Snake) void {
     }
 
     var p = snake.sprites.first;
-    while (p != null) : (p = p.?.next) {
-        const sprite: *spr.Sprite = @ptrCast(@alignCast(p.?.data));
+    while (p) |node| : (p = node.next) {
+        const sprite: *spr.Sprite = @ptrCast(@alignCast(node.data));
 
         for (0..@intCast(step)) |_| {
             const b = &sprite.posBuffer;
             var firstSlot = b.buffer[0];
 
             while (b.size > 0 and sprite.x == firstSlot.x and sprite.y == firstSlot.y) {
-                tps.changeSpriteDirection(p.?, firstSlot.direction);
+                tps.changeSpriteDirection(node, firstSlot.direction);
                 b.size -= 1;
                 for (0..@intCast(b.size)) |i| {
                     b.buffer[i] = b.buffer[i + 1];
@@ -1701,7 +1707,7 @@ fn handleLocalKeypress() bool {
     return quit;
 }
 
-fn gameLoop() GameStatus {
+fn gameLoop() !GameStatus {
     var quit = false;
     var throttler = th.Throttler.init();
     //var lastTicks: u32 = 0;
@@ -1755,7 +1761,7 @@ fn gameLoop() GameStatus {
         }
 
         makeCross();
-        ren.render();
+        try ren.render();
         updateBuffDuration();
 
         {

@@ -53,7 +53,7 @@ pub fn main() !void {
         if (!try res.loadMedia()) {
             std.log.err("Failed to load media.", .{});
         } else {
-            ui.mainUi();
+            try ui.mainUi();
         }
     }
 }

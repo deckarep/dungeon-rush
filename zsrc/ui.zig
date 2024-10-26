@@ -79,7 +79,7 @@ fn moveCursor(optsNum: c_int) bool {
     return quit;
 }
 
-fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) c_int {
+fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) !c_int {
     cursorPos = 0;
     const player = pl.createSnake(2, 0, .LOCAL);
     gm.appendSpriteToSnake(
@@ -104,7 +104,7 @@ fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) c_int {
         sprite.x = (res.SCREEN_WIDTH / 2) - @divTrunc(options[@intCast(cursorPos)].width, 2) - (res.UNIT / 2);
         sprite.y = startY + cursorPos * lineGap;
         ren.updateAnimationOfSprite(sprite);
-        ren.renderUi();
+        try ren.renderUi();
 
         const optsNum: usize = @intCast(optionsNum);
         for (0..optsNum) |i| {
@@ -134,7 +134,7 @@ pub fn baseUi(w: c_int, h: c_int) void {
     mp.pushMapToRender();
 }
 
-fn chooseLevelUi() bool {
+fn chooseLevelUi() !bool {
     baseUi(30, 12);
     const optsNum = 3;
 
@@ -144,7 +144,7 @@ fn chooseLevelUi() bool {
     for (0..optsNum) |i| {
         opts[i] = &res.texts[i + 10];
     }
-    const opt = chooseOptions(optsNum, opts);
+    const opt = try chooseOptions(optsNum, opts);
     if (opt != optsNum) {
         gm.setLevel(opt);
     }
@@ -153,8 +153,8 @@ fn chooseLevelUi() bool {
     return opt != optsNum;
 }
 
-fn launchLocalGame(localPlayerNum: c_int) void {
-    const scores = gm.startGame(localPlayerNum, 0, true);
+fn launchLocalGame(localPlayerNum: c_int) !void {
+    const scores = try gm.startGame(localPlayerNum, 0, true);
 
     // TODO: Cleaning up score temporarily, but it's used in commented out code below which is not finished!
     defer gAllocator.free(scores);
@@ -169,7 +169,7 @@ fn launchLocalGame(localPlayerNum: c_int) void {
     //   destroyRanklist(localPlayerNum, scores);
 }
 
-pub fn mainUi() void {
+pub fn mainUi() !void {
     baseUi(30, 12);
     aud.playBgm(0);
 
@@ -400,7 +400,7 @@ pub fn mainUi() void {
         // offset 6 is where "Single Player" is.
         opts[i] = &res.texts[i + 6];
     }
-    const opt = chooseOptions(optsNum, opts);
+    const opt = try chooseOptions(optsNum, opts);
     gAllocator.free(opts);
 
     ren.blackout();
@@ -408,8 +408,8 @@ pub fn mainUi() void {
     // Working on chooseOptions next switch case below.
     switch (opt) {
         0 => {
-            if (chooseLevelUi()) {
-                launchLocalGame(1);
+            if (try chooseLevelUi()) {
+                try launchLocalGame(1);
             }
             std.debug.print("option 0 - local game!!\n", .{});
         },
@@ -423,6 +423,6 @@ pub fn mainUi() void {
     }
     if (opt == optsNum) return;
     if (opt != 3) {
-        mainUi();
+        try mainUi();
     }
 }
