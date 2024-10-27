@@ -243,8 +243,8 @@ pub fn initWeapons() void {
     curWep.deathAni.?.angle = -1;
     curWep.deathAni.?.at = .AT_CENTER;
     curWep.flyAni.?.scaled = false;
-    curWep.birthAudio = res.AUDIO_LIGHT_SHOOT;
-    curWep.deathAudio = res.AUDIO_ARROW_HIT;
+    curWep.birthAudio = res.AUDIO_BOW_FIRE;
+    curWep.deathAudio = res.AUDIO_BOW_HIT;
 
     curWep = &weapons[WEAPON_POWERFUL_BOW];
     weaponIndexesUsed.append(WEAPON_POWERFUL_BOW) catch unreachable;
@@ -256,8 +256,8 @@ pub fn initWeapons() void {
     curWep.bulletSpeed = 7;
     curWep.deathAni.?.angle = -1;
     curWep.deathAni.?.at = .AT_CENTER;
-    curWep.birthAudio = res.AUDIO_LIGHT_SHOOT;
-    curWep.deathAudio = res.AUDIO_ARROW_HIT;
+    curWep.birthAudio = res.AUDIO_BOW_FIRE;
+    curWep.deathAudio = res.AUDIO_BOW_HIT;
     curWep.effects[tp.BUFF_ATTACK] = .{ .chance = 0.5, .duration = 240 };
 
     curWep = &weapons[WEAPON_MONSTER_CLAW2];

@@ -1359,9 +1359,9 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                                     res.SPRITE_KNIGHT => aud.playAudio(@intCast(hlp.randInt(res.HUMAN_YESSIR_01, res.HUMAN_YESSIR_04))),
                                     res.SPRITE_WIZZARD => aud.playAudio(@intCast(hlp.randInt(res.WIZZARD_YESSIR_01, res.WIZZARD_YESSIR_03))),
                                     res.SPRITE_ELF => aud.playAudio(@intCast(hlp.randInt(res.ELVE_YESSIR_01, res.ELVE_YESSIR_04))),
+                                    res.SPRITE_LIZARD => aud.playAudio(@intCast(hlp.randInt(res.LIZARD_YESSIR_01, res.LIZARD_YESSIR_03))),
                                     else => aud.playAudio(res.AUDIO_COIN),
                                 }
-                                aud.playAudio(res.AUDIO_COIN);
                                 appendSpriteToSnake(snake, itemMap[i][j].id, 0, 0, .RIGHT);
                                 herosCount -= 1;
                                 tps.removeAnimationFromLinkList(&ren.animationsList[ren.RENDER_LIST_SPRITE_ID], ani);

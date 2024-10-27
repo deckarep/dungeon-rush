@@ -202,6 +202,11 @@ pub const ELVE_YESSIR_01 = 27;
 pub const ELVE_YESSIR_02 = 28;
 pub const ELVE_YESSIR_03 = 29;
 pub const ELVE_YESSIR_04 = 30;
+pub const LIZARD_YESSIR_01 = 31;
+pub const LIZARD_YESSIR_02 = 32;
+pub const LIZARD_YESSIR_03 = 33;
+pub const AUDIO_BOW_FIRE = 34;
+pub const AUDIO_BOW_HIT = 35;
 
 // End Resource ID
 
@@ -313,7 +318,7 @@ const soundfxList = &[_][]const u8{
     "med.wav",
     "holy.ogg",
     "axe.wav",
-    "hyessir1.wav",
+    "hyessir1.wav", // Hero acknowledgements
     "hyessir2.wav",
     "hyessir3.wav",
     "hyessir4.wav",
@@ -324,6 +329,11 @@ const soundfxList = &[_][]const u8{
     "eyessir2.wav",
     "eyessir3.wav",
     "eyessir4.wav",
+    "tryessr1.wav",
+    "tryessr2.wav",
+    "tryessr3.wav",
+    "bowfire.wav",
+    "bowhit.wav",
 };
 
 // Globals
