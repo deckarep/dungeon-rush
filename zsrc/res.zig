@@ -190,6 +190,19 @@ pub const AUDIO_CLAW_HIT_HEAVY = 15;
 pub const AUDIO_COIN = 16;
 pub const AUDIO_MED = 17;
 pub const AUDIO_HOLY = 18;
+pub const AUDIO_AXE_FLY = 19;
+pub const HUMAN_YESSIR_01 = 20;
+pub const HUMAN_YESSIR_02 = 21;
+pub const HUMAN_YESSIR_03 = 22;
+pub const HUMAN_YESSIR_04 = 23;
+pub const WIZZARD_YESSIR_01 = 24;
+pub const WIZZARD_YESSIR_02 = 25;
+pub const WIZZARD_YESSIR_03 = 26;
+pub const ELVE_YESSIR_01 = 27;
+pub const ELVE_YESSIR_02 = 28;
+pub const ELVE_YESSIR_03 = 29;
+pub const ELVE_YESSIR_04 = 30;
+
 // End Resource ID
 
 pub const UNIT = 32;
@@ -299,6 +312,18 @@ const soundfxList = &[_][]const u8{
     "coin.wav",
     "med.wav",
     "holy.ogg",
+    "axe.wav",
+    "hyessir1.wav",
+    "hyessir2.wav",
+    "hyessir3.wav",
+    "hyessir4.wav",
+    "wzyessr1.wav",
+    "wzyessr2.wav",
+    "wzyessr3.wav",
+    "eyessir1.wav",
+    "eyessir2.wav",
+    "eyessir3.wav",
+    "eyessir4.wav",
 };
 
 // Globals

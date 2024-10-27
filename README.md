@@ -57,6 +57,9 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
   4. Phase 4: ???
       * I'd love to port this to Raylib.
 
+## More baddies?
+  * [pixel-sprite-mixer](https://kingbell.itch.io/pixel-sprite-mixer)
+
 ## Why Zig?
 Cause it's a game-changing, bad-ass language that unlocks super-powers and was a fun learning experience.
 

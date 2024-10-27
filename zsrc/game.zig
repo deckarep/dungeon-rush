@@ -204,14 +204,14 @@ pub fn appendSpriteToSnake(
         sprite.ani.currentFrame = sh.ani.currentFrame;
     }
     // insert the sprite
-    //node.element = sprite;
     node.data = sprite;
     tps.pushLinkNodeAtHead(snake.sprites, node);
 
     // push ani
     ren.pushAnimationToRender(ren.RENDER_LIST_SPRITE_ID, sprite.ani);
 
-    // TODO: I think the buffs array should be booleans (possibly, confirm later)
+    // r.c. - I think the buffs array should be booleans (possibly, confirm later)
+    // Confirmed they should not be booleans, because they are counted down.
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
         shieldSprite(sprite, snake.buffs[tps.BUFF_DEFENCE]);
     }
@@ -1353,6 +1353,14 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                             var taken = true;
                             const ani = itemMap[i][j].ani;
                             if (itemMap[i][j].type == .ITEM_HERO) {
+                                // r.c. - we're going to play an appropriate Hero pickup sound instead of the coin.
+                                // Differs from the original C game.
+                                switch (itemMap[i][j].id) {
+                                    res.SPRITE_KNIGHT => aud.playAudio(@intCast(hlp.randInt(res.HUMAN_YESSIR_01, res.HUMAN_YESSIR_04))),
+                                    res.SPRITE_WIZZARD => aud.playAudio(@intCast(hlp.randInt(res.WIZZARD_YESSIR_01, res.WIZZARD_YESSIR_03))),
+                                    res.SPRITE_ELF => aud.playAudio(@intCast(hlp.randInt(res.ELVE_YESSIR_01, res.ELVE_YESSIR_04))),
+                                    else => aud.playAudio(res.AUDIO_COIN),
+                                }
                                 aud.playAudio(res.AUDIO_COIN);
                                 appendSpriteToSnake(snake, itemMap[i][j].id, 0, 0, .RIGHT);
                                 herosCount -= 1;

@@ -276,7 +276,7 @@ pub fn initWeapons() void {
     curWep.flyAni.?.scaled = false;
     curWep.deathAni.?.scaled = false;
     curWep.deathAni.?.at = .AT_CENTER;
-    curWep.birthAudio = res.AUDIO_LIGHT_SHOOT;
+    curWep.birthAudio = res.AUDIO_AXE_FLY; //res.AUDIO_LIGHT_SHOOT;
     curWep.deathAudio = res.AUDIO_ARROW_HIT;
 
     curWep = &weapons[WEAPON_MANY_AXES];
@@ -291,7 +291,7 @@ pub fn initWeapons() void {
     curWep.flyAni.?.duration = 24;
     curWep.flyAni.?.angle = -1;
     curWep.deathAni.?.at = .AT_CENTER;
-    curWep.birthAudio = res.AUDIO_LIGHT_SHOOT;
+    curWep.birthAudio = res.AUDIO_AXE_FLY; //res.AUDIO_LIGHT_SHOOT;res.AUDIO_LIGHT_SHOOT;
     curWep.deathAudio = res.AUDIO_ARROW_HIT;
 
     curWep = &weapons[WEAPON_SOLID];

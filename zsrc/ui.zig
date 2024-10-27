@@ -122,6 +122,7 @@ fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) !c_int {
 
         throttler.tick();
     }
+
     aud.playAudio(res.AUDIO_BUTTON1);
     gm.destroySnake(player);
     tps.destroyAnimationsByLinkList(&ren.animationsList[ren.RENDER_LIST_SPRITE_ID]);
@@ -394,18 +395,17 @@ pub fn mainUi() !void {
     );
 
     const optsNum = 4;
-    const opts = gAllocator.alloc(*tps.Text, optsNum) catch unreachable;
+    var opts: [optsNum]*tps.Text = undefined;
     for (0..optsNum) |i| {
         // r.c.: Original code is straight up pointer arithmetic.
         // offset 6 is where "Single Player" is.
         opts[i] = &res.texts[i + 6];
     }
-    const opt = try chooseOptions(optsNum, opts);
-    gAllocator.free(opts);
+    const opt = try chooseOptions(optsNum, &opts);
 
     ren.blackout();
     ren.clearRenderer();
-    // Working on chooseOptions next switch case below.
+
     switch (opt) {
         0 => {
             if (try chooseLevelUi()) {

@@ -527,13 +527,11 @@ fn updateAnimationLinkList(list: *ll.GenericLL) void {
 
         if (ani.lp == .LOOP_ONCE) {
             if (ani.currentFrame == ani.duration) {
-                //tps.destroyAnimation(ani);
                 ani.deinit();
                 tps.removeLinkNode(list, ptr);
             }
         } else {
             if (ani.lp == .LOOP_LIFESPAN and ani.lifeSpan <= 0) {
-                //tps.destroyAnimation(ani);
                 ani.deinit();
                 tps.removeLinkNode(list, ptr);
             } else {
