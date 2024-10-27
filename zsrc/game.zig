@@ -868,10 +868,16 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
 }
 
 fn shieldSprite(sprite: *spr.Sprite, duration: c_int) void {
+    // r.c. - I added this effect, to make the holy shield look less boring.
+    // Now it pulsates with transparency.
+    const effect = gAllocator.create(tps.Effect) catch unreachable;
+    defer effect.deinit();
+    tps.copyEffect(&res.effects[res.EFFECT_BLINK], effect);
+
     const ani = ren.createAndPushAnimation(
         &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
         &res.textures[res.RES_HOLY_SHIELD],
-        null,
+        effect,
         .LOOP_LIFESPAN,
         40,
         sprite.x,
@@ -880,6 +886,7 @@ fn shieldSprite(sprite: *spr.Sprite, duration: c_int) void {
         0,
         .AT_BOTTOM_CENTER,
     );
+
     ren.bindAnimationToSprite(ani, sprite, true);
     ani.lifeSpan = duration;
 }
