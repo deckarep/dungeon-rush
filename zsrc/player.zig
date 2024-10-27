@@ -24,6 +24,7 @@
 const ll = @import("linkedlist.zig");
 const tps = @import("types.zig");
 const c = @import("cdefs.zig").c;
+const spr = @import("sprite.zig");
 const gAllocator = @import("alloc.zig").gAllocator;
 
 pub const PlayerType = enum {
@@ -43,11 +44,33 @@ pub const Snake = struct {
     playerType: PlayerType,
 
     // TODO: r.c. introduce Zig helper methods like below to check if any defense left.
-    // const Self = @This();
+    const Self = @This();
 
     // pub fn hasDefense(self: *const Self) bool {
     //     return self.buffs[tps.BUFF_DEFENSE] > 0;
     // }
+
+    pub fn create(step: c_int, team: c_int, playerType: PlayerType) *Self {
+        const snake = createSnake(step, team, playerType);
+        initSnake(snake, step, team, playerType);
+        return snake;
+    }
+
+    pub fn deinit(self: *Self) void {
+        var p = self.sprites.first;
+        while (p) |node| : (p = node.next) {
+            const sprite: *spr.Sprite = @alignCast(@ptrCast(node.data.?));
+            gAllocator.destroy(sprite);
+            node.data = null;
+        }
+
+        tps.destroyLinkList(self.sprites);
+        //snake.sprites = null; // currently it's non-nullable.
+        tps.destroyScore(self.score);
+        //snake.score = null; // currently it's non-nullable.
+        // std.log.info("destroySnake: Freeing snake at address: {*}", .{snake});
+        gAllocator.destroy(self);
+    }
 };
 
 pub fn initSnake(snake: *Snake, step: c_int, team: c_int, playerType: PlayerType) void {

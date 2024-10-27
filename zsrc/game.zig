@@ -1186,19 +1186,9 @@ pub fn destroySnake(snake: *pl.Snake) void {
         }
     }
 
-    var p = snake.sprites.first;
-    while (p) |node| : (p = node.next) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(node.data.?));
-        gAllocator.destroy(sprite);
-        node.data = null;
-    }
-
-    tps.destroyLinkList(snake.sprites);
-    //snake.sprites = null; // currently it's non-nullable.
-    tps.destroyScore(snake.score);
-    //snake.score = null; // currently it's non-nullable.
-    std.log.info("destroySnake: Freeing snake at address: {*}", .{snake});
-    gAllocator.destroy(snake);
+    // r.c. - Different from original C code - snake now has a deinit() method
+    // which takes care of destroying everything it owns.
+    snake.deinit();
 }
 
 ///  Helper function to determine whehter a snake is a player
@@ -1700,7 +1690,6 @@ fn handleLocalKeypress() bool {
             var id: c_int = 0;
             while (id <= 1 and id < playersCount) : (id += 1) {
                 const player = spriteSnake[@intCast(id)].?;
-                // BUG: for player 0, why isn't .LOCAL condition passing????
                 if (player.playerType == .LOCAL) {
                     if (player.buffs[tps.BUFF_FROZEN] == 0 and player.sprites.first != null) {
                         const direction = if (id == 0) arrowsToDirection(keyValue) else wasdToDirection(keyValue);
@@ -1720,7 +1709,6 @@ fn handleLocalKeypress() bool {
 fn gameLoop() !GameStatus {
     var quit = false;
     var throttler = th.Throttler.init();
-    //var lastTicks: u32 = 0;
 
     while (!quit) {
         if (throttler.shouldWait()) {

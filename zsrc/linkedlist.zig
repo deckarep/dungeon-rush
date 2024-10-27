@@ -23,6 +23,14 @@
 const std = @import("std");
 const tps = @import("types.zig");
 
+// NOTE: r.c. - I made a decision to replace the original C ADT-style doubly
+// linked-list with a single generic doubly linked-list using the Zig
+// standard library where the data is just an opaque pointer type.
+// This means, I still need to type cast everywhere unfortunately.
+
+// I may or may not follow-up by breaking them out against each type
+// specified below in Phase 2.
+
 // Phase 1: Just start off by storing a pointer to a nullable opaque type.
 // Original C-style ADT linked list has been deprecated in favor of this!
 pub const GenericLL = std.DoublyLinkedList(?*anyopaque);

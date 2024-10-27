@@ -175,8 +175,8 @@ pub fn clearRenderer() void {
 
 fn renderSnakeHp(snake: *pl.Snake) void {
     var p = snake.sprites.first;
-    while (p != null) : (p = p.?.next) {
-        const sprite: *spr.Sprite = @alignCast(@ptrCast(p.?.data));
+    while (p) |node| : (p = node.next) {
+        const sprite: *spr.Sprite = @alignCast(@ptrCast(node.data));
 
         // Skip showing HP bar when health is at 100%
         if (sprite.hp == sprite.totalHp) {
@@ -325,8 +325,8 @@ pub fn updateAnimationOfSprite(self: *spr.Sprite) void {
 
 pub fn updateAnimationOfSnake(snake: *pl.Snake) void {
     var p = snake.sprites.first;
-    while (p != null) : (p = p.?.next) {
-        updateAnimationOfSprite(@alignCast(@ptrCast(p.?.data)));
+    while (p) |node| : (p = node.next) {
+        updateAnimationOfSprite(@alignCast(@ptrCast(node.data)));
     }
 }
 
@@ -361,13 +361,13 @@ pub fn updateAnimationOfBlock(self: *tps.Block) void {
 pub fn clearBindInAnimationsList(sprite: *spr.Sprite, id: c_int) void {
     var p = animationsList[@intCast(id)].first;
     var nxt: ?*ll.GenericNode = null;
-    while (p != null) : (p = nxt) {
-        nxt = p.?.next;
-        const ani: *tps.Animation = @alignCast(@ptrCast(p.?.data));
+    while (p) |node| : (p = nxt) {
+        nxt = node.next;
+        const ani: *tps.Animation = @alignCast(@ptrCast(node.data));
         if (ani.bind != null and ani.bind.? == @as(*anyopaque, sprite)) {
             ani.bind = null;
             if (ani.dieWithBind) {
-                tps.removeLinkNode(&animationsList[@intCast(id)], p.?);
+                tps.removeLinkNode(&animationsList[@intCast(id)], node);
                 ani.deinit();
                 //tps.destroyAnimation(ani);
             }
@@ -512,8 +512,8 @@ pub fn createAndPushAnimation(
 
 fn updateAnimationLinkList(list: *ll.GenericLL) void {
     var p = list.first;
-    while (p != null) {
-        const ptr = p.?;
+    while (p) |node| {
+        const ptr = node;
         // r.c. going to make that we always have an animation in within the linked list.
         const ani: *tps.Animation = @alignCast(@ptrCast(ptr.data.?));
         const nxt = ptr.next;
@@ -546,8 +546,8 @@ fn updateAnimationLinkList(list: *ll.GenericLL) void {
 
 pub fn renderAnimationLinkList(list: *ll.GenericLL) void {
     var p = list.first;
-    while (p != null) {
-        const ptr = p.?;
+    while (p) |node| {
+        const ptr = node;
         renderAnimation(@alignCast(@ptrCast(ptr.data)));
         p = ptr.next;
     }
