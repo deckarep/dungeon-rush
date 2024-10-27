@@ -553,16 +553,6 @@ pub fn renderAnimationLinkList(list: *ll.GenericLL) void {
     }
 }
 
-// NOTE: currently this is the only callconv(.C) cause I'm still using qsort.
-// TODO: Migrate to Zig's sorting facility at some pointer.
-// fn compareAnimationByY(x: ?*const anyopaque, y: ?*const anyopaque) callconv(.C) c_int {
-//     // NOTE: r.c. - this gives a pointer to a pointer.
-//     const a: *const *tps.Animation = @alignCast(@ptrCast(x));
-//     const b: *const *tps.Animation = @alignCast(@ptrCast(y));
-//     //std.log.info("doing compare: b.y:{d} - a.y:{d} = {d}", .{ b.*.y, a.*.y, b.*.y - a.*.y });
-//     return b.*.y - a.*.y;
-// }
-
 fn renderAnimationLinkListWithSort(list: *ll.GenericLL) !void {
     // r.c. - this method differs from the original C code but should preserve
     // the exact same semantics.
@@ -667,7 +657,7 @@ pub fn render() !void {
             renderAnimationLinkList(&animationsList[i]);
         }
     }
-    // TODO: these funcs below.
+
     renderHp();
     renderCountDown();
     renderInfo();
