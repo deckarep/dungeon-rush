@@ -19,6 +19,16 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
   * Classic pixel art and animations
   * 8-bit style music and many sound sfx
 
+## How to play
+* Each round starts with a random hero in the middle
+* Move the arrow keys: up, down, left, right to control your character
+* Make your party stronger by collecting more heroes
+* Collect weapon and loot drops to become more powerful and heal up
+* Don't run into walls, bad guys or yourself
+* Your heroes will intelligently attack nearby enemies
+* To advance to the next round, you must collect a certain amount of heros
+* Be careful of giant bosses, they are very strong
+
 ## Port Goals
 * To re-create a moderately complex game, fully in Zig and to get better at the language.
 * To make this port faithful to the original, while being more idiomatic.
