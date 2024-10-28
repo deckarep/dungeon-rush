@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        platform: [ubuntu-latest, macos-latest]
+        platform: [aarch64-macos] #ubuntu-latest, macos-latest]
     
     runs-on: ${{matrix.platform}}
     
