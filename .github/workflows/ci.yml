@@ -6,26 +6,43 @@ env:
 jobs:
   build:
     strategy:
+      fail-fast: true
       matrix:
-        #os: [ubuntu-latest, macos-latest, windows-latest]
-        os: [ubuntu-latest]
-    runs-on: ${{matrix.os}}
+        platform: [ubuntu-latest, macos-latest]
+    
+    runs-on: ${{matrix.platform}}
+    
     steps:
       - uses: actions/checkout@v2
-      - uses: goto-bus-stop/setup-zig@v1
         with:
-          version: ${{ env.zig_version }}
-      # Ubuntu-specific bit
-      - run: sudo apt-get update -qq
-      - run: sudo apt-get install -y libsdl2-dev
-      - run: zig build
-      #- run: zig build test
+          submodules: 'recursive'
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: ${{ env.zig_version }}
-      - run: zig fmt --check zsrc/*.zig
+
+      - name: Install Dependencies on Ubuntu
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y libsdl2-*
+      
+      - name: Install Dependencies on macOS
+        if: runner.os == 'macOS'
+        run: brew install sdl2 sdl2_mixer sdl2_net sdl2_image sdl2_ttf      
+
+      - name: Build
+        - run: zig build -Doptimize=ReleaseSafe
+        #- run: zig build test
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: DungeonRush-${{ matrix.platform }}
+          path: zig-out/bin
+
+  # lint:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: goto-bus-stop/setup-zig@v1
+  #       with:
+  #         version: ${{ env.zig_version }}
+  #     - run: zig fmt --check zsrc/*.zig

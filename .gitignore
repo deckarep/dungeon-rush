@@ -13,5 +13,6 @@ c-dungeonrush
 *.gch
 build
 
+zig-out
 .zig-cache
 *.zig.raw
