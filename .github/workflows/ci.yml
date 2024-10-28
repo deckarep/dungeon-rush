@@ -5,12 +5,21 @@ env:
 
 jobs:
   build:
+    name: "DungeonRush Release - ${{ matrix.os }} ${{ matrix.arch }}"
+    runs-on: ${{matrix.os}}
+    
     strategy:
       fail-fast: true
       matrix:
-        platform: [aarch64-macos] #ubuntu-latest, macos-latest]
-    
-    runs-on: ${{matrix.platform}}
+        #platform: [macos-latest] #ubuntu-latest, macos-latest]
+        os:
+          - macOS-13
+          - ubuntu-latest
+        arch:
+          - x64
+        include:
+          - os: macOS-latest
+            arch: aarch64
     
     steps:
       - uses: actions/checkout@v2
@@ -39,7 +48,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DungeonRush-${{ matrix.platform }}
+          name: DungeonRush-${{ matrix.os }}-${{ matrix.aarch }}
           path: zig-out/bin
 
   # lint:
