@@ -19,14 +19,14 @@ jobs:
           - x64
         include:
           - os: macOS-latest
-            arch: arm64 #aarch64
+            arch: aarch64
     
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
 
-      - uses: goto-bus-stop/setup-zig@v1
+      - uses: goto-bus-stop/setup-zig@v2
         with:
           version: ${{ env.zig_version }}
 
