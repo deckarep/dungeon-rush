@@ -29,11 +29,11 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install sdl2 sdl2_mixer sdl2_net sdl2_image sdl2_ttf
 
-      - name: Build
-        - run: zig build -Doptimize=ReleaseSafe
-        #- run: zig build test
+      - name: Compile with Zig
+        run: zig build -Doptimize=ReleaseSafe
 
-      - uses: actions/upload-artifact@v2
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: DungeonRush-${{ matrix.platform }}
           path: zig-out/bin
