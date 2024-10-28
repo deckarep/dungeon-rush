@@ -43,6 +43,7 @@ jobs:
 
       - name: Copy over game resources
         run: |
+          mkdir -p zig-out/bin/res
           cp -r res/* zig-out/bin/res/
 
       - name: Upload artifact
