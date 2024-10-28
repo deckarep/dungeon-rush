@@ -32,6 +32,10 @@ jobs:
       - name: Compile with Zig
         run: zig build -Doptimize=ReleaseSafe
 
+      - name: Copy over game resources
+        run: |
+          cp -r res/* zig-out/bin/res/
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
