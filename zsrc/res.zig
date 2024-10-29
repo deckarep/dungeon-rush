@@ -72,6 +72,7 @@ pub const RES_FLASK_BIG_BLUE = 67;
 pub const RES_FLASK_BIG_GREEN = 68;
 pub const RES_FLASK_BIG_YELLOW = 69;
 pub const RES_SKULL = 74;
+pub const RES_HEART_FULL = 77;
 pub const RES_TINY_ZOMBIE = 102;
 pub const RES_GOBLIN = 104;
 pub const RES_IMP = 106;
@@ -475,6 +476,7 @@ fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) bool {
         const p = &textures[texturesCount];
         texturesCount += 1;
         tps.initTexture(p, origin.?, w, h, f);
+        std.log.debug("{d}). {s}", .{ count, std.mem.sliceTo(&resName, 0) });
 
         var i: usize = 0;
         while (i < f) : (i += 1) {

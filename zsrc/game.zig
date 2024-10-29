@@ -63,9 +63,10 @@ var bullets: ?*ll.GenericLL = null;
 
 /// gameLevel is actually difficulty level, selected at the start of the game.
 pub var gameLevel: c_int = undefined;
-
 /// stage starts at 0 and just increases with each round.
 pub var stage: c_int = undefined;
+/// Lives is the number of lives.
+pub var playerLives: usize = 0;
 pub var spritesCount: c_int = undefined;
 pub var playersCount: c_int = undefined;
 var flasksCount: c_int = undefined;
@@ -146,6 +147,7 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) ![
 
     var currentStatus: GameStatus = undefined;
     stage = 0;
+    playerLives = 3;
     // NOTE: r.c.: ugly do-while converted to while with a break.
     while (true) {
         initGame(localPlayers, remotePlayers, localFirst);
@@ -155,8 +157,9 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) ![
             tps.addScore(scores[i], spriteSnake[i].?.score);
         }
         destroyGame(currentStatus);
-        stage += 1;
-        if (currentStatus != .STAGE_CLEAR) break;
+
+        if (currentStatus == .STAGE_CLEAR) stage += 1;
+        if (currentStatus == .GAME_OVER) break;
     }
 
     return scores;
@@ -532,6 +535,7 @@ fn isWin() bool {
 
 const GameStatus = enum {
     STAGE_CLEAR,
+    LOST_LIFE,
     GAME_OVER,
 };
 
@@ -540,6 +544,8 @@ fn setTerm(s: GameStatus) void {
 
     switch (s) {
         .STAGE_CLEAR => aud.playAudio(res.AUDIO_WIN),
+        // TODO: for lost life, use an alternative sound effect.
+        .LOST_LIFE => aud.playAudio(res.AUDIO_LOSE),
         .GAME_OVER => aud.playAudio(res.AUDIO_LOSE),
     }
 
@@ -1170,18 +1176,53 @@ fn destroyGame(currentStatus: GameStatus) void {
     tps.destroyLinkList(bullets.?);
     bullets = null;
 
-    ren.blackout();
+    const msg: [*:0]const u8 = switch (currentStatus) {
+        .GAME_OVER => blk: {
+            ren.blackout();
+            break :blk "Game Over";
+        },
+        .STAGE_CLEAR => blk: {
+            ren.blackout();
+            break :blk "Stage Clear";
+        },
+        .LOST_LIFE => blk: {
+            ren.dim();
 
-    var msg: [*:0]const u8 = "Game Over";
-    if (currentStatus == .STAGE_CLEAR) {
-        msg = "Stage Clear";
-    }
+            // Renders hearts left on the UI layer.
+            const ITEM_SPACING = 60;
+            for (0..playerLives) |i| {
+                _ = ren.createAndPushAnimation(
+                    &ren.animationsList[ren.RENDER_LIST_UI_ID],
+                    &res.textures[res.RES_HEART_FULL],
+                    null,
+                    .LOOP_INFI,
+                    80,
+                    (res.SCREEN_WIDTH / 2) + (@as(c_int, @intCast(i)) - 1) * ITEM_SPACING,
+                    (res.SCREEN_HEIGHT / 2) + ITEM_SPACING,
+                    c.SDL_FLIP_NONE,
+                    0,
+                    .AT_CENTER,
+                );
+            }
 
+            // TODO: try is needed, but not doable in an expression.
+            ren.renderUi() catch unreachable;
+            break :blk "You Died";
+        },
+    };
+
+    // Show the intermediate banner for:
+    // 1. Losing a life
+    // 2. Game Over
+    // 3. Clearing the stage
     const text = tps.createText(msg, tps.WHITE);
+    defer tps.destroyText(text);
     _ = ren.renderCenteredText(text, res.SCREEN_WIDTH / 2, res.SCREEN_HEIGHT / 2, 2);
-    tps.destroyText(text);
     _ = c.SDL_RenderPresent(ren.renderer);
-    std.time.sleep(ren.RENDER_GAMEOVER_DURATION * std.time.ns_per_s);
+
+    // This blocks for some time.
+    const waitTime: u64 = if (currentStatus == .LOST_LIFE) ren.RENDER_LOST_LIFE_DURATION else ren.RENDER_GAMEOVER_DURATION;
+    std.time.sleep(waitTime * std.time.ns_per_s);
     ren.clearRenderer();
 }
 
@@ -1209,8 +1250,7 @@ inline fn isPlayer(snake: *pl.Snake) bool {
     return false;
 }
 
-//  Verdict if a sprite crushes on other objects
-
+///  Verdict if a sprite crushes on other objects
 pub fn crushVerdict(sprite: *spr.Sprite, loose: bool, useAnimationBox: bool) bool {
     const x = sprite.x;
     const y = sprite.y;
@@ -1804,7 +1844,12 @@ fn gameLoop() !GameStatus {
             var alivePlayer: c_int = -1;
             for (0..@intCast(playersCount)) |i| {
                 if (spriteSnake[i].?.sprites.first == null) {
-                    setTerm(.GAME_OVER);
+                    playerLives -= 1;
+                    if (playerLives <= 0) {
+                        setTerm(.GAME_OVER);
+                    } else {
+                        setTerm(.LOST_LIFE);
+                    }
                     //sendGameOverPacket(alivePlayer);
                     break;
                 } else {

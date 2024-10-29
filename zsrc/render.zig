@@ -53,6 +53,7 @@ pub const RENDER_BLACKOUT_DURATION = 20;
 pub const RENDER_DIM_DURATION = 8;
 pub const RENDER_TERM_COUNT = 60;
 pub const RENDER_GAMEOVER_DURATION = 1;
+pub const RENDER_LOST_LIFE_DURATION = 2;
 
 // UI
 pub const UI_COUNTDOWN_BAR_WIDTH = 128;
@@ -69,13 +70,18 @@ var scoresText: [gm.MAX_PLAYERS_NUM]?*tps.Text = undefined;
 
 pub fn blacken(duration: usize) void {
     _ = c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND);
-    const rect: c.SDL_Rect = .{ .x = 0, .y = 0, .w = res.SCREEN_WIDTH, .h = res.SCREEN_HEIGHT };
+    const rect: c.SDL_Rect = .{
+        .x = 0,
+        .y = 0,
+        .w = res.SCREEN_WIDTH,
+        .h = res.SCREEN_HEIGHT,
+    };
     _ = c.SDL_SetRenderDrawColor(
         renderer,
         RENDER_BG_COLOR.r,
         RENDER_BG_COLOR.g,
         RENDER_BG_COLOR.b,
-        RENDER_BG_COLOR.a,
+        85,
     );
 
     for (0..duration) |_| {
@@ -88,6 +94,7 @@ pub fn blackout() void {
     blacken(RENDER_BLACKOUT_DURATION);
 }
 
+// Doesn't seem to work, same outcome as just calling blackout.
 pub fn dim() void {
     blacken(RENDER_DIM_DURATION);
 }
@@ -121,7 +128,7 @@ pub fn initCountDownBar() void {
 
 pub fn initInfo() void {
     var buf: [1 << 8]u8 = undefined;
-    const strResult = std.fmt.bufPrintZ(&buf, "Stage: {d: >3}", .{gm.stage}) catch unreachable;
+    const strResult = std.fmt.bufPrintZ(&buf, "Stage: {d: >3}", .{@as(u32, @intCast(gm.stage))}) catch unreachable;
 
     if (stageText != null) {
         tps.setText(stageText.?, strResult.ptr);
@@ -228,6 +235,19 @@ fn renderHp() void {
     }
 }
 
+pub fn renderCenteredText(text: *const tps.Text, x: c_int, y: c_int, scale: f64) c.SDL_Point {
+    const width: c_int = @intFromFloat(@as(f64, @floatFromInt(text.width)) * scale + 0.5);
+    const height: c_int = @intFromFloat(@as(f64, @floatFromInt(text.height)) * scale + 0.5);
+    const dst: c.SDL_Rect = .{
+        .x = x - @divTrunc(width, 2),
+        .y = y - @divTrunc(height, 2),
+        .w = width,
+        .h = height,
+    };
+    _ = c.SDL_RenderCopy(renderer, text.origin, null, &dst);
+    return .{ .x = x - @divTrunc(width, 2), .y = y - @divTrunc(height, 1) };
+}
+
 fn renderCenteredTextBackground(text: *tps.Text, x: c_int, y: c_int, scale: f64) void {
     const width: f64 = @as(f64, @floatFromInt(text.width)) * scale + 0.5;
     const height: f64 = @as(f64, @floatFromInt(text.height)) * scale + 0.5;
@@ -271,19 +291,6 @@ fn renderText(text: *const tps.Text, x: c_int, y: c_int, scale: f64) void {
         .h = @intFromFloat((@as(f64, @floatFromInt(text.height)) * scale + 0.5)),
     };
     _ = c.SDL_RenderCopy(renderer, text.origin, null, &dst);
-}
-
-pub fn renderCenteredText(text: *const tps.Text, x: c_int, y: c_int, scale: f64) c.SDL_Point {
-    const width: c_int = @intFromFloat(@as(f64, @floatFromInt(text.width)) * scale + 0.5);
-    const height: c_int = @intFromFloat(@as(f64, @floatFromInt(text.height)) * scale + 0.5);
-    const dst: c.SDL_Rect = .{
-        .x = x - @divTrunc(width, 2),
-        .y = y - @divTrunc(height, 2),
-        .w = width,
-        .h = height,
-    };
-    _ = c.SDL_RenderCopy(renderer, text.origin, null, &dst);
-    return .{ .x = x - @divTrunc(width, 2), .y = y - @divTrunc(height, 1) };
 }
 
 pub fn setEffect(texture: *tps.Texture, ef: ?*tps.Effect) void {
@@ -369,7 +376,6 @@ pub fn clearBindInAnimationsList(sprite: *spr.Sprite, id: c_int) void {
             if (ani.dieWithBind) {
                 tps.removeLinkNode(&animationsList[@intCast(id)], node);
                 ani.deinit();
-                //tps.destroyAnimation(ani);
             }
         }
     }
