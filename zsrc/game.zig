@@ -61,7 +61,10 @@ pub var spriteSnake: [SPRITES_MAX_NUM]?*pl.Snake = undefined;
 
 var bullets: ?*ll.GenericLL = null;
 
+/// gameLevel is actually difficulty level, selected at the start of the game.
 pub var gameLevel: c_int = undefined;
+
+/// stage starts at 0 and just increases with each round.
 pub var stage: c_int = undefined;
 pub var spritesCount: c_int = undefined;
 pub var playersCount: c_int = undefined;

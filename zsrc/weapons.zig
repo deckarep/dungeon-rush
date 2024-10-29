@@ -166,7 +166,7 @@ pub fn destroyWeapons() void {
     }
 }
 
-pub fn initWeapons() void {
+pub fn initWeapons() !void {
     // r.c. - added by me.
     // This ArrayList is for a little extra book-keeping of the weapons initialized.
     // I need to destroy all their respective dynamically allocated *Animations.
@@ -178,7 +178,7 @@ pub fn initWeapons() void {
 
     var curWep: *Weapon = undefined;
     curWep = &weapons[WEAPON_SWORD];
-    weaponIndexesUsed.append(WEAPON_SWORD) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_SWORD);
     initWeapon(curWep, null, res.RES_SwordFx, null);
     curWep.damage = 30;
     curWep.shootRange = 32 * 3;
@@ -187,7 +187,7 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_SWORD_HIT;
 
     curWep = &weapons[WEAPON_MONSTER_CLAW];
-    weaponIndexesUsed.append(WEAPON_MONSTER_CLAW) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_MONSTER_CLAW);
     initWeapon(curWep, null, res.RES_CLAWFX2, null);
     curWep.wp = .WEAPON_SWORD_RANGE;
     curWep.shootRange = 32 * 3 + 16;
@@ -197,7 +197,7 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_CLAW_HIT_HEAVY;
 
     curWep = &weapons[WEAPON_FIREBALL];
-    weaponIndexesUsed.append(WEAPON_FIREBALL) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_FIREBALL);
     initWeapon(curWep, res.RES_Shine, res.RES_HALO_EXPLOSION1, res.RES_FIREBALL);
     curWep.wp = .WEAPON_GUN_RANGE;
     curWep.damage = 45;
@@ -211,7 +211,7 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_FIREBALL_EXP;
 
     curWep = &weapons[WEAPON_THUNDER];
-    weaponIndexesUsed.append(WEAPON_THUNDER) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_THUNDER);
     initWeapon(curWep, res.RES_BLOOD_BOUND, res.RES_Thunder, null);
     curWep.wp = .WEAPON_SWORD_RANGE;
     curWep.damage = 80;
@@ -222,7 +222,7 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_THUNDER;
 
     curWep = &weapons[WEAPON_THUNDER_STAFF];
-    weaponIndexesUsed.append(WEAPON_THUNDER_STAFF) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_THUNDER_STAFF);
     initWeapon(curWep, null, res.RES_THUNDER_YELLOW, null);
     curWep.wp = .WEAPON_SWORD_RANGE;
     curWep.damage = 50;
@@ -233,7 +233,7 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_THUNDER;
 
     curWep = &weapons[WEAPON_ARROW];
-    weaponIndexesUsed.append(WEAPON_ARROW) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_ARROW);
     initWeapon(curWep, null, res.RES_HALO_EXPLOSION2, res.RES_ARROW);
     curWep.wp = .WEAPON_GUN_POINT;
     curWep.gap = 40;
@@ -247,7 +247,7 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_BOW_HIT;
 
     curWep = &weapons[WEAPON_POWERFUL_BOW];
-    weaponIndexesUsed.append(WEAPON_POWERFUL_BOW) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_POWERFUL_BOW);
     initWeapon(curWep, null, res.RES_HALO_EXPLOSION2, res.RES_ARROW);
     curWep.wp = .WEAPON_GUN_POINT;
     curWep.gap = 60;
@@ -261,11 +261,11 @@ pub fn initWeapons() void {
     curWep.effects[tp.BUFF_ATTACK] = .{ .chance = 0.5, .duration = 240 };
 
     curWep = &weapons[WEAPON_MONSTER_CLAW2];
-    weaponIndexesUsed.append(WEAPON_MONSTER_CLAW2) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_MONSTER_CLAW2);
     initWeapon(curWep, null, res.RES_CLAWFX, null);
 
     curWep = &weapons[WEAPON_THROW_AXE];
-    weaponIndexesUsed.append(WEAPON_THROW_AXE) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_THROW_AXE);
     initWeapon(curWep, null, res.RES_CROSS_HIT, res.RES_AXE);
     curWep.wp = .WEAPON_GUN_POINT;
     curWep.damage = 12;
@@ -280,7 +280,7 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_ARROW_HIT;
 
     curWep = &weapons[WEAPON_MANY_AXES];
-    weaponIndexesUsed.append(WEAPON_MANY_AXES) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_MANY_AXES);
     initWeapon(curWep, null, res.RES_CROSS_HIT, res.RES_AXE);
     curWep.wp = .WEAPON_GUN_POINT_MULTI;
     curWep.shootRange = 180;
@@ -295,14 +295,14 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_ARROW_HIT;
 
     curWep = &weapons[WEAPON_SOLID];
-    weaponIndexesUsed.append(WEAPON_SOLID) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_SOLID);
     initWeapon(curWep, null, res.RES_SOLIDFX, null);
     curWep.deathAni.?.scaled = false;
     curWep.deathAni.?.angle = -1;
     curWep.effects[tp.BUFF_SLOWDOWN] = .{ .chance = 0.3, .duration = 180 };
 
     curWep = &weapons[WEAPON_SOLID_GREEN];
-    weaponIndexesUsed.append(WEAPON_SOLID_GREEN) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_SOLID_GREEN);
     initWeapon(curWep, null, res.RES_SOLID_GREENFX, null);
     curWep.shootRange = 96;
     curWep.deathAni.?.scaled = false;
@@ -310,7 +310,7 @@ pub fn initWeapons() void {
     curWep.effects[tp.BUFF_SLOWDOWN] = .{ .chance = 0.3, .duration = 180 };
 
     curWep = &weapons[WEAPON_SOLID_CLAW];
-    weaponIndexesUsed.append(WEAPON_SOLID_CLAW) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_SOLID_CLAW);
     initWeapon(curWep, null, res.RES_SOLID_GREENFX, null);
     curWep.wp = .WEAPON_SWORD_RANGE;
     curWep.shootRange = 32 * 3 + 16;
@@ -321,7 +321,7 @@ pub fn initWeapons() void {
     curWep.effects[tp.BUFF_SLOWDOWN] = .{ .chance = 0.7, .duration = 60 };
 
     curWep = &weapons[WEAPON_ICEPICK];
-    weaponIndexesUsed.append(WEAPON_ICEPICK) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_ICEPICK);
     initWeapon(curWep, null, res.RES_ICESHATTER, res.RES_ICEPICK);
     curWep.wp = .WEAPON_GUN_RANGE;
     curWep.damage = 30;
@@ -336,7 +336,7 @@ pub fn initWeapons() void {
     curWep.birthAudio = res.AUDIO_ICE_SHOOT;
 
     curWep = &weapons[WEAPON_PURPLE_BALL];
-    weaponIndexesUsed.append(WEAPON_PURPLE_BALL) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_PURPLE_BALL);
     initWeapon(curWep, null, res.RES_PURPLE_EXP, res.RES_PURPLE_BALL);
     curWep.wp = .WEAPON_GUN_RANGE;
     curWep.damage = 20;
@@ -352,8 +352,8 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_ARROW_HIT;
 
     curWep = &weapons[WEAPON_PURPLE_STAFF];
-    weaponIndexesUsed.append(WEAPON_PURPLE_STAFF) catch unreachable;
-    initWeapon(curWep, null, res.RES_PURPLE_EXP, res.RES_PURPLE_BALL);
+    try weaponIndexesUsed.append(WEAPON_PURPLE_STAFF);
+    initWeapon(curWep, null, res.RES_PURPLE_EXP, res.RES_PURPLE_FIRE_BALL);
     curWep.wp = .WEAPON_GUN_POINT_MULTI;
     curWep.damage = 45;
     curWep.effectRange = 50;
@@ -368,7 +368,7 @@ pub fn initWeapons() void {
     curWep.deathAudio = res.AUDIO_ARROW_HIT;
 
     curWep = &weapons[WEAPON_HOLY_SWORD];
-    weaponIndexesUsed.append(WEAPON_HOLY_SWORD) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_HOLY_SWORD);
     initWeapon(curWep, null, res.RES_GOLDEN_CROSS_HIT, null);
     curWep.wp = .WEAPON_SWORD_RANGE;
     curWep.damage = 30;
@@ -376,7 +376,7 @@ pub fn initWeapons() void {
     curWep.effects[tp.BUFF_DEFENCE] = .{ .chance = 0.6, .duration = 180 };
 
     curWep = &weapons[WEAPON_ICE_SWORD];
-    weaponIndexesUsed.append(WEAPON_ICE_SWORD) catch unreachable;
+    try weaponIndexesUsed.append(WEAPON_ICE_SWORD);
     initWeapon(curWep, null, res.RES_ICESHATTER, null);
     curWep.wp = .WEAPON_SWORD_RANGE;
     curWep.shootRange = 32 * 3 + 16;

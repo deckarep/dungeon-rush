@@ -138,6 +138,7 @@ pub const RES_THUNDER_STAFF = 204;
 pub const RES_THUNDER_YELLOW = 205;
 pub const RES_ATTACK_UP = 206;
 pub const RES_POWERFUL_BOW = 207;
+pub const RES_PURPLE_FIRE_BALL = 208;
 
 // Effect
 pub const EFFECT_DEATH = 0;
@@ -266,6 +267,7 @@ const tilesetPath = &[_][]const u8{
     "res/drawable/Thunder_Yellow",
     "res/drawable/attack_up",
     "res/drawable/powerful_bow",
+    "res/drawable/purple_fire_ball",
 };
 
 pub const textList = &[_][*:0]const u8{
@@ -567,7 +569,7 @@ pub fn loadMedia(exePath: []const u8) !bool {
     }
 
     // Init common sprites
-    wp.initWeapons();
+    try wp.initWeapons();
     initCommonSprites();
 
     if (!try loadAudio()) {

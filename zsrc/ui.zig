@@ -137,18 +137,18 @@ pub fn baseUi(w: c_int, h: c_int) void {
 
 fn chooseLevelUi() !bool {
     baseUi(30, 12);
+
     const optsNum = 3;
-
-    const opts = gAllocator.alloc(*tps.Text, @as(usize, @intCast((optsNum)))) catch unreachable;
-    defer gAllocator.free(opts);
-
+    var opts: [optsNum]*tps.Text = undefined;
     for (0..optsNum) |i| {
         opts[i] = &res.texts[i + 10];
     }
-    const opt = try chooseOptions(optsNum, opts);
+
+    const opt = try chooseOptions(optsNum, &opts);
     if (opt != optsNum) {
         gm.setLevel(opt);
     }
+
     ren.clearRenderer();
 
     return opt != optsNum;
