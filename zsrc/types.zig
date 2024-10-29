@@ -82,7 +82,6 @@ pub const Texture = struct {
     width: c_int,
     height: c_int,
     frames: c_int,
-    dbgName: [256]u8 = undefined,
     crops: []c.SDL_Rect,
 };
 

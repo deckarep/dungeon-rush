@@ -336,7 +336,11 @@ const soundfxList = &[_][]const u8{
     "bowhit.wav",
 };
 
-// Globals
+/// Globals
+/// This var gets populated in main of the root path of the executable.
+/// This way, if the .exe is double-clicked, it will still find the res/
+/// folder because on MacOS, scripts or commands execute from the home folder.
+var rootPath: []const u8 = undefined;
 pub var textures: [TEXTURES_SIZE]tps.Texture = undefined;
 pub var texturesCount: usize = 0;
 pub var bgms: [AUDIO_BGM_SIZE]?*c.Mix_Music = undefined;
@@ -442,13 +446,18 @@ fn loadTextset() bool {
     return success;
 }
 
-fn loadTileset(path: [*]const u8, origin: ?*c.SDL_Texture) bool {
+fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) bool {
     if (origin == null) {
         @panic("origin should never be null!");
     }
 
     const file = c.fopen(path, "r");
     defer _ = c.fclose(file);
+
+    if (file == null) {
+        std.log.err("Couldn't find file at path: {s}", .{path});
+        return false;
+    }
 
     var x: c_int = undefined;
     var y: c_int = undefined;
@@ -459,6 +468,7 @@ fn loadTileset(path: [*]const u8, origin: ?*c.SDL_Texture) bool {
     var resName: [256]u8 = undefined;
 
     // Convention of tileset: name, x, y, w, h, f (num of frames)
+    var count: usize = 0;
     while (c.fscanf(file, "%s %d %d %d %d %d", &resName, &x, &y, &w, &h, &f) == 6) {
         const p = &textures[texturesCount];
         texturesCount += 1;
@@ -472,11 +482,8 @@ fn loadTileset(path: [*]const u8, origin: ?*c.SDL_Texture) bool {
             p.crops[i].w = w;
         }
 
-        p.dbgName = resName;
-
-        std.log.debug("Texture Res: {d}). {s} ptr:{*}, x:{d}, y:{d}, w:{d}, h:{d}, f:{d}", .{
+        std.log.debug("Texture Res: {d}). ptr:{*}, x:{d}, y:{d}, w:{d}, h:{d}, f:{d}", .{
             texturesCount - 1,
-            std.mem.sliceTo(&p.dbgName, 0),
             p,
             x,
             y,
@@ -484,6 +491,7 @@ fn loadTileset(path: [*]const u8, origin: ?*c.SDL_Texture) bool {
             h,
             f,
         });
+        count += 1;
     }
     return true;
 }
@@ -523,18 +531,21 @@ pub fn loadAudio() !bool {
     return true;
 }
 
-pub fn loadMedia() !bool {
+pub fn loadMedia(exePath: []const u8) !bool {
+    rootPath = exePath;
+
     // load effects
     initCommonEffects();
 
+    var buf: [PATH_LEN + 4]u8 = undefined;
+
     // Load tileset
     for (tilesetPath, 0..) |path, idx| {
-        var buf: [PATH_LEN + 4]u8 = undefined;
-        const img = try std.fmt.bufPrintZ(&buf, "{s}.png", .{path});
+        const imgPath = try std.fmt.bufPrintZ(&buf, "{s}/{s}.png", .{ rootPath, path });
+        originTextures[idx] = loadSDLTexture(std.mem.sliceTo(imgPath, 0));
 
-        originTextures[idx] = loadSDLTexture(std.mem.sliceTo(img, 0));
-        const pptr = path.ptr;
-        _ = loadTileset(pptr, originTextures[idx]);
+        const defPath = try std.fmt.bufPrintZ(&buf, "{s}/{s}", .{ rootPath, path });
+        _ = loadTileset(defPath, originTextures[idx]);
         if (originTextures[idx] == null) {
             return false;
         }

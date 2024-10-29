@@ -29,6 +29,14 @@ const ui = @import("ui.zig");
 const alloc = @import("alloc.zig");
 
 pub fn main() !void {
+    // First grab the path to the exe.
+    var buff: [512]u8 = undefined;
+    const exeDir = try std.fs.selfExeDirPath(&buff);
+
+    try realMain(exeDir);
+}
+
+fn realMain(exePath: []const u8) !void {
     std.log.info(res.nameOfTheGame, .{});
     prng.prngSrand(@as(c_uint, @bitCast(@as(c_int, @truncate(c.time(null))))));
 
@@ -50,7 +58,7 @@ pub fn main() !void {
     if (!res.init()) {
         std.log.err("Failed to init SDL and/or the game.", .{});
     } else {
-        if (!try res.loadMedia()) {
+        if (!try res.loadMedia(exePath)) {
             std.log.err("Failed to load media.", .{});
         } else {
             try ui.mainUi();

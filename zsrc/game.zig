@@ -1411,12 +1411,8 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                 // So it goes from: {character-type}_run_anim -> {character-type}_hit_anim
                 // NOTE: Only some characters have the _hit_anim
                 var deathPtr: usize = @intFromPtr(sprite.ani.origin);
-                std.log.debug("Death dbg: {s}, b4 ptr: {*}", .{ std.mem.sliceTo(&sprite.ani.origin.dbgName, 0), sprite.ani.origin });
 
                 if (isPlayer(snake)) deathPtr += (@sizeOf(tps.Texture) * 1);
-
-                const possiblyNewTexture = @as(*tps.Texture, @ptrFromInt(deathPtr));
-                std.log.debug("Death dbg: {s}, aft ptr: {*}", .{ std.mem.sliceTo(&possiblyNewTexture.dbgName, 0), possiblyNewTexture });
 
                 dropItem(sprite);
 

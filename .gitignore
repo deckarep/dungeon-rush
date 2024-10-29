@@ -8,6 +8,7 @@ storage.dat
 archive
 dungeon_rush
 dungeonrush
+dungeonrush-zig
 c-dungeonrush
 *.o
 *.gch
