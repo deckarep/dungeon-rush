@@ -126,9 +126,9 @@ pub fn initCountDownBar() void {
     );
 }
 
-pub fn initInfo() void {
+pub fn initInfo() !void {
     var buf: [1 << 8]u8 = undefined;
-    const strResult = std.fmt.bufPrintZ(&buf, "Stage: {d: >3}", .{@as(u32, @intCast(gm.stage))}) catch unreachable;
+    const strResult = try std.fmt.bufPrintZ(&buf, "Stage: {d: >3}", .{@as(u32, @intCast(gm.stage))});
 
     if (stageText != null) {
         tps.setText(stageText.?, strResult.ptr);

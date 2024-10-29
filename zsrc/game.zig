@@ -150,7 +150,7 @@ pub fn startGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) ![
     playerLives = 3;
     // NOTE: r.c.: ugly do-while converted to while with a break.
     while (true) {
-        initGame(localPlayers, remotePlayers, localFirst);
+        try initGame(localPlayers, remotePlayers, localFirst);
         setLevel(gameLevel);
         currentStatus = try gameLoop();
         for (0..@intCast(localPlayers)) |i| {
@@ -1118,7 +1118,7 @@ fn initItemMap(incomingHerosCount: c_int, incomingFlasksCount: c_int) void {
     }
 }
 
-fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
+fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) !void {
     aud.randomBgm();
     status = .STAGE_CLEAR;
     termCount = 0;
@@ -1141,7 +1141,7 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) void {
         initPlayer(playerType);
         shieldSnake(spriteSnake[i].?, 300);
     }
-    ren.initInfo();
+    try ren.initInfo();
     // create map
     mp.initRandomMap(0.7, 7, GAME_TRAP_RATE);
 
