@@ -541,11 +541,12 @@ pub fn loadMedia(exePath: []const u8) !bool {
 
     // Load tileset
     for (tilesetPath, 0..) |path, idx| {
-        const imgPath = try std.fmt.bufPrintZ(&buf, "{s}/{s}.png", .{ rootPath, path });
-        originTextures[idx] = loadSDLTexture(std.mem.sliceTo(imgPath, 0));
+        const imgPath = try std.fs.path.joinZ(gAllocator, &.{ rootPath, path });
+        defer gAllocator.free(imgPath);
+        const imgFile = try std.fmt.bufPrintZ(&buf, "{s}.png", .{imgPath});
+        originTextures[idx] = loadSDLTexture(std.mem.sliceTo(imgFile, 0));
 
-        const defPath = try std.fmt.bufPrintZ(&buf, "{s}/{s}", .{ rootPath, path });
-        _ = loadTileset(defPath, originTextures[idx]);
+        _ = loadTileset(imgPath, originTextures[idx]);
         if (originTextures[idx] == null) {
             return false;
         }

@@ -112,7 +112,7 @@ pub fn setLevel(level: c_int) void {
     GAME_MONSTERS_GEN_FACTOR = 1 + fLvl * 0.5 + fStg * fLvl * 0.05;
     GAME_MONSTERS_WEAPON_BUFF_ADJUST = 1 + fLvl * 0.8 + fStg * fLvl * 0.02;
     ai.AI_LOCK_LIMIT = @max(1, 7 - fLvl * 2 - fStg / 2);
-    GAME_WIN_NUM = 10 + level * 5 + stage * 3;
+    GAME_WIN_NUM = 13 + level * 5 + (stage * 3);
     if (level == 0) {
         // wow, such empty.
     } else if (level == 1) {

@@ -33,7 +33,14 @@ pub fn main() !void {
     var buff: [512]u8 = undefined;
     const exeDir = try std.fs.selfExeDirPath(&buff);
 
-    try realMain(exeDir);
+    if (std.mem.indexOf(u8, exeDir, "zig-out") != null) {
+        // When run like: zig build run we know it's ran from the cwd.
+        try realMain("");
+    } else {
+        // When run from a double click, no matter where it's run it needs to
+        // to use the exe folder, which has the assets.
+        try realMain(exeDir);
+    }
 }
 
 fn realMain(exePath: []const u8) !void {
@@ -56,10 +63,10 @@ fn realMain(exePath: []const u8) !void {
     }
 
     if (!res.init()) {
-        std.log.err("Failed to init SDL and/or the game.", .{});
+        std.log.err("failed to init SDL and/or the game.", .{});
     } else {
         if (!try res.loadMedia(exePath)) {
-            std.log.err("Failed to load media.", .{});
+            std.log.err("failed to load media.", .{});
         } else {
             try ui.mainUi();
         }
