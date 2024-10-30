@@ -339,6 +339,19 @@ const soundfxList = &[_][]const u8{
     "bowhit.wav",
 };
 
+pub const deathTexts = &[_][*:0]const u8{
+    "Perished in the depths...",
+    "Another hero falls...",
+    "Your journey ends here...",
+    "Vanquished by fate...",
+    "A noble effort, but ultimately doomed...",
+    "Lost to the shadows...",
+    "Defeated but not forgotten...",
+    "Your courage was unmatched...",
+    "Rest in pixelated peace...",
+    "The dungeon claims another...",
+};
+
 /// Globals
 /// This var gets populated in main of the root path of the executable.
 /// This way, if the .exe is double-clicked, it will still find the res/

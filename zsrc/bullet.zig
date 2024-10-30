@@ -36,42 +36,42 @@ pub const Bullet = struct {
     owner: ?*pl.Snake,
     rad: f64,
     ani: *tps.Animation,
+
+    pub fn create(
+        owner: *pl.Snake,
+        parent: *wp.Weapon,
+        x: c_int,
+        y: c_int,
+        rad: f64,
+        team: c_int,
+        ani: *tps.Animation,
+    ) *Bullet {
+        const bullet = gAllocator.create(Bullet) catch unreachable;
+        bullet.* = .{
+            .parent = parent,
+            .x = x,
+            .y = y,
+            .team = team,
+            .owner = owner,
+            .rad = rad,
+            .ani = gAllocator.create(tps.Animation) catch unreachable,
+        };
+        tps.copyAnimation(ani, bullet.ani);
+        bullet.ani.x = x;
+        bullet.ani.y = y;
+        bullet.ani.angle = rad * 180 / std.math.pi;
+        return bullet;
+    }
+
+    pub fn move(self: *Bullet) void {
+        const speed: f64 = @floatFromInt(self.parent.bulletSpeed);
+        self.x += @intFromFloat(@cos(self.rad) * speed);
+        self.y += @intFromFloat(@sin(self.rad) * speed);
+        self.ani.x = self.x;
+        self.ani.y = self.y;
+    }
+
+    pub fn deinit(self: *Bullet) void {
+        gAllocator.destroy(self);
+    }
 };
-
-pub fn createBullet(
-    owner: *pl.Snake,
-    parent: *wp.Weapon,
-    x: c_int,
-    y: c_int,
-    rad: f64,
-    team: c_int,
-    ani: *tps.Animation,
-) *Bullet {
-    const bullet = gAllocator.create(Bullet) catch unreachable;
-    bullet.* = .{
-        .parent = parent,
-        .x = x,
-        .y = y,
-        .team = team,
-        .owner = owner,
-        .rad = rad,
-        .ani = gAllocator.create(tps.Animation) catch unreachable,
-    };
-    tps.copyAnimation(ani, bullet.ani);
-    bullet.ani.x = x;
-    bullet.ani.y = y;
-    bullet.ani.angle = rad * 180 / std.math.pi;
-    return bullet;
-}
-
-pub fn moveBullet(bullet: *Bullet) void {
-    const speed: f64 = @floatFromInt(bullet.parent.bulletSpeed);
-    bullet.x += @intFromFloat(@cos(bullet.rad) * speed);
-    bullet.y += @intFromFloat(@sin(bullet.rad) * speed);
-    bullet.ani.x = bullet.x;
-    bullet.ani.y = bullet.y;
-}
-
-pub fn destroyBullet(bullet: *Bullet) void {
-    gAllocator.destroy(bullet);
-}

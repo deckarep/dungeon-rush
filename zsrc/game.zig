@@ -476,7 +476,7 @@ fn makeSpriteAttack(sprite: *spr.Sprite, snake: *pl.Snake) void {
                         break :attack_end;
                     }
                 } else {
-                    const bullet = blt.createBullet(
+                    const bullet = blt.Bullet.create(
                         snake,
                         weapon,
                         sprite.x,
@@ -1169,7 +1169,8 @@ fn destroyGame(currentStatus: GameStatus) void {
 
     var p = bullets.?.first;
     while (p) |node| : (p = node.next) {
-        blt.destroyBullet(@alignCast(@ptrCast(node.data)));
+        const bullet: *blt.Bullet = @alignCast(@ptrCast(node.data));
+        bullet.deinit();
         node.data = null;
     }
 
@@ -1207,7 +1208,9 @@ fn destroyGame(currentStatus: GameStatus) void {
 
             // TODO: try is needed, but not doable in an expression.
             ren.renderUi() catch unreachable;
-            break :blk "You Died";
+
+            const randomDeathChoice: usize = @intCast(hlp.randInt(0, res.deathTexts.len));
+            break :blk res.deathTexts[randomDeathChoice];
         },
     };
 
@@ -1678,7 +1681,10 @@ fn makeCross() void {
                 &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],
                 bullet.ani,
             );
-            blt.destroyBullet(bullet); // r.c. This was leaking.
+
+            // r.c. In original, this was leaking
+            // because bullet wasn't cleaned up
+            bullet.deinit();
             tps.removeLinkNode(bullets.?, node);
         }
     }
@@ -1789,7 +1795,8 @@ fn gameLoop() !GameStatus {
         if (bullets) |b| {
             var p = b.first;
             while (p) |node| : (p = node.next) {
-                blt.moveBullet(@ptrCast(@alignCast(node.data)));
+                const bullet: *blt.Bullet = @ptrCast(@alignCast(node.data));
+                bullet.move();
             }
         }
 
