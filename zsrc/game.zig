@@ -1209,7 +1209,7 @@ fn destroyGame(currentStatus: GameStatus) void {
             // TODO: try is needed, but not doable in an expression.
             ren.renderUi() catch unreachable;
 
-            const randomDeathChoice: usize = @intCast(hlp.randInt(0, res.deathTexts.len));
+            const randomDeathChoice: usize = @intCast(hlp.randInt(0, res.deathTexts.len - 1));
             break :blk res.deathTexts[randomDeathChoice];
         },
     };
