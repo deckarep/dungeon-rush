@@ -104,3 +104,4 @@ dumb shit like that.
   as part of the strategy to help you cope with the certain level.
 * Introduce themed levels, like a frost level where most or all baddies are cold-based.
 * Introduce upgrades along the way, pick up treason, loot upgrade your heroes.
+* Gamepad support, it might be fun to not always use the damn keyboard.

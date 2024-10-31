@@ -249,7 +249,9 @@ pub fn renderCenteredText(text: *const tps.Text, x: c_int, y: c_int, scale: f64)
     return .{ .x = x - @divTrunc(width, 2), .y = y - @divTrunc(height, 1) };
 }
 
-fn renderCenteredTextBackground(text: *tps.Text, x: c_int, y: c_int, scale: f64) void {
+/// Renders a background centered behind some text object. The intention is to render the background
+/// then, followup by rendering the text itself using: renderCenteredText(...).
+fn renderCenteredBGForText(text: *const tps.Text, clr: c.SDL_Color, x: c_int, y: c_int, scale: f64) void {
     const width: f64 = @as(f64, @floatFromInt(text.width)) * scale + 0.5;
     const height: f64 = @as(f64, @floatFromInt(text.height)) * scale + 0.5;
     const dst: c.SDL_Rect = .{
@@ -259,18 +261,26 @@ fn renderCenteredTextBackground(text: *tps.Text, x: c_int, y: c_int, scale: f64)
         .h = @intFromFloat(height),
     };
     _ = c.SDL_SetRenderDrawBlendMode(renderer, c.SDL_BLENDMODE_BLEND);
-    _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 200);
+    _ = c.SDL_SetRenderDrawColor(renderer, clr.r, clr.g, clr.b, clr.a);
     _ = c.SDL_RenderFillRect(renderer, &dst);
 }
 
 fn renderId() void {
     const powerful = ai.getPowerfulPlayer();
+    const clr: c.SDL_Color = .{
+        .r = 255,
+        .g = 0,
+        .b = 0,
+        .a = 200,
+    };
+
     for (0..@intCast(gm.playersCount)) |i| {
         const snake = gm.spriteSnake[i].?;
         if (snake.sprites.first != null) {
             const snakeHead: *spr.Sprite = @alignCast(@ptrCast(snake.sprites.first.?.data.?));
+
             if (i == powerful) {
-                renderCenteredTextBackground(&res.texts[4 + i], snakeHead.x, snakeHead.y, 0.5);
+                renderCenteredBGForText(&res.texts[4 + i], clr, snakeHead.x, snakeHead.y, 0.5);
             }
             _ = renderCenteredText(&res.texts[4 + i], snakeHead.x, snakeHead.y, 0.5);
         }
@@ -404,6 +414,7 @@ pub fn renderAnimation(a: ?*tps.Animation) void {
     const ani = a.?;
 
     updateAnimationFromBind(ani);
+
     var width = ani.origin.width;
     var height = ani.origin.height;
     var poi: c.SDL_Point = .{
@@ -456,6 +467,7 @@ pub fn renderAnimation(a: ?*tps.Animation) void {
         &poi,
         ani.flip,
     );
+
     if (ani.effect) |_| {
         unsetEffect(ani.origin);
     }
@@ -621,7 +633,7 @@ fn renderInfo() void {
     }
 
     if (gm.playersCount == 1) {
-        var buf: [1 << 8]u8 = undefined;
+        var buf: [64]u8 = undefined;
 
         // TODO: try needs to be here.
         const strResult = std.fmt.bufPrintZ(

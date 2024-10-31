@@ -54,6 +54,9 @@ pub fn clearMapGenerator() void {
     hasMap = std.mem.zeroes([MAP_SIZE][MAP_SIZE]bool);
 }
 
+/// Iterates the 8 neighboring cells surrounding a central cell at position
+/// (x,y) and returns a count of how many cells are set to true excluding
+/// the cell itself.
 fn count(x: c_int, y: c_int) c_int {
     var ret: c_int = 0;
 
@@ -280,24 +283,24 @@ fn initMap() void {
 }
 
 fn decorateMap() void {
-    var i: c_int = 0;
     const lim: c_int = @intFromFloat(@as(f64, res.n) * @as(f64, res.m) * MAP_HOW_OLD);
     var x: usize = 0;
     var y: usize = 0;
 
+    var i: c_int = 0;
     while (i < lim) : (i += 1) { // Original out for loop.
         while (true) {
             x = @intCast(hlp.randInt(0, res.n - 2));
             y = @intCast(hlp.randInt(0, res.m - 2));
 
             // r.c. - need ints because how many "trues" get counted.
-            const condition = @as(c_int, @intFromBool((hasMap[x][y] and !isTrap[x][y]))) +
+            const cond = @as(c_int, @intFromBool((hasMap[x][y] and !isTrap[x][y]))) +
                 @as(c_int, @intFromBool((hasMap[x + 1][y] and !isTrap[x + 1][y]))) +
                 @as(c_int, @intFromBool((hasMap[x][y + 1] and !isTrap[x][y + 1]))) +
                 @as(c_int, @intFromBool((hasMap[x + 1][y + 1] and !isTrap[x + 1][y + 1]))) < 4;
 
             // Since we ported a do-while loop, we negate the condition.
-            if (!condition) break;
+            if (!cond) break;
         }
 
         if (hlp.randDouble() < MAP_HOW_OLD) {
@@ -333,6 +336,9 @@ pub fn initBlankMap(w: c_int, h: c_int) void {
         }
     }
 
+    // r.c. this was added by me, to give the title/menu more visual interest.
+    decorateMap();
+
     std.log.info("initBlankMap finished...", .{});
 }
 
@@ -354,6 +360,7 @@ pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void 
         }
     }
 
+    // NOTE: This code places spiked traps.
     var t: c_int = @intFromFloat(@as(f64, res.n) * @as(f64, res.m) * trapRate);
     while (t > 0) : (t -= 1) {
         var x: c_int = undefined;
@@ -391,6 +398,7 @@ pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void 
         }
     }
 
+    // NOTE: This finds a single x,y map location for an exit block.
     // Converted from do-while nonsense to while w/negated if condition.
     while (true) {
         exitX = hlp.randInt(0, res.n - 1);
@@ -404,6 +412,9 @@ pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void 
         if (!cond) break;
     }
 
+    // r.c. - In both the original and this port, i'm not seeing an exit block render.
+    // I have confirmed it's because enable is false. Setting it to true shows the block
+    // but does nothing as it's not used in the game.
     initBlock(
         &gm.map[@intCast(exitX)][@intCast(exitY)],
         .BLOCK_EXIT,
@@ -413,9 +424,7 @@ pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void 
         false,
     );
 
-    // #ifdef DBG
-    //   printf("exit: %d %d\n", exitX, exitY);
-    // #endif
+    std.log.debug("exit: {d},{d}", .{ exitX, exitY });
 
     initMap();
     decorateMap();
@@ -424,10 +433,6 @@ pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void 
 }
 
 pub fn pushMapToRender() void {
-    // BUG: map isn't centered.
-    // CHECK: map is the correct dimensions.
-    // BIG FAT TODO: I'm not sure I ported over the if/else if/else nesting properly...fuck c for having optional curly braces.
-
     // Aliases to cutdown on long names.
     const cpa = ren.createAndPushAnimation;
 

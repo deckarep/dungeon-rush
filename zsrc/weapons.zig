@@ -362,7 +362,7 @@ pub fn initWeapons() !void {
     curWep.bulletSpeed = 7;
     curWep.deathAni.?.angle = -1;
     curWep.deathAni.?.scaled = false;
-    curWep.flyAni.?.scaled = false;
+    curWep.flyAni.?.scaled = true;
     curWep.deathAni.?.at = .AT_CENTER;
     curWep.birthAudio = res.AUDIO_ICE_SHOOT;
     curWep.deathAudio = res.AUDIO_ARROW_HIT;
