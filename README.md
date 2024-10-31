@@ -95,3 +95,12 @@ If people want to change the overall look and feel or game logic, please fork Du
 * All original development was done on Apple MacOS Silcon, contributions are welcome for other OSes.
 * The game has some multi-player networking code, I don't care about it at the moment so it's not started.
 * It's very possible this manual port has introduced a bug or two, the game needs to be well tested.
+
+## Future ideas
+* Introduce heroes that have innate abilities like a Frost Hero that is immune to cold attacks
+and is able to dish out there own cold attacks. Or a Fire Hero that can't be frozen. Yeah,
+dumb shit like that.
+  * This would make the game a little more interesting because you can pick up cerrtain heroes
+  as part of the strategy to help you cope with the certain level.
+* Introduce themed levels, like a frost level where most or all baddies are cold-based.
+* Introduce upgrades along the way, pick up treason, loot upgrade your heroes.

@@ -822,9 +822,13 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
             .AT_BOTTOM_CENTER,
         );
         ani.scaled = false;
-        if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
-            continue;
-        }
+
+        // TODO: see slowDownSnake comments, I had to remove this code in there...why should this
+        // if block also be in this function? It doesn't make sense to me.
+        // Commenting it out for now as well.
+        // if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
+        //     continue;
+        // }
         ren.bindAnimationToSprite(ani, sprite, true);
     }
 }
@@ -869,10 +873,12 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
         );
         ani.lifeSpan = duration;
         ani.scaled = false;
+
         // r.c. - This line prevents slow downs from tracking with the sprite when
         // BUFF_DEFENCE is non-zero. I don't know why this code is like this. But
         // I believe the animations should always track alongside the sprite's x,y coords.
-        // In other words, bindAnimationToSprite should always be ran.
+        // In other words, bindAnimationToSprite should always be ran so it's not
+        // like the original raw C code.
 
         // if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
         //     continue;
