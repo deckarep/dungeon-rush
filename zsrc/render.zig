@@ -43,7 +43,7 @@ pub const RENDER_LIST_EFFECT_ID = 5;
 pub const RENDER_LIST_MAP_FOREWALL = 6;
 pub const RENDER_LIST_UI_ID = 7;
 pub const RENDER_BUFFER_SIZE = 1 << 16;
-pub const RENDER_HP_BAR_HEIGHT = 2;
+pub const RENDER_HP_BAR_HEIGHT = 3;
 pub const RENDER_HP_BAR_WIDTH = 20;
 pub const RENDER_COUNTDOWN_BAR_WIDTH = 300;
 pub const RENDER_COUNTDOWN_BAR_HEIGHT = 10;
@@ -220,11 +220,12 @@ fn renderSnakeHp(snake: *pl.Snake) void {
             const spriteHeight: c_int = sprite.ani.origin.height * SCALE_FACTOR;
             const bar: c.SDL_Rect = .{
                 .x = sprite.x - res.UNIT / 2 + (res.UNIT - width) / 2,
-                .y = sprite.y - spriteHeight - RENDER_HP_BAR_HEIGHT * (@as(c_int, @intCast(i)) + 1),
+                .y = sprite.y - spriteHeight - RENDER_HP_BAR_HEIGHT * (@as(c_int, @intCast(i)) + 3),
                 .w = @intFromFloat(@as(f64, @floatFromInt(width)) * @min(1.0, percent)),
                 .h = RENDER_HP_BAR_HEIGHT,
             };
-            _ = c.SDL_RenderDrawRect(renderer, &bar);
+
+            _ = c.SDL_RenderFillRect(renderer, &bar);
         }
     }
 }
@@ -381,12 +382,6 @@ pub fn clearBindInAnimationsList(sprite: *spr.Sprite, id: c_int) void {
     }
 }
 
-pub fn bindAnimationToSprite(ani: *tps.Animation, sprite: *spr.Sprite, isStrong: bool) void {
-    ani.bind = sprite;
-    ani.dieWithBind = isStrong;
-    updateAnimationFromBind(ani);
-}
-
 pub fn updateAnimationFromBind(ani: *tps.Animation) void {
     if (ani.bind) |bnd| {
         const sprite: *spr.Sprite = @alignCast(@ptrCast(bnd));
@@ -394,6 +389,14 @@ pub fn updateAnimationFromBind(ani: *tps.Animation) void {
         ani.y = sprite.y;
         ani.flip = sprite.ani.flip;
     }
+}
+
+/// associates an animation to track and render following the sprites x,y position. If isStrong
+/// is true, then the animation should be removed should the sprite need to be destroyed, ie: died.
+pub fn bindAnimationToSprite(ani: *tps.Animation, sprite: *spr.Sprite, isStrong: bool) void {
+    ani.bind = sprite;
+    ani.dieWithBind = isStrong;
+    updateAnimationFromBind(ani);
 }
 
 pub fn renderAnimation(a: ?*tps.Animation) void {

@@ -869,9 +869,15 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
         );
         ani.lifeSpan = duration;
         ani.scaled = false;
-        if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
-            continue;
-        }
+        // r.c. - This line prevents slow downs from tracking with the sprite when
+        // BUFF_DEFENCE is non-zero. I don't know why this code is like this. But
+        // I believe the animations should always track alongside the sprite's x,y coords.
+        // In other words, bindAnimationToSprite should always be ran.
+
+        // if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
+        //     continue;
+        // }
+
         ren.bindAnimationToSprite(ani, sprite, true);
     }
 }
@@ -941,7 +947,7 @@ fn attackUpSnake(snake: *pl.Snake, duration: c_int) void {
     }
 }
 
-fn takeHpMedcine(snake: *pl.Snake, delta: c_int, extra: bool) void {
+fn takeHpMedicine(snake: *pl.Snake, delta: c_int, extra: bool) void {
     var p = snake.sprites.first;
     while (p) |node| : (p = node.next) {
         const sprite: *spr.Sprite = @alignCast(@ptrCast(node.data));
@@ -1422,7 +1428,7 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                                 itemMap[i][j].type == .ITEM_HP_EXTRA_MEDICINE)
                             {
                                 aud.playAudio(res.AUDIO_MED);
-                                takeHpMedcine(snake, GAME_HP_MEDICINE_DELTA, itemMap[i][j].type == .ITEM_HP_EXTRA_MEDICINE);
+                                takeHpMedicine(snake, GAME_HP_MEDICINE_DELTA, itemMap[i][j].type == .ITEM_HP_EXTRA_MEDICINE);
                                 flasksCount -= @intFromBool(itemMap[i][j].type == .ITEM_HP_MEDICINE);
 
                                 tps.removeAnimationFromLinkList(&ren.animationsList[ren.RENDER_LIST_MAP_ITEMS_ID], ani);

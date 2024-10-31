@@ -489,7 +489,6 @@ fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) bool {
         const p = &textures[texturesCount];
         texturesCount += 1;
         tps.initTexture(p, origin.?, w, h, f);
-        std.log.debug("{d}). {s}", .{ count, std.mem.sliceTo(&resName, 0) });
 
         var i: usize = 0;
         while (i < f) : (i += 1) {
@@ -499,8 +498,9 @@ fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) bool {
             p.crops[i].w = w;
         }
 
-        std.log.debug("Texture Res: {d}). ptr:{*}, x:{d}, y:{d}, w:{d}, h:{d}, f:{d}", .{
+        std.log.debug("Texture Res: {d}). name: {s}, ptr:{*}, x:{d}, y:{d}, w:{d}, h:{d}, f:{d}", .{
             texturesCount - 1,
+            std.mem.sliceTo(&resName, 0),
             p,
             x,
             y,
