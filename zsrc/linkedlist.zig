@@ -33,10 +33,12 @@ const tps = @import("types.zig");
 
 // Phase 1: Just start off by storing a pointer to a nullable opaque type.
 // Original C-style ADT linked list has been deprecated in favor of this!
+// This is complete!
 pub const GenericLL = std.DoublyLinkedList(?*anyopaque);
 pub const GenericNode = GenericLL.Node;
 
 // Phase 2: Break these out into type-safe individual linked lists. (maybe)
+// Not started.
 //      Need one for: *Animation
 //      Need one for: *Bullet
 //      Need one for: *Sprite

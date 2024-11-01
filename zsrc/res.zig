@@ -694,7 +694,8 @@ pub fn initCommonEffects() void {
     effects[0].keys[2] = death;
     death.r = 0;
     death.a = 0;
-    effects[0].keys[0] = death;
+    effects[0].keys[3] = death;
+    std.log.debug("Effect #0: Death (30frames) loaded", .{});
 
     tps.initEffect(&effects[1], 30, 3, c.SDL_BLENDMODE_ADD);
     var blink: c.SDL_Color = .{ .r = 0, .g = 0, .b = 0, .a = 255 };
@@ -707,12 +708,14 @@ pub fn initCommonEffects() void {
     blink.g = 0;
     blink.b = 0;
     effects[1].keys[2] = blink;
+    std.log.debug("Effect #1: Blink (white) (30frames) loaded", .{});
 
     tps.initEffect(&effects[2], 30, 2, c.SDL_BLENDMODE_BLEND);
     var vanish: c.SDL_Color = .{ .r = 255, .g = 255, .b = 255, .a = 255 };
     effects[2].keys[0] = vanish;
     vanish.a = 0;
     effects[2].keys[1] = vanish;
+    std.log.debug("Effect #2: Vanish (30frames) loaded", .{});
 }
 
 fn initCommonSprite(sprite: *spr.Sprite, weapon: *wp.Weapon, res_id: c_int, hp: c_int) void {
