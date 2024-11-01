@@ -752,6 +752,9 @@ fn initEnemies(enemiesCount: c_int) void {
         } else if (rand < 0.8) {
             startId = res.SPRITE_MUDDY;
             endId = res.SPRITE_SWAMPY;
+        } else if (rand < 0.9) {
+            startId = res.SPRITE_GREEN_HOOD_SKEL;
+            endId = res.SPRITE_GREEN_HOOD_SKEL;
         } else {
             startId = res.SPRITE_MASKED_ORC;
             endId = res.SPRITE_NECROMANCER;
