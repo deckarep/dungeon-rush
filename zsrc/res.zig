@@ -462,54 +462,91 @@ fn loadTextset() bool {
     return success;
 }
 
-fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) bool {
+fn initTilesetLine(line: []const u8, origin: ?*c.SDL_Texture) !void {
+    // Skip over empty lines.
+    if (std.mem.trim(u8, line, " ").len == 0) {
+        return;
+    }
+
+    // Skip over comment lines.
+    if (std.mem.startsWith(u8, line, "#")) {
+        return;
+    }
+
+    var seq = std.mem.splitSequence(u8, line, " ");
+    const a0 = seq.next();
+    const b0 = seq.next();
+    const c0 = seq.next();
+    const d0 = seq.next();
+    const e0 = seq.next();
+    const f0 = seq.next();
+
+    // Stupid sanity check.
+    if (a0 == null or b0 == null or c0 == null or d0 == null or e0 == null or f0 == null) {
+        @panic("Expected a tileset line item to have 6 fields defined!");
+    }
+
+    const name = a0.?;
+    const x = try std.fmt.parseInt(c_int, b0.?, 10);
+    const y = try std.fmt.parseInt(c_int, c0.?, 10);
+    const w = try std.fmt.parseInt(c_int, d0.?, 10);
+    const h = try std.fmt.parseInt(c_int, e0.?, 10);
+    // fc means frameCount
+    const fc = try std.fmt.parseInt(c_int, f0.?, 10);
+
+    const p = &textures[texturesCount];
+    texturesCount += 1;
+    tps.initTexture(p, origin.?, w, h, fc);
+
+    var i: usize = 0;
+    while (i < fc) : (i += 1) {
+        p.crops[i].x = x + @as(c_int, @intCast(i)) * w;
+        p.crops[i].y = y;
+        p.crops[i].h = h;
+        p.crops[i].w = w;
+    }
+
+    // Don't delete this: in debug mode, this line is useful to debug textureIds.
+    std.log.debug("Texture Res: {d}). name: {s}, ptr:{*}, x:{d}, y:{d}, w:{d}, h:{d}, fc:{d}", .{
+        texturesCount - 1,
+        name,
+        p,
+        x,
+        y,
+        w,
+        h,
+        fc,
+    });
+}
+
+fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) !bool {
     if (origin == null) {
         @panic("origin should never be null!");
     }
 
-    const file = c.fopen(path, "r");
-    defer _ = c.fclose(file);
+    const file = try std.fs.cwd().openFile(path, .{});
+    defer file.close();
 
-    if (file == null) {
-        std.log.err("Couldn't find file at path: {s}", .{path});
-        return false;
+    var bfReader = std.io.bufferedReader(file.reader());
+    const reader = bfReader.reader();
+
+    var line = std.ArrayList(u8).init(gAllocator);
+    defer line.deinit();
+
+    const writer = line.writer();
+    while (reader.streamUntilDelimiter(writer, '\n', null)) {
+        defer line.clearRetainingCapacity();
+        try initTilesetLine(line.items, origin);
+    } else |err| switch (err) {
+        error.EndOfStream => {
+            // Don't forget the last line too!
+            defer line.clearRetainingCapacity();
+            try initTilesetLine(line.items, origin);
+            std.log.debug("end of stream found!", .{});
+        },
+        else => return err,
     }
 
-    var x: c_int = undefined;
-    var y: c_int = undefined;
-    var w: c_int = undefined;
-    var h: c_int = undefined;
-    var f: c_int = undefined;
-
-    var resName: [256]u8 = undefined;
-
-    // Convention of tileset: name, x, y, w, h, f (num of frames)
-    var count: usize = 0;
-    while (c.fscanf(file, "%s %d %d %d %d %d", &resName, &x, &y, &w, &h, &f) == 6) {
-        const p = &textures[texturesCount];
-        texturesCount += 1;
-        tps.initTexture(p, origin.?, w, h, f);
-
-        var i: usize = 0;
-        while (i < f) : (i += 1) {
-            p.crops[i].x = x + @as(c_int, @intCast(i)) * w;
-            p.crops[i].y = y;
-            p.crops[i].h = h;
-            p.crops[i].w = w;
-        }
-
-        std.log.debug("Texture Res: {d}). name: {s}, ptr:{*}, x:{d}, y:{d}, w:{d}, h:{d}, f:{d}", .{
-            texturesCount - 1,
-            std.mem.sliceTo(&resName, 0),
-            p,
-            x,
-            y,
-            w,
-            h,
-            f,
-        });
-        count += 1;
-    }
     return true;
 }
 
@@ -563,7 +600,7 @@ pub fn loadMedia(exePath: []const u8) !bool {
         const imgFile = try std.fmt.bufPrintZ(&buf, "{s}.png", .{imgPath});
         originTextures[idx] = loadSDLTexture(std.mem.sliceTo(imgFile, 0));
 
-        _ = loadTileset(imgPath, originTextures[idx]);
+        _ = try loadTileset(imgPath, originTextures[idx]);
         if (originTextures[idx] == null) {
             return false;
         }

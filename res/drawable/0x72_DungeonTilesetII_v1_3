@@ -157,6 +157,7 @@ lizard_f_hit_anim 256 205 16 19 1
 lizard_m_idle_anim 128 237 16 19 4 
 lizard_m_run_anim 192 237 16 19 4 
 lizard_m_hit_anim 256 237 16 19 1 
+# Added by r.c. - to represent the Zig iguana.
 ziggy_m_idle_anim 127 417 16 19 4 
 ziggy_m_run_anim 191 417 16 19 4 
-ziggy_m_hit_anim 255 414 16 19 1 
+ziggy_m_hit_anim 255 414 16 19 1
