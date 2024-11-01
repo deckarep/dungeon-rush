@@ -530,6 +530,8 @@ fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) !bool {
     var bfReader = std.io.bufferedReader(file.reader());
     const reader = bfReader.reader();
 
+    // Zig provides precise memory control:
+    // This uses a stack allocated ArrayList, see if you can do this in your language.
     const bufSize = 128;
     var buffer: [bufSize]u8 = undefined;
     var fba = std.heap.FixedBufferAllocator.init(&buffer);
