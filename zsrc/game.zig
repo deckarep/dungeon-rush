@@ -1814,7 +1814,7 @@ fn gameLoop() !GameStatus {
             var p = b.first;
             while (p) |node| : (p = node.next) {
                 const bullet: *blt.Bullet = @ptrCast(@alignCast(node.data));
-                bullet.move();
+                bullet.update();
             }
         }
 

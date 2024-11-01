@@ -63,7 +63,7 @@ pub const Bullet = struct {
         return bullet;
     }
 
-    pub fn move(self: *Bullet) void {
+    pub fn update(self: *Bullet) void {
         const speed: f64 = @floatFromInt(self.parent.bulletSpeed);
         self.x += @intFromFloat(@cos(self.rad) * speed);
         self.y += @intFromFloat(@sin(self.rad) * speed);
