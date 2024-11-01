@@ -51,7 +51,7 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
       * Migrate to a Zig-based SDL wrapper, for a nicer SDL experience.
       * Ensure all errors are accounted for, utilize `try`
       * Use build.zig.zon
-      * Setup Github to build the project regularly
+      * ✅ Setup Github to build the project regularly
   3. Phase 3: Code Clean-up/Refactor
       * Remove duplicate code
       * Make code even more idiomatic for Zig

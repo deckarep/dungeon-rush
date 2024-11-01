@@ -799,7 +799,8 @@ fn freezeSnake(snake: *pl.Snake, duration: c_int) void {
     var effect: ?*tps.Effect = null;
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
         effect = gAllocator.create(tps.Effect) catch unreachable;
-        tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
+        res.effects[res.EFFECT_VANISH30].copyInto(effect.?);
+        //tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
         dur = 30;
     }
 
@@ -849,7 +850,8 @@ fn slowDownSnake(snake: *pl.Snake, duration: c_int) void {
     var effect: ?*tps.Effect = null;
     if (snake.buffs[tps.BUFF_DEFENCE] > 0) {
         effect = gAllocator.create(tps.Effect) catch unreachable;
-        tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
+        res.effects[res.EFFECT_VANISH30].copyInto(effect.?);
+        //tps.copyEffect(&res.effects[res.EFFECT_VANISH30], effect.?);
         dur = 30;
     }
 
@@ -896,7 +898,8 @@ fn shieldSprite(sprite: *spr.Sprite, duration: c_int) void {
     // Now it pulsates with transparency.
     const effect = gAllocator.create(tps.Effect) catch unreachable;
     defer effect.deinit();
-    tps.copyEffect(&res.effects[res.EFFECT_BLINK], effect);
+    res.effects[res.EFFECT_BLINK].copyInto(effect);
+    //tps.copyEffect(&res.effects[res.EFFECT_BLINK], effect);
 
     const ani = ren.createAndPushAnimation(
         &ren.animationsList[ren.RENDER_LIST_EFFECT_ID],

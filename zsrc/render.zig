@@ -316,7 +316,7 @@ pub fn setEffect(texture: *tps.Texture, ef: ?*tps.Effect) void {
     progress /= interval;
 
     const prev: c.SDL_Color = effect.keys[@intCast(stage)];
-    const nxt: c.SDL_Color = effect.keys[@intCast(@min(stage + 1, effect.length - 1))];
+    const nxt: c.SDL_Color = effect.keys[@intCast(@min(@as(usize, @intCast(stage)) + 1, effect.length - 1))];
 
     var mixed: c.SDL_Color = undefined;
     mixed.r = @intFromFloat(@as(f64, @floatFromInt(prev.r)) * (1.0 - progress) + @as(f64, @floatFromInt(nxt.r)) * progress);

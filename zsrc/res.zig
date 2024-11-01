@@ -730,38 +730,44 @@ pub fn cleanup() void {
 }
 
 pub fn initCommonEffects() void {
-    tps.initEffect(&effects[0], 30, 4, c.SDL_BLENDMODE_BLEND);
+    //tps.initEffect(&effects[0], 30, 4, c.SDL_BLENDMODE_BLEND);
+    const deathEffect = &effects[0];
+    deathEffect.init(30, 4, c.SDL_BLENDMODE_BLEND);
     var death: c.SDL_Color = .{ .r = 255, .g = 255, .b = 255, .a = 255 };
-    effects[0].keys[0] = death;
+    deathEffect.keys[0] = death;
     death.g = 0;
     death.b = 0;
     death.r = 168;
-    effects[0].keys[1] = death;
+    deathEffect.keys[1] = death;
     death.r = 80;
-    effects[0].keys[2] = death;
+    deathEffect.keys[2] = death;
     death.r = 0;
     death.a = 0;
-    effects[0].keys[3] = death;
+    deathEffect.keys[3] = death;
     std.log.debug("Effect #0: Death (30frames) loaded", .{});
 
-    tps.initEffect(&effects[1], 30, 3, c.SDL_BLENDMODE_ADD);
+    //tps.initEffect(&effects[1], 30, 3, c.SDL_BLENDMODE_ADD);
+    const blinkEffect = &effects[1];
+    blinkEffect.init(30, 3, c.SDL_BLENDMODE_ADD);
     var blink: c.SDL_Color = .{ .r = 0, .g = 0, .b = 0, .a = 255 };
-    effects[1].keys[0] = blink;
+    blinkEffect.keys[0] = blink;
     blink.r = 200;
     blink.g = 200;
     blink.b = 200;
-    effects[1].keys[1] = blink;
+    blinkEffect.keys[1] = blink;
     blink.r = 0;
     blink.g = 0;
     blink.b = 0;
-    effects[1].keys[2] = blink;
+    blinkEffect.keys[2] = blink;
     std.log.debug("Effect #1: Blink (white) (30frames) loaded", .{});
 
-    tps.initEffect(&effects[2], 30, 2, c.SDL_BLENDMODE_BLEND);
+    //tps.initEffect(&effects[2], 30, 2, c.SDL_BLENDMODE_BLEND);
+    const vanishEffect = &effects[2];
+    vanishEffect.init(30, 2, c.SDL_BLENDMODE_BLEND);
     var vanish: c.SDL_Color = .{ .r = 255, .g = 255, .b = 255, .a = 255 };
-    effects[2].keys[0] = vanish;
+    vanishEffect.keys[0] = vanish;
     vanish.a = 0;
-    effects[2].keys[1] = vanish;
+    vanishEffect.keys[1] = vanish;
     std.log.debug("Effect #2: Vanish (30frames) loaded", .{});
 }
 

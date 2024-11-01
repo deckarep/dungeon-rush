@@ -138,15 +138,38 @@ pub const Animation = struct {
 pub const Effect = struct {
     duration: c_int,
     currentFrame: c_int,
-    length: c_int,
-    //keys: [*]c.SDL_Color,
+    length: usize,
     keys: []c.SDL_Color,
     mode: c.SDL_BlendMode,
 
-    pub fn deinit(self: *Effect) void {
-        // TODO: migrate the destroyEffect code INTO this method.
-        // delete all uses of destroyEffect in favor of effect.deinit()
-        destroyEffect(self);
+    pub fn init(self: *Effect, duration: c_int, length: usize, mode: c.SDL_BlendMode) void {
+        self.keys = gAllocator.alloc(c.SDL_Color, length) catch unreachable;
+        self.duration = duration;
+        self.length = length;
+        self.currentFrame = 0;
+        self.mode = mode;
+    }
+
+    pub fn deinit(self: ?*Effect) void {
+        if (self) |ef| {
+            gAllocator.free(ef.keys);
+            gAllocator.destroy(ef);
+        }
+    }
+
+    /// Ensures an exact memberwise replica copy is made of the *Effect
+    /// while ensuring the effect.keys are deep copied. This function
+    /// allows the caller to choose how the dest *Effect is allocated (stack or heap).
+    pub fn copyInto(self: *const Effect, dest: *Effect) void {
+        // rc: changed from @memcpy to a memberwise copy.
+        dest.* = self.*;
+
+        // With a deep alloc-copy on the keys.
+        const len: usize = @intCast(self.length);
+        dest.*.keys = gAllocator.alloc(c.SDL_Color, len) catch unreachable;
+        for (0..len) |idx| {
+            dest.keys[idx] = self.keys[idx];
+        }
     }
 };
 
@@ -237,7 +260,8 @@ pub fn initAnimation(
     // will deep copy effect
     if (effect) |ef| {
         self.effect = gAllocator.create(Effect) catch unreachable;
-        copyEffect(ef, self.effect.?);
+        //copyEffect(ef, self.effect.?);
+        ef.copyInto(self.effect.?);
     } else {
         self.effect = null;
     }
@@ -286,7 +310,7 @@ pub fn copyAnimation(src: *const Animation, dest: *Animation) void {
     dest.* = src.*;
     if (src.effect) |eff| {
         dest.effect = gAllocator.create(Effect) catch unreachable;
-        copyEffect(eff, dest.effect.?);
+        eff.copyInto(dest.effect.?);
     }
 }
 
@@ -336,33 +360,6 @@ pub fn setText(self: *Text, str: [*:0]const u8) void {
 pub fn destroyText(self: *Text) void {
     c.SDL_DestroyTexture(self.origin);
     gAllocator.destroy(self);
-}
-
-pub fn initEffect(self: *Effect, duration: c_int, length: c_int, mode: c.SDL_BlendMode) void {
-    self.keys = gAllocator.alloc(c.SDL_Color, @as(usize, @intCast(length))) catch unreachable;
-    self.duration = duration;
-    self.length = length;
-    self.currentFrame = 0;
-    self.mode = mode;
-}
-
-// deep copy
-pub fn copyEffect(src: *const Effect, dest: *Effect) void {
-    // rc: change from memcopy to just regular ass copy.
-    dest.* = src.*;
-
-    const len: usize = @intCast(src.length);
-    dest.*.keys = gAllocator.alloc(c.SDL_Color, len) catch unreachable;
-    for (0..len) |idx| {
-        dest.keys[idx] = src.keys[idx];
-    }
-}
-
-pub fn destroyEffect(self: ?*Effect) void {
-    if (self) |ef| {
-        gAllocator.free(ef.keys);
-        gAllocator.destroy(ef);
-    }
 }
 
 pub fn initLinkNode(self: *ll.GenericNode) void {
