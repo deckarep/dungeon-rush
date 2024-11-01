@@ -660,9 +660,8 @@ pub fn cleanup() void {
     wp.destroyWeapons();
 
     // Effects also live for the life of the app and should be cleaned up.
-    // NOTE: 3 is hardoded - baaaad.
-    for (0..3) |i| {
-        gAllocator.free(effects[i].keys);
+    for (&effects) |*ef| {
+        gAllocator.free(ef.keys);
     }
 
     // Clean up long-lived texture crops, which are dynamically alloc'd.
