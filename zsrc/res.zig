@@ -462,6 +462,9 @@ fn loadTextset() bool {
     return success;
 }
 
+/// This just parses and populates tileset single line in a texture definition file.
+/// The whole point of this is to just extract out the texture name and
+/// the integer fields for: x, y, w, h and frame count.
 fn initTilesetLine(line: []const u8, origin: ?*c.SDL_Texture) !void {
     // Skip over empty lines.
     if (std.mem.trim(u8, line, " ").len == 0) {
@@ -469,30 +472,30 @@ fn initTilesetLine(line: []const u8, origin: ?*c.SDL_Texture) !void {
     }
 
     // Skip over comment lines.
+    // They must start with a '#' symbol.
     if (std.mem.startsWith(u8, line, "#")) {
         return;
     }
 
     var seq = std.mem.splitSequence(u8, line, " ");
-    const a0 = seq.next();
-    const b0 = seq.next();
-    const c0 = seq.next();
-    const d0 = seq.next();
-    const e0 = seq.next();
-    const f0 = seq.next();
+    var fields: [6][]const u8 = undefined;
+    for (&fields) |*fld| {
+        const res = seq.next();
+        // Stupid sanity check.
+        if (res == null) {
+            @panic("A tileset line item requires 6 populated fields so none can be empty!");
+        }
 
-    // Stupid sanity check.
-    if (a0 == null or b0 == null or c0 == null or d0 == null or e0 == null or f0 == null) {
-        @panic("Expected a tileset line item to have 6 fields defined!");
+        fld.* = res.?;
     }
 
-    const name = a0.?;
-    const x = try std.fmt.parseInt(c_int, b0.?, 10);
-    const y = try std.fmt.parseInt(c_int, c0.?, 10);
-    const w = try std.fmt.parseInt(c_int, d0.?, 10);
-    const h = try std.fmt.parseInt(c_int, e0.?, 10);
+    const name = fields[0];
+    const x = try std.fmt.parseInt(c_int, fields[1], 10);
+    const y = try std.fmt.parseInt(c_int, fields[2], 10);
+    const w = try std.fmt.parseInt(c_int, fields[3], 10);
+    const h = try std.fmt.parseInt(c_int, fields[4], 10);
     // fc means frameCount
-    const fc = try std.fmt.parseInt(c_int, f0.?, 10);
+    const fc = try std.fmt.parseInt(c_int, fields[5], 10);
 
     const p = &textures[texturesCount];
     texturesCount += 1;
