@@ -530,7 +530,11 @@ fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) !bool {
     var bfReader = std.io.bufferedReader(file.reader());
     const reader = bfReader.reader();
 
-    var line = std.ArrayList(u8).init(gAllocator);
+    const bufSize = 128;
+    var buffer: [bufSize]u8 = undefined;
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    const allocator = fba.allocator();
+    var line = try std.ArrayList(u8).initCapacity(allocator, bufSize);
     defer line.deinit();
 
     const writer = line.writer();
