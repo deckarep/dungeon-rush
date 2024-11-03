@@ -38,21 +38,22 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
 * To fully eradicate all original C-based files and C-based build scripts.
 * To port in phases:
   1. Phase 1: port the C code almost as-is to minimize bugs introduced
-      * ✅ Deprecated usage of `c.malloc`/`c.free` in all cases
-      * ✅ Deprecated use of `c.qsort` with a `callconv(.C)` callback in favor of Zig's sorting.
+      * ✅ Deprecate usage of `c.malloc`/`c.free` in all cases
+      * ✅ Deprecate use of `c.qsort` with a `callconv(.C)` callback in favor of Zig's sorting
       * Deprecate all [*c] style pointers
-      * ✅ Deprecated C-style multi-pointers
-      * Find and improve `const` correctness in some cases.
+      * ✅ Deprecate C-style multi-pointers
+      * Find and improve `const` correctness where applicable
   2. Phase 2: Ziggify
       * Move away from `c_int` or C specific types
-      * ✅ Favor slices over multi-pointers, remove any pointer arithmetic.
-      * Use more of Zig's stdlib for logging, file-io, etc.
+      * ✅ Favor slices over multi-pointers, remove any pointer arithmetic
+      * Use more of Zig's stdlib for logging, file-io, etc
       * Utilize `defer`/`errdefer` for effective cleanup
-      * Migrate to a Zig-based SDL wrapper, for a nicer SDL experience.
+      * Migrate to a Zig-based SDL wrapper, for a nicer SDL experience
       * Ensure all errors are accounted for, utilize `try`
       * Use build.zig.zon
       * ✅ Setup Github to build the project regularly
   3. Phase 3: Code Clean-up/Refactor
+      * ✅ Gamepad controller support added
       * Remove duplicate code
       * Make code even more idiomatic for Zig
       * Make the code more maintainable
@@ -62,7 +63,7 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
       * ✅ Use some Zig based collections like the `generic` LinkList over the original C ADT style
       * Bonus: Introduce unit-tests
       * Get building for other OSes (w/ community contributions)
-      * Migrated hardcoded textures, music + sound sfx out of the source code and into config files
+      * Migrate hardcoded textures, music + sound sfx out of the source code and into config files
         * This will allow the game to be easily skinned, for a whole new experience.
   4. Phase 4: ???
       * I'd love to port this to Raylib.

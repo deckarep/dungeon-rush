@@ -30,9 +30,6 @@ const BGM_FADE_DURATION = 800;
 var nowBgmId: c_int = -1;
 
 pub fn playBgm(id: c_int) void {
-    // NOTE: r.c. disabled music bruh.
-    if (true) return;
-
     if (nowBgmId == id) {
         return;
     }
@@ -51,7 +48,7 @@ pub fn stopBgm() void {
 }
 
 pub fn randomBgm() void {
-    playBgm(hlp.randInt(1, res.bgmNums - 1));
+    playBgm(hlp.randInt(1, res.bgmsPath.len - 1));
 }
 
 pub fn playAudio(id: usize) void {

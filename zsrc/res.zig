@@ -270,7 +270,7 @@ pub const PATH_LEN = 1024;
 pub const TILESET_SIZE = 1024;
 pub const TEXTSET_SIZE = 1024;
 pub const EFFECTS_SIZE = 128;
-pub const bgmNums = 4;
+// pub const bgmNums = 4; Not needed in Zig port.
 pub const TEXTURES_SIZE = 1024;
 
 pub const nameOfTheGame = "Dungeon Rush: Zig-Edition v1.0 - by @deckarep";
@@ -340,7 +340,7 @@ pub const textList = &[_][*:0]const u8{
     "Zig Edition: by @deckarep - (c) 2024", // <-- that's me!
 };
 
-const bgmsPath = &[_][]const u8{
+pub const bgmsPath = &[_][]const u8{
     "res/audio/main_title.ogg",
     "res/audio/bg1.ogg",
     "res/audio/bg2.ogg",
@@ -612,7 +612,7 @@ fn loadTileset(path: [:0]const u8, origin: ?*c.SDL_Texture) !bool {
 }
 
 pub fn loadAudio() !bool {
-    for (0..bgmNums) |i| {
+    for (0..bgmsPath.len) |i| {
         const mus = c.Mix_LoadMUS(bgmsPath[i].ptr);
         if (mus) |mu| {
             bgms[i] = mu;
