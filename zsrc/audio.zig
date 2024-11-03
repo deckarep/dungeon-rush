@@ -27,13 +27,14 @@ const hlp = @import("helper.zig");
 
 const BGM_FADE_DURATION = 800;
 
-var nowBgmId: c_int = -1;
+var nowBgmId: ?usize = null;
 
-pub fn playBgm(id: c_int) void {
-    if (nowBgmId == id) {
+pub fn playBgm(id: usize) void {
+    if (id == nowBgmId) {
         return;
     }
-    if (nowBgmId == -1) {
+
+    if (nowBgmId == null) {
         _ = c.Mix_PlayMusic(res.bgms[@intCast(id)], -1);
     } else {
         _ = c.Mix_FadeInMusic(res.bgms[@intCast(id)], -1, BGM_FADE_DURATION);
@@ -44,11 +45,12 @@ pub fn playBgm(id: c_int) void {
 
 pub fn stopBgm() void {
     _ = c.Mix_FadeOutMusic(BGM_FADE_DURATION);
-    nowBgmId = -1;
+    nowBgmId = null;
 }
 
 pub fn randomBgm() void {
-    playBgm(hlp.randInt(1, res.bgmsPath.len - 1));
+    const r: usize = @intCast(hlp.randInt(1, res.bgmsPath.len - 1));
+    playBgm(r);
 }
 
 pub fn playAudio(id: usize) void {
