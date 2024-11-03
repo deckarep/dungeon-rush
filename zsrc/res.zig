@@ -419,7 +419,7 @@ var soundsCount: usize = 0;
 
 pub fn init() bool {
     var success = true;
-    if (c.SDL_Init(c.SDL_INIT_VIDEO | c.SDL_INIT_AUDIO) < 0) {
+    if (c.SDL_Init(c.SDL_INIT_VIDEO | c.SDL_INIT_AUDIO) < 0) { //c.SDL_INIT_GAMECONTROLLER | c.SDL_INIT_JOYSTICK) < 0) {
         _ = c.printf("SDL could not initialize! SDL_Error: %s\n", c.SDL_GetError());
         success = false;
     } else {
@@ -461,6 +461,11 @@ pub fn init() bool {
                 }
                 if (c.SDLNet_Init() == -1) {
                     _ = c.printf("SDL_Net_Init: %s\n", c.SDLNet_GetError());
+                    success = false;
+                }
+
+                if (c.SDL_InitSubSystem(c.SDL_INIT_SENSOR | c.SDL_INIT_GAMECONTROLLER) == -1) { //| c.SDL_INIT_HAPTIC | c.SDL_INIT_JOYSTICK) == -1) { //|SDL_INIT_HAPTIC)
+                    _ = c.printf("SDL_InitSubSystem failed with err: %s\n", c.SDL_GetError());
                     success = false;
                 }
             }
@@ -641,8 +646,37 @@ pub fn loadAudio() !bool {
     return true;
 }
 
+pub fn initControllerMappings() void {
+    //if (true) return;
+    //const mappingResult = c.SDL_GameControllerAddMappingsFromFile("res/controllers/gamecontrollerdb.txt");
+    // const mappingResult = c.SDL_GameControllerAddMappingsFromRW(c.SDL_RWFromFile("res/controller/gamecontrollerdb.txt", "rb"), 1);
+
+    // if (mappingResult == -1) {
+    //     std.log.debug("mappingResult => {d}", .{mappingResult});
+    //     _ = c.printf("WARN: mapping file err: %s\n", c.SDL_GetError());
+    //     @panic("Failed to fucken find a damn controller!");
+    // }
+
+    // std.log.debug("Mapping loaded!", .{});
+
+    // Gamepad sniff
+    // const numJoysticksFound = c.SDL_NumJoysticks();
+    // std.log.debug("SDL identified {d} joysticks connected.", .{numJoysticksFound});
+    // if (numJoysticksFound > 0) {
+    //     gamePadController = c.SDL_GameControllerOpen(0);
+    //     if (gamePadController == null) {
+    //         _ = c.printf("WARN: A gamepad controller was detected but failed to open with err: %s\n", c.SDL_GetError());
+    //     } else {
+    //         std.log.debug("A gamepad controller was detected and successfully bound!", .{});
+    //     }
+    // }
+}
+
 pub fn loadMedia(exePath: []const u8) !bool {
     rootPath = exePath;
+
+    // load controller mappings
+    //initControllerMappings();
 
     // load effects
     initCommonEffects();

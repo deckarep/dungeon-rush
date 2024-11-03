@@ -36,6 +36,7 @@ const wp = @import("weapons.zig");
 const hlp = @import("helper.zig");
 const c = @import("cdefs.zig").c;
 const th = @import("throttler.zig");
+const ct = @import("controller.zig");
 const gAllocator = @import("alloc.zig").gAllocator;
 
 const SPIKE_ANI_DURATION = 20;
@@ -565,6 +566,9 @@ fn pauseGame() void {
     _ = c.SDL_RenderPresent(ren.renderer);
     tps.destroyText(text);
 
+    // Reset the controller coming into the event loop.
+    ct.controller.reset();
+
     var e: c.SDL_Event = undefined;
     var quit = false;
     while (!quit) {
@@ -572,6 +576,14 @@ fn pauseGame() void {
             if (e.type == c.SDL_QUIT or e.type == c.SDL_KEYDOWN) {
                 quit = true;
                 break;
+            } else {
+                ct.controller.poll(e);
+                defer ct.controller.reset();
+
+                if (ct.controller.states.Button.Start) {
+                    quit = true;
+                    break;
+                }
             }
         }
     }
@@ -1104,7 +1116,9 @@ fn clearItemMap() void {
     }
 }
 
-fn initItemMap(incomingHerosCount: c_int, incomingFlasksCount: c_int) void {
+/// initHeroAndItemMap creates however many heroes and/or power-up items every
+/// once and awhile.
+fn initHeroAndItemMap(incomingHerosCount: c_int, incomingFlasksCount: c_int) void {
     var hc = incomingHerosCount;
     var fc = incomingFlasksCount;
 
@@ -1769,7 +1783,7 @@ fn handleLocalKeypress() bool {
             while (id <= 1 and id < playersCount) : (id += 1) {
                 const player = spriteSnake[@intCast(id)].?;
                 if (player.playerType == .LOCAL) {
-                    if (player.buffs[tps.BUFF_FROZEN] == 0 and player.sprites.first != null) {
+                    if (player.buffs[tps.BUFF_FROZEN] <= 0 and player.sprites.first != null) {
                         const direction = if (id == 0) arrowsToDirection(keyValue) else wasdToDirection(keyValue);
                         if (direction) |dir| {
                             //sendPlayerMovePacket(id, direction); // TODO for networking.
@@ -1777,6 +1791,37 @@ fn handleLocalKeypress() bool {
                         }
                     }
                 }
+            }
+        } else {
+            ct.controller.poll(S.e);
+            defer ct.controller.reset();
+
+            const player = spriteSnake[0].?;
+            var shouldProcessAsPlayer0 = false;
+            if (player.playerType == .LOCAL) {
+                if (player.buffs[tps.BUFF_FROZEN] <= 0 and player.sprites.first != null) {
+                    shouldProcessAsPlayer0 = true;
+                }
+            }
+
+            if (ct.controller.states.DPad.Up and shouldProcessAsPlayer0) {
+                tps.changeSpriteDirection(player.sprites.first.?, .UP);
+            }
+
+            if (ct.controller.states.DPad.Down and shouldProcessAsPlayer0) {
+                tps.changeSpriteDirection(player.sprites.first.?, .DOWN);
+            }
+
+            if (ct.controller.states.DPad.Left and shouldProcessAsPlayer0) {
+                tps.changeSpriteDirection(player.sprites.first.?, .LEFT);
+            }
+
+            if (ct.controller.states.DPad.Right and shouldProcessAsPlayer0) {
+                tps.changeSpriteDirection(player.sprites.first.?, .RIGHT);
+            }
+
+            if (ct.controller.states.Button.Start) {
+                pauseGame();
             }
         }
     }
@@ -1819,7 +1864,7 @@ fn gameLoop() !GameStatus {
         }
 
         if (ren.renderFrames % GAME_MAP_RELOAD_PERIOD == 0) {
-            initItemMap(
+            initHeroAndItemMap(
                 herosSetting - herosCount,
                 flasksSetting - flasksCount,
             );

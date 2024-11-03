@@ -33,6 +33,7 @@ const spr = @import("sprite.zig");
 const mp = @import("map.zig");
 const c = @import("cdefs.zig").c;
 const th = @import("throttler.zig");
+const ct = @import("controller.zig");
 const gAllocator = @import("alloc.zig").gAllocator;
 
 const UI_MAIN_GAP = 40;
@@ -71,6 +72,28 @@ fn moveCursor(optsNum: c_int) bool {
                     return quit;
                 },
                 else => {},
+            }
+        } else {
+            ct.controller.poll(e);
+            defer ct.controller.reset();
+
+            if (ct.controller.states.DPad.Up) {
+                cursorPos -= 1;
+                aud.playAudio(res.AUDIO_INTER1);
+            }
+            if (ct.controller.states.DPad.Down) {
+                cursorPos += 1;
+                aud.playAudio(res.AUDIO_INTER1);
+            }
+            if (ct.controller.states.Button.Back) {
+                quit = true;
+                cursorPos = optsNum;
+                aud.playAudio(res.AUDIO_BUTTON1);
+                return quit;
+            }
+            if (ct.controller.states.Button.Start) {
+                quit = true;
+                break;
             }
         }
     }

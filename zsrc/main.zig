@@ -33,6 +33,8 @@ pub fn main() !void {
     var buff: [512]u8 = undefined;
     const exeDir = try std.fs.selfExeDirPath(&buff);
 
+    std.log.debug("SDL2 version: {d}.{d}.{d}", .{ c.SDL_MAJOR_VERSION, c.SDL_MINOR_VERSION, c.SDL_PATCHLEVEL });
+
     if (std.mem.indexOf(u8, exeDir, "zig-out") != null) {
         // When run like: zig build run we know it's ran from the cwd.
         try realMain("");
