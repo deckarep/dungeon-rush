@@ -137,7 +137,7 @@ fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) !c_int {
 
         // Wedge in Zig-Edition
         // by @deckarep text.
-        _ = ren.renderCenteredText(&res.texts[17], res.SCREEN_WIDTH / 2, 920, 1);
+        _ = ren.renderCenteredText(&res.texts[17], res.SCREEN_WIDTH / 2, 920 * res.SCREEN_FACTOR, 1);
 
         // Update Screen
         c.SDL_RenderPresent(ren.renderer);

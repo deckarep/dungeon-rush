@@ -34,6 +34,9 @@ const hlp = @import("helper.zig");
 const gAllocator = @import("alloc.zig").gAllocator;
 
 pub const ANIMATION_LINK_LIST_NUM = 16;
+
+/// NOTE: these render list act as layers where MAP_ID is drawn first.
+/// and UI_ID is drawn last (on top).
 pub const RENDER_LIST_MAP_ID = 0;
 pub const RENDER_LIST_MAP_SPECIAL_ID = 1;
 pub const RENDER_LIST_MAP_ITEMS_ID = 2;
@@ -42,6 +45,7 @@ pub const RENDER_LIST_SPRITE_ID = 4;
 pub const RENDER_LIST_EFFECT_ID = 5;
 pub const RENDER_LIST_MAP_FOREWALL = 6;
 pub const RENDER_LIST_UI_ID = 7;
+
 pub const RENDER_BUFFER_SIZE = 1 << 16;
 pub const RENDER_HP_BAR_HEIGHT = 3;
 pub const RENDER_HP_BAR_WIDTH = 20;
@@ -664,9 +668,62 @@ fn renderFps() void {
     _ = renderCenteredText(&res.texts[res.textList.len + fpsUsize], 300, 10, 1);
 }
 
+const star = struct {
+    speed: c_int,
+    scale: c_int,
+    frame: c_int,
+};
+
+const fieldSize = 1000;
+var starSpeeds: [fieldSize]star = undefined;
+var starPts: [fieldSize]c.SDL_Point = undefined;
+
+var starFieldInited: bool = false;
+
+fn renderStarField() void {
+    if (!starFieldInited) {
+        var initial_value: [fieldSize]star = undefined;
+        for (&initial_value, 0..) |*st, idx| {
+            st.* = star{
+                .speed = hlp.randInt(1, 2),
+                .scale = hlp.randInt(2, 3),
+                .frame = hlp.randInt(0, 5),
+            };
+            starPts[idx].x = hlp.randInt(0, res.SCREEN_WIDTH * res.SCREEN_FACTOR);
+            starPts[idx].y = hlp.randInt(0, res.SCREEN_WIDTH * res.SCREEN_FACTOR);
+        }
+        starSpeeds = initial_value;
+        starFieldInited = true;
+    }
+
+    // Draw star field.
+    for (&starPts, 0..) |*pt, idx| {
+        const txt = res.textures[176]; // Shine
+        const frame = starSpeeds[idx].frame;
+        const src: c.SDL_Rect = txt.crops[@intCast(frame)];
+        const dst: c.SDL_Rect = .{ .x = pt.x, .y = pt.y, .w = 32 * starSpeeds[idx].scale, .h = 32 * starSpeeds[idx].scale };
+
+        _ = c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        _ = c.SDL_RenderCopy(renderer, txt.origin, &src, &dst);
+
+        if (pt.x > (res.SCREEN_WIDTH * res.SCREEN_FACTOR)) {
+            pt.x = 0;
+        }
+
+        pt.x += starSpeeds[idx].speed;
+        if (hlp.randDouble() < 0.1) starSpeeds[idx].frame += 1;
+
+        if (starSpeeds[idx].frame > 5) {
+            starSpeeds[idx].frame = 0;
+        }
+    }
+}
+
 pub fn render() !void {
     _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
     _ = c.SDL_RenderClear(renderer);
+
+    renderStarField();
 
     for (0..ANIMATION_LINK_LIST_NUM) |i| {
         updateAnimationLinkList(&animationsList[i]);

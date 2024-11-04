@@ -220,6 +220,7 @@ pub const SPRITE_GREEN_HOOD_SKEL = 21;
 // Audio
 pub const AUDIO_BGM_SIZE = 16;
 pub const AUDIO_SOUND_SIZE = 256;
+
 pub const AUDIO_WIN = 0;
 pub const AUDIO_LOSE = 1;
 pub const AUDIO_POWERLOSS = 2;
@@ -260,8 +261,11 @@ pub const AUDIO_BOW_HIT = 35;
 // End Resource ID
 
 pub const UNIT = 32;
-pub const SCREEN_WIDTH = 1440;
-pub const SCREEN_HEIGHT = 960;
+
+// Suprisingly, the game works just as well when the SCREEN_WIDTH/HEIGHT are multiplied by 2.
+pub const SCREEN_FACTOR = 2;
+pub const SCREEN_WIDTH = 1440 * SCREEN_FACTOR;
+pub const SCREEN_HEIGHT = 960 * SCREEN_FACTOR;
 pub const n = SCREEN_WIDTH / UNIT;
 pub const m = SCREEN_HEIGHT / UNIT;
 

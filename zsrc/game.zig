@@ -1175,7 +1175,8 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) !void {
     }
     try ren.initInfo();
     // create map
-    mp.initRandomMap(0.7, 7, GAME_TRAP_RATE);
+    //mp.initRandomMap(0.7, 7, GAME_TRAP_RATE); // Original
+    mp.initRandomMap(0.6, 3, GAME_TRAP_RATE);
 
     clearItemMap();
 
