@@ -198,7 +198,7 @@ pub fn mainUi() !void {
     aud.playBgm(0);
 
     var startY: c_int = (res.SCREEN_HEIGHT / 2) - 70;
-    var startX: c_int = (res.SCREEN_WIDTH / 5) + 32;
+    var startX: c_int = (res.SCREEN_WIDTH / 3) + 125;
 
     // Title - Logo
     _ = ren.createAndPushAnimation(
@@ -208,7 +208,7 @@ pub fn mainUi() !void {
         .LOOP_INFI,
         80,
         res.SCREEN_WIDTH / 2,
-        280,
+        (res.SCREEN_HEIGHT / 2) - 275,
         c.SDL_FLIP_NONE,
         0,
         .AT_CENTER,

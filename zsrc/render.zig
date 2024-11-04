@@ -668,54 +668,51 @@ fn renderFps() void {
     _ = renderCenteredText(&res.texts[res.textList.len + fpsUsize], 300, 10, 1);
 }
 
-const star = struct {
-    speed: c_int,
-    scale: c_int,
-    frame: c_int,
-};
-
-const fieldSize = 1000;
-var starSpeeds: [fieldSize]star = undefined;
-var starPts: [fieldSize]c.SDL_Point = undefined;
+const starFieldScale = 2;
+const scaledWidth = 320 * starFieldScale; // 320 is the hardcoded size of the starfield asset.
+const rows = res.SCREEN_HEIGHT / scaledWidth;
+const cols = (res.SCREEN_WIDTH / scaledWidth) + 3;
+const total = rows * cols;
+var starPts: [total]c.SDL_Point = undefined;
 
 var starFieldInited: bool = false;
-
 fn renderStarField() void {
     if (!starFieldInited) {
-        var initial_value: [fieldSize]star = undefined;
-        for (&initial_value, 0..) |*st, idx| {
-            st.* = star{
-                .speed = hlp.randInt(1, 2),
-                .scale = hlp.randInt(2, 3),
-                .frame = hlp.randInt(0, 5),
-            };
-            starPts[idx].x = hlp.randInt(0, res.SCREEN_WIDTH * res.SCREEN_FACTOR);
-            starPts[idx].y = hlp.randInt(0, res.SCREEN_WIDTH * res.SCREEN_FACTOR);
+        // Init the starfield x,y locations once.
+        var index: usize = 0;
+
+        var row: usize = 0;
+        while (row < rows) : (row += 1) {
+            var col: usize = 0;
+            while (col < cols) : (col += 1) {
+                starPts[index].x = (@as(c_int, @intCast(col)) * scaledWidth) - scaledWidth;
+                starPts[index].y = @as(c_int, @intCast(row)) * scaledWidth;
+                index += 1;
+            }
         }
-        starSpeeds = initial_value;
+
         starFieldInited = true;
     }
 
     // Draw star field.
-    for (&starPts, 0..) |*pt, idx| {
-        const txt = res.textures[176]; // Shine
-        const frame = starSpeeds[idx].frame;
-        const src: c.SDL_Rect = txt.crops[@intCast(frame)];
-        const dst: c.SDL_Rect = .{ .x = pt.x, .y = pt.y, .w = 32 * starSpeeds[idx].scale, .h = 32 * starSpeeds[idx].scale };
+    for (&starPts) |*pt| {
+        const txt = res.textures[res.RES_STAR_FIELD];
+        const src: c.SDL_Rect = txt.crops[0];
+        const dst: c.SDL_Rect = .{
+            .x = pt.x,
+            .y = pt.y,
+            .w = scaledWidth,
+            .h = scaledWidth,
+        };
 
         _ = c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         _ = c.SDL_RenderCopy(renderer, txt.origin, &src, &dst);
 
-        if (pt.x > (res.SCREEN_WIDTH * res.SCREEN_FACTOR)) {
-            pt.x = 0;
+        if (pt.x > (res.SCREEN_WIDTH)) {
+            pt.x = -scaledWidth;
         }
 
-        pt.x += starSpeeds[idx].speed;
-        if (hlp.randDouble() < 0.1) starSpeeds[idx].frame += 1;
-
-        if (starSpeeds[idx].frame > 5) {
-            starSpeeds[idx].frame = 0;
-        }
+        pt.x += 1;
     }
 }
 

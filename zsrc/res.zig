@@ -141,51 +141,7 @@ pub const RES_THUNDER_YELLOW = 207;
 pub const RES_ATTACK_UP = 208;
 pub const RES_POWERFUL_BOW = 209;
 pub const RES_PURPLE_FIRE_BALL = 210;
-
-// pub const RES_HALO_EXPLOSION1 = 163;
-// pub const RES_HALO_EXPLOSION2 = 164;
-// pub const RES_FIREBALL = 165;
-// pub const RES_FLOOR_SPIKE_DISABLED = 166;
-// pub const RES_FLOOR_SPIKE_ENABLED = 167;
-// pub const RES_FLOOR_SPIKE_OUT_ANI = 168;
-// pub const RES_FLOOR_SPIKE_IN_ANI = 169;
-// pub const RES_FLOOR_EXIT = 170;
-// pub const RES_HP_MED = 171;
-// pub const RES_SwordFx = 172;
-// pub const RES_CLAWFX = 173;
-// pub const RES_Shine = 174;
-// pub const RES_Thunder = 175;
-// pub const RES_BLOOD_BOUND = 176;
-// pub const RES_ARROW = 177;
-// pub const RES_EXPOLSTION2 = 178;
-// pub const RES_CLAWFX2 = 179;
-// pub const RES_AXE = 180;
-// pub const RES_CROSS_HIT = 181;
-// pub const RES_BLOOD1 = 182;
-// pub const RES_BLOOD4 = 185;
-// pub const RES_SOLIDFX = 186;
-// pub const RES_SOLID_GREENFX = 187;
-// pub const RES_ICEPICK = 188;
-// pub const RES_ICESHATTER = 189;
-// pub const RES_ICE = 190;
-// pub const RES_HOLY_SWORD = 191;
-// pub const RES_FIRE_SWORD = 192;
-// pub const RES_ICE_SWORD = 193;
-// pub const RES_GRASS_SWORD = 194;
-// pub const RES_IRON_SWORD = 195;
-// pub const RES_HOLY_SHIELD = 196;
-// pub const RES_GOLDEN_CROSS_HIT = 197;
-// pub const RES_SLIDER = 198;
-// pub const RES_BAR_BLUE = 199;
-// pub const RES_TITLE = 200;
-// pub const RES_PURPLE_BALL = 201;
-// pub const RES_PURPLE_EXP = 202;
-// pub const RES_PURPLE_STAFF = 203;
-// pub const RES_THUNDER_STAFF = 204;
-// pub const RES_THUNDER_YELLOW = 205;
-// pub const RES_ATTACK_UP = 206;
-// pub const RES_POWERFUL_BOW = 207;
-// pub const RES_PURPLE_FIRE_BALL = 208;
+pub const RES_STAR_FIELD = 211;
 
 // Effect
 pub const EFFECT_DEATH = 0;
@@ -320,6 +276,7 @@ const tilesetPath = &[_][]const u8{
     "res/drawable/attack_up",
     "res/drawable/powerful_bow",
     "res/drawable/purple_fire_ball",
+    "res/drawable/starfield",
 };
 
 pub const textList = &[_][*:0]const u8{
