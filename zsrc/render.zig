@@ -563,6 +563,7 @@ fn updateAnimationLinkList(list: *ll.GenericLL) void {
                 ani.currentFrame = @mod(ani.currentFrame, ani.duration);
             }
         }
+
         p = nxt;
     }
 }
@@ -643,8 +644,8 @@ fn renderInfo() void {
         const strResult = std.fmt.bufPrintZ(
             &buf,
             "Find {d} more heroes!",
-            .{if (gm.GAME_WIN_NUM > gm.spriteSnake[0].?.num)
-                gm.GAME_WIN_NUM - gm.spriteSnake[0].?.num
+            .{if (gm.GAME_WIN_NUM > gm.spriteSnake[0].?.num())
+                gm.GAME_WIN_NUM - gm.spriteSnake[0].?.num()
             else
                 0},
         ) catch unreachable;

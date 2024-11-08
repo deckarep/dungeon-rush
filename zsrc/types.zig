@@ -459,7 +459,7 @@ pub fn changeSpriteDirection(self: *ll.GenericNode, newDirection: Direction) voi
             .y = sprite.y,
             .direction = sprite.direction,
         };
-        spr.pushToPositionBuffer(&nextSprite.posBuffer, slot);
+        spr.pushToPositionBuffer(&nextSprite.posQueue, slot);
     }
 }
 

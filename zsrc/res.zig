@@ -307,6 +307,8 @@ pub const bgmsPath = &[_][]const u8{
     "res/audio/bg2.ogg",
     "res/audio/bg3.ogg",
 };
+
+// More: https://microstudio.dev/community/resources/essential-retro-video-game-sound-effects-collection-512-sounds/181/
 const soundfxList = &[_][]const u8{
     // r.c.: Moved to a static embedded list cause I don't want to do file-io right now.
     "win.wav",
@@ -607,7 +609,13 @@ pub fn loadAudio() !bool {
     return true;
 }
 
+/// r.c. I created this function because I couldn't get my USB Buffalo gamepad to work
+/// it turns out I didn't need all this crap, just needed a single custom mapping added.
+/// There still seems to be some kind of SDL or MacOS bug prevening this gamepad from
+/// working correctly, so the mapping is added in controller.zig.
+/// Leaving this here for future reference should I need to support more controllers.
 pub fn initControllerMappings() void {
+    std.log.debug("initControllerMappings currently not implemented...", .{});
     //if (true) return;
     //const mappingResult = c.SDL_GameControllerAddMappingsFromFile("res/controllers/gamecontrollerdb.txt");
     // const mappingResult = c.SDL_GameControllerAddMappingsFromRW(c.SDL_RWFromFile("res/controller/gamecontrollerdb.txt", "rb"), 1);
@@ -637,7 +645,7 @@ pub fn loadMedia(exePath: []const u8) !bool {
     rootPath = exePath;
 
     // load controller mappings
-    //initControllerMappings();
+    initControllerMappings();
 
     // load effects
     initCommonEffects();
@@ -790,6 +798,7 @@ fn initCommonSprite(sprite: *spr.Sprite, weapon: *wp.Weapon, res_id: c_int, hp: 
         .direction = .RIGHT,
         .lastAttack = 0,
         .dropRate = 1,
+        .posQueue = spr.PositionBufferQueue.init(),
     };
 
     commonSpriteCounter += 1;

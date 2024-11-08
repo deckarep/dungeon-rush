@@ -30,7 +30,8 @@ const BGM_FADE_DURATION = 800;
 var nowBgmId: ?usize = null;
 
 pub fn playBgm(id: usize) void {
-    if (id == nowBgmId) {
+    // NOTE: temporary disabling music, as it's getting old.
+    if (true or id == nowBgmId) {
         return;
     }
 

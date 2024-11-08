@@ -20,14 +20,14 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
   * 8-bit style music and many sound sfx
 
 ## How to play
-* Each round starts with a random hero in the middle
-* Move the arrow keys: up, down, left, right to control your character
+* Each round starts with a random hero in the middle of the dungeon
+* Move the arrow keys: `up`, `down`, `left`, `right` to control your character
 * Make your party stronger by collecting more heroes
-* Collect weapon and loot drops to become more powerful and heal up
-* Don't run into walls, bad guys or yourself
-* Your heroes will intelligently attack nearby enemies
-* To advance to the next round, you must collect a certain amount of heros
-* Be careful of giant bosses, they are very strong
+* Collect weapon and loot drops to become more powerful and heal your party
+* Don't run into walls, bad guys or yourself or you will 💀
+* Your heroes will intelligently attack nearby enemies when they are near
+* To advance to the next round, you must collect a certain amount of heroes
+* Be careful of giant bosses, they can be very powerful
 
 ## Port Goals
 * To re-create a moderately complex game, fully in Zig and to get better at the language.
@@ -40,7 +40,7 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
   1. Phase 1: port the C code almost as-is to minimize bugs introduced
       * ✅ Deprecate usage of `c.malloc`/`c.free` in all cases
       * ✅ Deprecate use of `c.qsort` with a `callconv(.C)` callback in favor of Zig's sorting
-      * Deprecate all [*c] style pointers
+      * ✅ Deprecate all [*c] style pointers
       * ✅ Deprecate C-style multi-pointers
       * Find and improve `const` correctness where applicable
   2. Phase 2: Ziggify
@@ -50,7 +50,7 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
       * Utilize `defer`/`errdefer` for effective cleanup
       * Migrate to a Zig-based SDL wrapper, for a nicer SDL experience
       * Ensure all errors are accounted for, utilize `try`
-      * Use build.zig.zon
+      * Use `build.zig.zon` file for any dependencies
       * ✅ Setup Github to build the project regularly
   3. Phase 3: Code Clean-up/Refactor
       * ✅ Gamepad controller support added
@@ -58,15 +58,14 @@ This is a near exact **Zig port** of the [original DungeonRush `C-based`](https:
       * Make code even more idiomatic for Zig
       * Make the code more maintainable
       * Use less globals
-      * Fix namespace issues
       * Remove redundant naming like some enumerations have their container name as the prefix
       * ✅ Use some Zig based collections like the `generic` LinkList over the original C ADT style
-      * Bonus: Introduce unit-tests
       * Get building for other OSes (w/ community contributions)
       * Migrate hardcoded textures, music + sound sfx out of the source code and into config files
         * This will allow the game to be easily skinned, for a whole new experience.
   4. Phase 4: ???
       * I'd love to port this to Raylib.
+      * Bonus: Introduce unit-tests
 
 ## More baddies?
   * [pixel-sprite-mixer](https://kingbell.itch.io/pixel-sprite-mixer)
@@ -104,5 +103,7 @@ dumb shit like that.
   * This would make the game a little more interesting because you can pick up cerrtain heroes
   as part of the strategy to help you cope with the certain level.
 * Introduce themed levels, like a frost level where most or all baddies are cold-based.
-* Introduce upgrades along the way, pick up treason, loot upgrade your heroes.
-* Gamepad support, it might be fun to not always use the damn keyboard.
+* Introduce upgrades along the way, loot upgrade your heroes.
+* ✅ Gamepad support, it might be fun to not always use the damn keyboard.
+* Weather effects, snow, rain, wind, fog-of-war, etc.
+* Show temporary animated scores when certain events occur like picking up loot

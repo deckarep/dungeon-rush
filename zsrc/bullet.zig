@@ -71,7 +71,7 @@ pub const Bullet = struct {
         self.ani.y = self.y;
     }
 
-    pub fn deinit(self: *Bullet) void {
+    pub fn deinit(self: *const Bullet) void {
         gAllocator.destroy(self);
     }
 };
