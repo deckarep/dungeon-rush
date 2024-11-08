@@ -2,7 +2,7 @@
 
 ![](screenshot.gif)
 
-<img src ="gameplay.png" width="1080" height="740"/>
+![](gameplay.png)
 
 This is a near exact **Zig port** of the [original DungeonRush `C-based`](https://github.com/rapiz1/DungeonRush) rogue-like game running on SDL2 originally developed by @rapiz1.
 
