@@ -479,7 +479,7 @@ pub fn renderAnimation(a: ?*tps.Animation) void {
     // When left-shift key is held down (eXtreme Developer Mode)
     // Show the various debug bounding boxes of the sprites.
     const state = c.SDL_GetKeyboardState(null);
-    if (state[c.SDL_SCANCODE_LSHIFT] > 0) {
+    if (state[c.SDL_SCANCODE_SPACE] > 0) {
         if (ani.at == .AT_BOTTOM_CENTER) {
             var tmp: c.SDL_Rect = undefined;
             var fake: spr.Sprite = undefined;
