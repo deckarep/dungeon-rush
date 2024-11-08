@@ -35,11 +35,6 @@ pub const PositionBufferSlot = struct {
     direction: tps.Direction,
 };
 
-pub const PositionBuffer = struct {
-    buffer: [tps.POSITION_BUFFER_SIZE]PositionBufferSlot,
-    size: usize,
-};
-
 pub const PositionBufferQueue = baq.BoundedArrayQueue(
     PositionBufferSlot,
     tps.POSITION_BUFFER_SIZE,
@@ -63,7 +58,7 @@ pub const Sprite = struct {
     dropRate: f64,
 };
 
-pub fn pushToPositionBuffer(q: *PositionBufferQueue, slot: PositionBufferSlot) void {
+pub inline fn pushToPositionBuffer(q: *PositionBufferQueue, slot: PositionBufferSlot) void {
     q.enqueue(slot);
 }
 
