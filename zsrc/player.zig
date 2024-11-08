@@ -37,8 +37,12 @@ pub const Snake = struct {
     sprites: *ll.GenericLL,
     moveStep: c_int,
     team: c_int,
+    // NOTE: r.c. - changed to be a getter method, cleaner and simpler.
+    // Additionally, the Zig linked-list has a count built-in so it's tracked
+    // for free!
+
     // num is how many sprites (heroes or baddies) form the snake.
-    num: c_int,
+    // num: c_int,
     buffs: [tps.BUFF_END]c_int, // r.c. - verified these should stay integers
     score: *tps.Score,
     playerType: PlayerType,
@@ -71,12 +75,20 @@ pub const Snake = struct {
         // std.log.info("destroySnake: Freeing snake at address: {*}", .{snake});
         gAllocator.destroy(self);
     }
+
+    /// This returns the number of sprites that are part of the player (snake).
+    /// Original Comment: num is how many sprites (heroes or baddies) form the snake.
+    pub fn num(self: *const Self) c_int {
+        // NOTE: should be a usize, but it will require too much casting
+        // for now, I'll leave as a c_int until I migrate away from c_int.
+        return @intCast(self.sprites.len);
+    }
 };
 
 pub fn initSnake(snake: *Snake, step: c_int, team: c_int, playerType: PlayerType) void {
     snake.moveStep = step;
     snake.team = team;
-    snake.num = 0;
+    //snake.num = 0;
     @memset(snake.buffs[0..], 0);
     snake.sprites = tps.createLinkList();
     snake.score = tps.createScore();

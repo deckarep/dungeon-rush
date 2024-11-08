@@ -141,51 +141,7 @@ pub const RES_THUNDER_YELLOW = 207;
 pub const RES_ATTACK_UP = 208;
 pub const RES_POWERFUL_BOW = 209;
 pub const RES_PURPLE_FIRE_BALL = 210;
-
-// pub const RES_HALO_EXPLOSION1 = 163;
-// pub const RES_HALO_EXPLOSION2 = 164;
-// pub const RES_FIREBALL = 165;
-// pub const RES_FLOOR_SPIKE_DISABLED = 166;
-// pub const RES_FLOOR_SPIKE_ENABLED = 167;
-// pub const RES_FLOOR_SPIKE_OUT_ANI = 168;
-// pub const RES_FLOOR_SPIKE_IN_ANI = 169;
-// pub const RES_FLOOR_EXIT = 170;
-// pub const RES_HP_MED = 171;
-// pub const RES_SwordFx = 172;
-// pub const RES_CLAWFX = 173;
-// pub const RES_Shine = 174;
-// pub const RES_Thunder = 175;
-// pub const RES_BLOOD_BOUND = 176;
-// pub const RES_ARROW = 177;
-// pub const RES_EXPOLSTION2 = 178;
-// pub const RES_CLAWFX2 = 179;
-// pub const RES_AXE = 180;
-// pub const RES_CROSS_HIT = 181;
-// pub const RES_BLOOD1 = 182;
-// pub const RES_BLOOD4 = 185;
-// pub const RES_SOLIDFX = 186;
-// pub const RES_SOLID_GREENFX = 187;
-// pub const RES_ICEPICK = 188;
-// pub const RES_ICESHATTER = 189;
-// pub const RES_ICE = 190;
-// pub const RES_HOLY_SWORD = 191;
-// pub const RES_FIRE_SWORD = 192;
-// pub const RES_ICE_SWORD = 193;
-// pub const RES_GRASS_SWORD = 194;
-// pub const RES_IRON_SWORD = 195;
-// pub const RES_HOLY_SHIELD = 196;
-// pub const RES_GOLDEN_CROSS_HIT = 197;
-// pub const RES_SLIDER = 198;
-// pub const RES_BAR_BLUE = 199;
-// pub const RES_TITLE = 200;
-// pub const RES_PURPLE_BALL = 201;
-// pub const RES_PURPLE_EXP = 202;
-// pub const RES_PURPLE_STAFF = 203;
-// pub const RES_THUNDER_STAFF = 204;
-// pub const RES_THUNDER_YELLOW = 205;
-// pub const RES_ATTACK_UP = 206;
-// pub const RES_POWERFUL_BOW = 207;
-// pub const RES_PURPLE_FIRE_BALL = 208;
+pub const RES_STAR_FIELD = 211;
 
 // Effect
 pub const EFFECT_DEATH = 0;
@@ -220,6 +176,7 @@ pub const SPRITE_GREEN_HOOD_SKEL = 21;
 // Audio
 pub const AUDIO_BGM_SIZE = 16;
 pub const AUDIO_SOUND_SIZE = 256;
+
 pub const AUDIO_WIN = 0;
 pub const AUDIO_LOSE = 1;
 pub const AUDIO_POWERLOSS = 2;
@@ -260,8 +217,11 @@ pub const AUDIO_BOW_HIT = 35;
 // End Resource ID
 
 pub const UNIT = 32;
-pub const SCREEN_WIDTH = 1440;
-pub const SCREEN_HEIGHT = 960;
+
+// Suprisingly, the game works just as well when the SCREEN_WIDTH/HEIGHT are multiplied by 2.
+pub const SCREEN_FACTOR = 2;
+pub const SCREEN_WIDTH = 1440 * SCREEN_FACTOR;
+pub const SCREEN_HEIGHT = 960 * SCREEN_FACTOR;
 pub const n = SCREEN_WIDTH / UNIT;
 pub const m = SCREEN_HEIGHT / UNIT;
 
@@ -316,6 +276,7 @@ const tilesetPath = &[_][]const u8{
     "res/drawable/attack_up",
     "res/drawable/powerful_bow",
     "res/drawable/purple_fire_ball",
+    "res/drawable/starfield",
 };
 
 pub const textList = &[_][*:0]const u8{
@@ -346,6 +307,8 @@ pub const bgmsPath = &[_][]const u8{
     "res/audio/bg2.ogg",
     "res/audio/bg3.ogg",
 };
+
+// More: https://microstudio.dev/community/resources/essential-retro-video-game-sound-effects-collection-512-sounds/181/
 const soundfxList = &[_][]const u8{
     // r.c.: Moved to a static embedded list cause I don't want to do file-io right now.
     "win.wav",
@@ -646,7 +609,13 @@ pub fn loadAudio() !bool {
     return true;
 }
 
+/// r.c. I created this function because I couldn't get my USB Buffalo gamepad to work
+/// it turns out I didn't need all this crap, just needed a single custom mapping added.
+/// There still seems to be some kind of SDL or MacOS bug prevening this gamepad from
+/// working correctly, so the mapping is added in controller.zig.
+/// Leaving this here for future reference should I need to support more controllers.
 pub fn initControllerMappings() void {
+    std.log.debug("initControllerMappings currently not implemented...", .{});
     //if (true) return;
     //const mappingResult = c.SDL_GameControllerAddMappingsFromFile("res/controllers/gamecontrollerdb.txt");
     // const mappingResult = c.SDL_GameControllerAddMappingsFromRW(c.SDL_RWFromFile("res/controller/gamecontrollerdb.txt", "rb"), 1);
@@ -676,7 +645,7 @@ pub fn loadMedia(exePath: []const u8) !bool {
     rootPath = exePath;
 
     // load controller mappings
-    //initControllerMappings();
+    initControllerMappings();
 
     // load effects
     initCommonEffects();
@@ -829,6 +798,7 @@ fn initCommonSprite(sprite: *spr.Sprite, weapon: *wp.Weapon, res_id: c_int, hp: 
         .direction = .RIGHT,
         .lastAttack = 0,
         .dropRate = 1,
+        .posQueue = spr.PositionBufferQueue.init(),
     };
 
     commonSpriteCounter += 1;

@@ -137,7 +137,7 @@ fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) !c_int {
 
         // Wedge in Zig-Edition
         // by @deckarep text.
-        _ = ren.renderCenteredText(&res.texts[17], res.SCREEN_WIDTH / 2, 920, 1);
+        _ = ren.renderCenteredText(&res.texts[17], res.SCREEN_WIDTH / 2, 920 * res.SCREEN_FACTOR, 1);
 
         // Update Screen
         c.SDL_RenderPresent(ren.renderer);
@@ -198,7 +198,7 @@ pub fn mainUi() !void {
     aud.playBgm(0);
 
     var startY: c_int = (res.SCREEN_HEIGHT / 2) - 70;
-    var startX: c_int = (res.SCREEN_WIDTH / 5) + 32;
+    var startX: c_int = (res.SCREEN_WIDTH / 3) + 125;
 
     // Title - Logo
     _ = ren.createAndPushAnimation(
@@ -208,7 +208,7 @@ pub fn mainUi() !void {
         .LOOP_INFI,
         80,
         res.SCREEN_WIDTH / 2,
-        280,
+        (res.SCREEN_HEIGHT / 2) - 275,
         c.SDL_FLIP_NONE,
         0,
         .AT_CENTER,

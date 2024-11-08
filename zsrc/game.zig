@@ -173,7 +173,7 @@ pub fn appendSpriteToSnake(
     y: c_int,
     direction: tps.Direction,
 ) void {
-    snake.num += 1;
+    //snake.num += 1;
     snake.score.got += 1;
     var newX = x;
     var newY = y;
@@ -531,7 +531,7 @@ fn makeSnakeAttack(snake: *pl.Snake) void {
 
 fn isWin() bool {
     if (playersCount != 1) return false;
-    return spriteSnake[0].?.num >= GAME_WIN_NUM;
+    return spriteSnake[0].?.num() >= GAME_WIN_NUM;
 }
 
 const GameStatus = enum {
@@ -1175,7 +1175,8 @@ fn initGame(localPlayers: c_int, remotePlayers: c_int, localFirst: bool) !void {
     }
     try ren.initInfo();
     // create map
-    mp.initRandomMap(0.7, 7, GAME_TRAP_RATE);
+    //mp.initRandomMap(0.7, 7, GAME_TRAP_RATE); // Original
+    mp.initRandomMap(0.6, 3, GAME_TRAP_RATE);
 
     clearItemMap();
 
@@ -1489,7 +1490,6 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                 // So it goes from: {character-type}_run_anim -> {character-type}_hit_anim
                 // NOTE: Only some characters have the _hit_anim
                 var deathPtr: usize = @intFromPtr(sprite.ani.origin);
-
                 if (isPlayer(snake)) deathPtr += (@sizeOf(tps.Texture) * 1);
 
                 dropItem(sprite);
@@ -1543,7 +1543,7 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                 ren.clearBindInAnimationsList(sprite, ren.RENDER_LIST_SPRITE_ID);
                 tps.removeAnimationFromLinkList(&ren.animationsList[ren.RENDER_LIST_SPRITE_ID], sprite.ani);
                 //sprite.ani = null;
-                snake.num -= 1;
+                //snake.num -= 1;
             }
         }
     }
@@ -1567,7 +1567,8 @@ fn makeSnakeCross(snake: *pl.Snake) bool {
                     const currSprite: *spr.Sprite = @alignCast(@ptrCast(q.?.data));
                     currSprite.direction = prevSprite.direction;
                     currSprite.face = prevSprite.face;
-                    currSprite.posBuffer = prevSprite.posBuffer;
+                    //currSprite.posBuffer = prevSprite.posBuffer;
+                    currSprite.posQueue = prevSprite.posQueue;
                     currSprite.x = prevSprite.x;
                     currSprite.y = prevSprite.y;
                 }
@@ -1746,17 +1747,15 @@ fn moveSnake(snake: *pl.Snake) void {
         const sprite: *spr.Sprite = @ptrCast(@alignCast(node.data));
 
         for (0..@intCast(step)) |_| {
-            const b = &sprite.posBuffer;
-            var firstSlot = b.buffer[0];
+            const b = &sprite.posQueue;
+            var firstSlot = b.peek();
 
-            while (b.size > 0 and sprite.x == firstSlot.x and sprite.y == firstSlot.y) {
-                tps.changeSpriteDirection(node, firstSlot.direction);
-                b.size -= 1;
-                for (0..@intCast(b.size)) |i| {
-                    b.buffer[i] = b.buffer[i + 1];
-                }
-                firstSlot = b.buffer[0];
+            while (firstSlot != null and b.count > 0 and sprite.x == firstSlot.?.x and sprite.y == firstSlot.?.y) {
+                tps.changeSpriteDirection(node, firstSlot.?.direction);
+                _ = b.dequeue();
+                firstSlot = b.peek();
             }
+
             moveSprite(sprite, 1);
         }
     }
@@ -1890,7 +1889,7 @@ fn gameLoop() !GameStatus {
             // Cull snakes that have no more soldiers.
             var i: usize = @intCast(playersCount);
             while (i < spritesCount) : (i += 1) {
-                if (spriteSnake[i].?.num == 0) {
+                if (spriteSnake[i].?.num() == 0) {
                     destroySnake(spriteSnake[i].?);
                     spriteSnake[i] = null;
                     var j = i;

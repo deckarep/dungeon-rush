@@ -25,6 +25,7 @@ const std = @import("std");
 const tps = @import("types.zig");
 const wp = @import("weapons.zig");
 const ren = @import("render.zig");
+const baq = @import("boundedarrayqueue.zig");
 const c = @import("cdefs.zig").c;
 const gAllocator = @import("alloc.zig").gAllocator;
 
@@ -39,6 +40,11 @@ pub const PositionBuffer = struct {
     size: usize,
 };
 
+pub const PositionBufferQueue = baq.BoundedArrayQueue(
+    PositionBufferSlot,
+    tps.POSITION_BUFFER_SIZE,
+);
+
 pub const Sprite = struct {
     x: c_int,
     y: c_int,
@@ -50,17 +56,15 @@ pub const Sprite = struct {
     face: tps.Direction,
     direction: tps.Direction,
 
-    posBuffer: PositionBuffer = undefined,
+    posQueue: PositionBufferQueue = PositionBufferQueue.init(),
 
     // Timestamp of the last attack
     lastAttack: c_int,
     dropRate: f64,
 };
 
-pub fn pushToPositionBuffer(b: *PositionBuffer, slot: PositionBufferSlot) void {
-    std.debug.assert(b.size < tps.POSITION_BUFFER_SIZE);
-    b.buffer[b.size] = slot;
-    b.size += 1;
+pub fn pushToPositionBuffer(q: *PositionBufferQueue, slot: PositionBufferSlot) void {
+    q.enqueue(slot);
 }
 
 pub fn initSprite(model: *const Sprite, self: *Sprite, x: c_int, y: c_int) void {
@@ -70,7 +74,7 @@ pub fn initSprite(model: *const Sprite, self: *Sprite, x: c_int, y: c_int) void 
 
     self.x = x;
     self.y = y;
-    self.posBuffer.size = 0;
+    self.posQueue = PositionBufferQueue.init();
 
     const ani = gAllocator.create(tps.Animation) catch unreachable;
     tps.copyAnimation(model.ani, ani);

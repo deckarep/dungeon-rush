@@ -30,7 +30,8 @@ const BGM_FADE_DURATION = 800;
 var nowBgmId: ?usize = null;
 
 pub fn playBgm(id: usize) void {
-    if (id == nowBgmId) {
+    // NOTE: temporary disabling music, as it's getting old.
+    if (true or id == nowBgmId) {
         return;
     }
 
@@ -48,6 +49,8 @@ pub fn stopBgm() void {
     nowBgmId = null;
 }
 
+/// randomBgm selects a random background music track from 1.. because track
+/// 0 is reserved for the game menu.
 pub fn randomBgm() void {
     const r: usize = @intCast(hlp.randInt(1, res.bgmsPath.len - 1));
     playBgm(r);

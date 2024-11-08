@@ -74,7 +74,7 @@ pub fn getPowerfulPlayer() c_int {
     var id: c_int = -1;
 
     for (0..@intCast(gm.playersCount)) |i| {
-        const num = gm.spriteSnake[i].?.num;
+        const num = gm.spriteSnake[i].?.num();
         if (num > maxNum) {
             maxNum = num;
             mxCount = 1;
@@ -85,7 +85,7 @@ pub fn getPowerfulPlayer() c_int {
     }
 
     if (id != -1 and mxCount == 1) {
-        if (@as(f64, @floatFromInt(gm.spriteSnake[@intCast(id)].?.num)) >= AI_LOCK_LIMIT) {
+        if (@as(f64, @floatFromInt(gm.spriteSnake[@intCast(id)].?.num())) >= AI_LOCK_LIMIT) {
             return id;
         } else {
             return -1;

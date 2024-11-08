@@ -11,6 +11,20 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    //exe.linkSystemLibrary("objc");
+    // exe.linkFramework("Cocoa");
+    // exe.linkFramework("CoreAudio");
+    // exe.linkFramework("Carbon");
+    // exe.linkFramework("Metal");
+    // exe.linkFramework("QuartzCore");
+    // exe.linkFramework("AudioToolbox");
+    // exe.linkFramework("ForceFeedback");
+    // exe.linkFramework("GameController");
+    // exe.linkFramework("CoreHaptics");
+    // exe.linkFramework("IOKit");
+
+    // exe.linkSystemLibrary("iconv");
+
     // Link SDL2 and friends.
     exe.linkSystemLibrary("SDL2");
     exe.linkSystemLibrary("SDL2_mixer");
@@ -18,7 +32,20 @@ pub fn build(b: *std.Build) void {
     exe.linkSystemLibrary("SDL2_ttf");
     exe.linkSystemLibrary("SDL2_net");
 
+    // exe.linkSystemLibrary2("SDL2", .{ .preferred_link_mode = .static });
+    // exe.linkSystemLibrary2("SDL2_mixer", .{ .preferred_link_mode = .static });
+    // exe.linkSystemLibrary2("SDL2_image", .{ .preferred_link_mode = .static });
+    // exe.linkSystemLibrary2("SDL2_ttf", .{ .preferred_link_mode = .static });
+    // exe.linkSystemLibrary2("SDL2_net", .{ .preferred_link_mode = .static });
+
+    // exe.linkSystemLibrary("freetype");
+    // exe.linkSystemLibrary("harfbuzz");
+    // exe.linkSystemLibrary("bz2");
+    // exe.linkSystemLibrary("zlib");
+    // exe.linkSystemLibrary("graphite2");
+
     // Link C
+    //exe.linkSystemLibrary2("c", .{ .preferred_link_mode = .static });
     exe.linkSystemLibrary("c");
 
     // This declares intent for the executable to be installed into the

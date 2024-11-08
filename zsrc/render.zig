@@ -34,6 +34,9 @@ const hlp = @import("helper.zig");
 const gAllocator = @import("alloc.zig").gAllocator;
 
 pub const ANIMATION_LINK_LIST_NUM = 16;
+
+/// NOTE: these render list act as layers where MAP_ID is drawn first.
+/// and UI_ID is drawn last (on top).
 pub const RENDER_LIST_MAP_ID = 0;
 pub const RENDER_LIST_MAP_SPECIAL_ID = 1;
 pub const RENDER_LIST_MAP_ITEMS_ID = 2;
@@ -42,6 +45,7 @@ pub const RENDER_LIST_SPRITE_ID = 4;
 pub const RENDER_LIST_EFFECT_ID = 5;
 pub const RENDER_LIST_MAP_FOREWALL = 6;
 pub const RENDER_LIST_UI_ID = 7;
+
 pub const RENDER_BUFFER_SIZE = 1 << 16;
 pub const RENDER_HP_BAR_HEIGHT = 3;
 pub const RENDER_HP_BAR_WIDTH = 20;
@@ -559,6 +563,7 @@ fn updateAnimationLinkList(list: *ll.GenericLL) void {
                 ani.currentFrame = @mod(ani.currentFrame, ani.duration);
             }
         }
+
         p = nxt;
     }
 }
@@ -639,8 +644,8 @@ fn renderInfo() void {
         const strResult = std.fmt.bufPrintZ(
             &buf,
             "Find {d} more heroes!",
-            .{if (gm.GAME_WIN_NUM > gm.spriteSnake[0].?.num)
-                gm.GAME_WIN_NUM - gm.spriteSnake[0].?.num
+            .{if (gm.GAME_WIN_NUM > gm.spriteSnake[0].?.num())
+                gm.GAME_WIN_NUM - gm.spriteSnake[0].?.num()
             else
                 0},
         ) catch unreachable;
@@ -664,9 +669,59 @@ fn renderFps() void {
     _ = renderCenteredText(&res.texts[res.textList.len + fpsUsize], 300, 10, 1);
 }
 
+const starFieldScale = 2;
+const scaledWidth = 320 * starFieldScale; // 320 is the hardcoded size of the starfield asset.
+const rows = res.SCREEN_HEIGHT / scaledWidth;
+const cols = (res.SCREEN_WIDTH / scaledWidth) + 3;
+const total = rows * cols;
+var starPts: [total]c.SDL_Point = undefined;
+
+var starFieldInited: bool = false;
+fn renderStarField() void {
+    if (!starFieldInited) {
+        // Init the starfield x,y locations once.
+        var index: usize = 0;
+
+        var row: usize = 0;
+        while (row < rows) : (row += 1) {
+            var col: usize = 0;
+            while (col < cols) : (col += 1) {
+                starPts[index].x = (@as(c_int, @intCast(col)) * scaledWidth) - scaledWidth;
+                starPts[index].y = @as(c_int, @intCast(row)) * scaledWidth;
+                index += 1;
+            }
+        }
+
+        starFieldInited = true;
+    }
+
+    // Draw star field.
+    for (&starPts) |*pt| {
+        const txt = res.textures[res.RES_STAR_FIELD];
+        const src: c.SDL_Rect = txt.crops[0];
+        const dst: c.SDL_Rect = .{
+            .x = pt.x,
+            .y = pt.y,
+            .w = scaledWidth,
+            .h = scaledWidth,
+        };
+
+        _ = c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        _ = c.SDL_RenderCopy(renderer, txt.origin, &src, &dst);
+
+        if (pt.x > (res.SCREEN_WIDTH)) {
+            pt.x = -scaledWidth;
+        }
+
+        pt.x += 1;
+    }
+}
+
 pub fn render() !void {
     _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
     _ = c.SDL_RenderClear(renderer);
+
+    renderStarField();
 
     for (0..ANIMATION_LINK_LIST_NUM) |i| {
         updateAnimationLinkList(&animationsList[i]);

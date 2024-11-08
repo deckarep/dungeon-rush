@@ -433,9 +433,11 @@ pub fn initRandomMap(floorPercent: f64, smoothTimes: c_int, trapRate: f64) void 
 }
 
 pub fn pushMapToRender() void {
+    std.log.info("pushMapToRender()...", .{});
     // Aliases to cutdown on long names.
     const cpa = ren.createAndPushAnimation;
 
+    // This code figures out the map boundaries and lays down the map walls (edges) only.
     for (0..res.n) |i| {
         for (0..res.m) |j| {
             const i_cInt: c_int = @intCast(i);
@@ -699,13 +701,16 @@ pub fn pushMapToRender() void {
         }
     }
 
-    for (0..(res.SCREEN_WIDTH / res.UNIT)) |i| {
-        for (0..(res.SCREEN_HEIGHT / res.UNIT)) |j| {
+    // This code lays down the map ground basically, anything within wall boundaries that
+    // is not animated (like traps).
+    for (0..res.n) |i| {
+        for (0..res.m) |j| {
             if (!hasMap[i][j]) {
                 continue;
             }
             const node = tps.createLinkNode(gm.map[i][j].ani);
-            std.debug.assert(node.data != null);
+            // This line is not necessary, it's always guaranteed to have a populated data field.
+            // std.debug.assert(node.data != null);
             tps.pushLinkNode(&ren.animationsList[ren.RENDER_LIST_MAP_ID], node);
         }
     }
