@@ -56,29 +56,29 @@ pub const Sprite = struct {
     // Timestamp of the last attack
     lastAttack: c_int,
     dropRate: f64,
+
+    pub fn create(model: *Sprite, x: c_int, y: c_int) *Sprite {
+        const self = gAllocator.create(Sprite) catch unreachable;
+        self.init(model, x, y);
+        return self;
+    }
+
+    pub fn init(self: *Sprite, model: *const Sprite, x: c_int, y: c_int) void {
+        // r.c.: 1. I made the model a const pointer.
+        // 2. Original C code used a memcpy, hoping the line below is fine.
+        self.* = model.*;
+
+        self.x = x;
+        self.y = y;
+        self.posQueue = PositionBufferQueue.init();
+
+        const ani = gAllocator.create(tps.Animation) catch unreachable;
+        tps.copyAnimation(model.ani, ani);
+        self.ani = ani;
+        ren.updateAnimationOfSprite(self);
+    }
 };
 
 pub inline fn pushToPositionBuffer(q: *PositionBufferQueue, slot: PositionBufferSlot) void {
     q.enqueue(slot);
-}
-
-pub fn initSprite(model: *const Sprite, self: *Sprite, x: c_int, y: c_int) void {
-    // r.c.: 1. I made the model a const pointer.
-    // 2. Original C code used a memcpy, hoping the line below is fine.
-    self.* = model.*;
-
-    self.x = x;
-    self.y = y;
-    self.posQueue = PositionBufferQueue.init();
-
-    const ani = gAllocator.create(tps.Animation) catch unreachable;
-    tps.copyAnimation(model.ani, ani);
-    self.ani = ani;
-    ren.updateAnimationOfSprite(self);
-}
-
-pub fn createSprite(model: *Sprite, x: c_int, y: c_int) *Sprite {
-    const self = gAllocator.create(Sprite) catch unreachable;
-    initSprite(model, self, x, y);
-    return self;
 }

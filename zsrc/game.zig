@@ -200,7 +200,7 @@ pub fn appendSpriteToSnake(
             newY += delta;
         }
     }
-    const sprite = spr.createSprite(&res.commonSprites[@intCast(spriteId)], newX, newY);
+    const sprite = spr.Sprite.create(&res.commonSprites[@intCast(spriteId)], newX, newY);
     sprite.direction = direction;
     if (direction == .LEFT) {
         sprite.face = .LEFT;
