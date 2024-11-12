@@ -23,6 +23,7 @@
 
 const std = @import("std");
 const c = @import("cdefs.zig").c;
+const c2 = @import("cdefs.zig").c2;
 const res = @import("res.zig");
 const tps = @import("types.zig");
 const ll = @import("linkedlist.zig");
@@ -63,7 +64,7 @@ pub const RENDER_LOST_LIFE_DURATION = 2;
 pub const UI_COUNTDOWN_BAR_WIDTH = 128;
 pub const SCALE_FACTOR = 2;
 
-pub var renderer: *c.SDL_Renderer = undefined;
+pub var renderer: *c2.SDL_Renderer = undefined;
 pub var renderFrames: usize = 0;
 
 pub var animationsList: [ANIMATION_LINK_LIST_NUM]ll.GenericLL = undefined;
@@ -706,8 +707,8 @@ fn renderStarField() void {
             .h = scaledWidth,
         };
 
-        _ = c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        _ = c.SDL_RenderCopy(renderer, txt.origin, &src, &dst);
+        _ = c2.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        _ = c2.SDL_RenderTexture(renderer, txt.origin, &src, &dst);
 
         if (pt.x > (res.SCREEN_WIDTH)) {
             pt.x = -scaledWidth;
@@ -718,8 +719,8 @@ fn renderStarField() void {
 }
 
 pub fn render() !void {
-    _ = c.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
-    _ = c.SDL_RenderClear(renderer);
+    _ = c2.SDL_SetRenderDrawColor(renderer, 25, 17, 23, 255);
+    _ = c2.SDL_RenderClear(renderer);
 
     renderStarField();
 
@@ -739,19 +740,19 @@ pub fn render() !void {
     renderFps();
 
     // Update Screen
-    c.SDL_RenderPresent(renderer);
+    _ = c2.SDL_RenderPresent(renderer);
     renderFrames += 1;
 }
 
 pub fn renderUi() !void {
-    _ = c.SDL_SetRenderDrawColor(
+    _ = c2.SDL_SetRenderDrawColor(
         renderer,
         RENDER_BG_COLOR.r,
         RENDER_BG_COLOR.g,
         RENDER_BG_COLOR.b,
         RENDER_BG_COLOR.a,
     );
-    _ = c.SDL_RenderClear(renderer);
+    _ = c2.SDL_RenderClear(renderer);
 
     for (0..ANIMATION_LINK_LIST_NUM) |i| {
         updateAnimationLinkList(&animationsList[i]);

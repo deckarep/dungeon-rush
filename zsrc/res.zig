@@ -23,11 +23,13 @@
 
 const std = @import("std");
 const c = @import("cdefs.zig").c;
+const c2 = @import("cdefs.zig").c2;
 const rnd = @import("render.zig");
 const tps = @import("types.zig");
 const wp = @import("weapons.zig");
 const spr = @import("sprite.zig");
 const ren = @import("render.zig");
+
 const gAllocator = @import("alloc.zig").gAllocator;
 
 // Resource ID
@@ -375,39 +377,41 @@ var commonSpriteCounter: usize = 0;
 pub var font: *c.TTF_Font = undefined;
 pub var sounds: [AUDIO_SOUND_SIZE]?*c.Mix_Chunk = undefined;
 pub var texts: [TEXTSET_SIZE]tps.Text = undefined;
-var window: *c.SDL_Window = undefined;
+var window: *c2.SDL_Window = undefined;
 var originTextures: [TILESET_SIZE]?*c.SDL_Texture = undefined;
 pub var effects: [EFFECTS_SIZE]tps.Effect = undefined;
 var soundsCount: usize = 0;
 
 pub fn init() bool {
     var success = true;
-    if (c.SDL_Init(c.SDL_INIT_VIDEO | c.SDL_INIT_AUDIO) < 0) { //c.SDL_INIT_GAMECONTROLLER | c.SDL_INIT_JOYSTICK) < 0) {
+
+    if (!c2.SDL_Init(c2.SDL_INIT_AUDIO | c2.SDL_INIT_VIDEO | c2.SDL_INIT_EVENTS)) { //c.SDL_INIT_GAMECONTROLLER | c.SDL_INIT_JOYSTICK) < 0) {
         _ = c.printf("SDL could not initialize! SDL_Error: %s\n", c.SDL_GetError());
         success = false;
     } else {
         // NOTE: enabled high-dpi mode and window resizing.
         // Taken from: https://github.com/midzer/DungeonRush/commit/a78751d4cd3bd336e4499b17f2772a57c0cb5b2a
-        const win = c.SDL_CreateWindow(
+        const win = c2.SDL_CreateWindow(
             nameOfTheGame,
             c.SDL_WINDOWPOS_CENTERED,
             c.SDL_WINDOWPOS_CENTERED,
-            SCREEN_WIDTH / 2, // Half for high dpi mode.
-            SCREEN_HEIGHT / 2, // Same.
-            c.SDL_WINDOW_ALLOW_HIGHDPI | c.SDL_WINDOW_RESIZABLE,
+            // SCREEN_WIDTH / 2, // Half for high dpi mode.
+            // SCREEN_HEIGHT / 2, // Same.
+            //c2.SDL_WINDOW_ALLOW_HIGHDPI | c2.SDL_WINDOW_RESIZABLE,
+            c2.SDL_WINDOW_OPENGL | c2.SDL_WINDOW_RESIZABLE,
         );
         if (win) |w| {
             window = w;
 
-            const rend = c.SDL_CreateRenderer(window, -1, c.SDL_RENDERER_ACCELERATED); //| c.SDL_RENDERER_PRESENTVSYNC);
+            const rend = c2.SDL_CreateRenderer(window, "foo"); //c.SDL_RENDERER_ACCELERATED); //| c.SDL_RENDERER_PRESENTVSYNC);
             if (rend == null) {
                 _ = c.printf("Renderer could not be created! SDL Error: %s\n", c.SDL_GetError());
                 success = false;
             } else {
                 rnd.renderer = rend.?;
-                _ = c.SDL_SetRenderDrawColor(rnd.renderer, 0xff, 0xff, 0xff, 0xff);
+                _ = c2.SDL_SetRenderDrawColor(rnd.renderer, 0xff, 0xff, 0xff, 0xff);
                 // Added for high dpi mode!
-                _ = c.SDL_RenderSetLogicalSize(ren.renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+                //_ = c2.SDL_RenderSetLogicalSize(ren.renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
                 const imgFlags: c_int = c.IMG_INIT_PNG;
                 if (!((c.IMG_Init(imgFlags) & imgFlags) != 0)) {

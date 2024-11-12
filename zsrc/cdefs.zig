@@ -33,3 +33,7 @@ pub const c = @cImport({
     @cInclude("SDL_net.h");
     @cInclude("SDL_ttf.h");
 });
+
+pub const c2 = @cImport({
+    @cInclude("SDL3/SDL.h");
+});

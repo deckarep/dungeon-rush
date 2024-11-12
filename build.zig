@@ -25,12 +25,24 @@ pub fn build(b: *std.Build) void {
 
     // exe.linkSystemLibrary("iconv");
 
-    // Link SDL2 and friends.
+    // Proper: Link SDL2 and friends.
     exe.linkSystemLibrary("SDL2");
     exe.linkSystemLibrary("SDL2_mixer");
     exe.linkSystemLibrary("SDL2_image");
     exe.linkSystemLibrary("SDL2_ttf");
     exe.linkSystemLibrary("SDL2_net");
+
+    // Proper: Link SDL3 and friends
+    exe.addIncludePath(b.path("lib/SDL3.framework/include"));
+    exe.addFrameworkPath(b.path("lib"));
+    exe.addRPath(b.path("lib"));
+    exe.linkFramework("SDL3");
+    // Strategy is to upgrade to these later...I think I can use
+    // SDL2 functions for now with SDL3.
+    // exe.linkFramework("SDL3_mixer");
+    // exe.linkFramework("SDL3_image");
+    // exe.linkFramework("SDL3_ttf");
+    // exe.linkFramework("SDL3_net");
 
     // exe.linkSystemLibrary2("SDL2", .{ .preferred_link_mode = .static });
     // exe.linkSystemLibrary2("SDL2_mixer", .{ .preferred_link_mode = .static });

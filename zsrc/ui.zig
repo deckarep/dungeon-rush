@@ -32,6 +32,7 @@ const gm = @import("game.zig");
 const spr = @import("sprite.zig");
 const mp = @import("map.zig");
 const c = @import("cdefs.zig").c;
+const c2 = @import("cdefs.zig").c2;
 const th = @import("throttler.zig");
 const ct = @import("controller.zig");
 const gAllocator = @import("alloc.zig").gAllocator;
@@ -140,7 +141,7 @@ fn chooseOptions(optionsNum: c_int, options: []const *tps.Text) !c_int {
         _ = ren.renderCenteredText(&res.texts[17], res.SCREEN_WIDTH / 2, 920 * res.SCREEN_FACTOR, 1);
 
         // Update Screen
-        c.SDL_RenderPresent(ren.renderer);
+        _ = c2.SDL_RenderPresent(ren.renderer);
         ren.renderFrames += 1;
 
         throttler.tick();
